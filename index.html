@@ -189,7 +189,7 @@ header .lc svg{width:18px;height:18px}
 <body>
 <header>
   <h1><img src="icon-192.png?v=3" width="22" height="22" style="vertical-align:middle;margin-right:4px;border-radius:4px"> 김춘식 데이트 맵</h1>
-  <div class="badge"><div class="dot"></div><span id="cnt">0</span>개 장소</div>
+  <div class="badge" onclick="openPlaceListModal()" style="cursor:pointer"><div class="dot"></div><span id="cnt">0</span>개 장소</div>
 </header>
 <div class="main">
   <div class="panel">
@@ -205,7 +205,7 @@ header .lc svg{width:18px;height:18px}
         <div class="list-search-row">
           <div class="list-search-box collapsed" id="listSearchBox" onclick="expandListSearch()">
             <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0"></i>
-            <input id="listSearchInput" type="text" placeholder="등록된 장소 검색 (예: ㅅㅂㅅ)" oninput="filterListSearch()" onblur="collapseListSearch()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
+            <input id="listSearchInput" type="text" placeholder="등록된 장소 검색 (예: ㅅㅂㅅ)" oninput="filterListSearch()" onblur="collapseListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
           </div>
           <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()"><i data-lucide="plus" class="lc lc-sm"></i> 추가</button>
         </div>
@@ -327,6 +327,22 @@ header .lc svg{width:18px;height:18px}
       <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('clearModal').classList.remove('open')">취소</button>
       <button class="btn btn-dark" style="flex:1;background:var(--red)" onclick="confirmClear()">삭제하기</button>
     </div>
+  </div>
+</div>
+
+<!-- 장소 리스트 모달 -->
+<div class="modal-overlay" id="placeListModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="width:320px;max-height:85vh;padding:16px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <h3 style="margin:0;font-size:15px">전체 장소 (<span id="plmCnt">0</span>)</h3>
+      <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="document.getElementById('placeListModal').classList.remove('open')">&times;</span>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button class="btn btn-sm btn-outline plm-sort" data-sort="name" onclick="sortPlaceList('name')" style="font-size:11px;padding:4px 10px">이름순</button>
+      <button class="btn btn-sm btn-outline plm-sort" data-sort="rating-desc" onclick="sortPlaceList('rating-desc')" style="font-size:11px;padding:4px 10px">평점높은순</button>
+      <button class="btn btn-sm btn-outline plm-sort" data-sort="rating-asc" onclick="sortPlaceList('rating-asc')" style="font-size:11px;padding:4px 10px">평점낮은순</button>
+    </div>
+    <div id="plmList" style="overflow-y:auto;max-height:calc(85vh - 100px)"></div>
   </div>
 </div>
 
@@ -676,13 +692,15 @@ function collapseListSearch() {
   const input = document.getElementById('listSearchInput');
   if (input.value.trim()) return;
   setTimeout(() => {
+    // blur 후 다시 input에 포커스가 간 경우 닫지 않음
+    if (document.activeElement === input) return;
     const box = document.getElementById('listSearchBox');
     box.classList.remove('expanded');
     box.classList.add('collapsed');
     box.onclick = expandListSearch;
     listSearchQuery = '';
     renderList();
-  }, 150);
+  }, 200);
 }
 
 // ── 카테고리 셀렉트 채우기 ──
@@ -910,6 +928,49 @@ function addPlace(p) {
   }
   toast(`📍 ${p.name} 추가 완료!`);
   return true;
+}
+
+// ── 장소 리스트 모달 ──
+let _plmSort = 'name';
+function openPlaceListModal() {
+  _plmSort = 'name';
+  renderPlaceListModal();
+  document.getElementById('placeListModal').classList.add('open');
+}
+function sortPlaceList(sort) {
+  _plmSort = sort;
+  document.querySelectorAll('.plm-sort').forEach(b => b.classList.remove('btn-dark'));
+  const btn = document.querySelector(`.plm-sort[data-sort="${sort}"]`);
+  if (btn) { btn.classList.add('btn-dark'); }
+  renderPlaceListModal();
+}
+function renderPlaceListModal() {
+  let list = [...places];
+  if (_plmSort === 'name') list.sort((a,b) => a.name.localeCompare(b.name, 'ko'));
+  else if (_plmSort === 'rating-desc') list.sort((a,b) => (getAvgRating(b)||0) - (getAvgRating(a)||0));
+  else if (_plmSort === 'rating-asc') list.sort((a,b) => (getAvgRating(a)||0) - (getAvgRating(b)||0));
+  document.getElementById('plmCnt').textContent = list.length;
+  const starSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>';
+  const emptyStar = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>';
+  document.getElementById('plmList').innerHTML = list.map(p => {
+    const c = getCat(p.cat);
+    const avg = getAvgRating(p);
+    const avgNum = avg ? parseFloat(avg) : 0;
+    const stars = Array.from({length:5}, (_,i) => i < Math.round(avgNum) ? starSvg : emptyStar).join('');
+    const dist = myLat !== null && p.lat ? formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng)) : '';
+    return `<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f0f0f0;cursor:pointer" onclick="document.getElementById('placeListModal').classList.remove('open');focusPlace(${p.id})">
+      <div style="width:28px;height:28px;border-radius:50%;background:${c.color};display:flex;align-items:center;justify-content:center;flex-shrink:0">${svgSized(getIcon(c.emoji),14)||c.emoji}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:1px">
+          <span style="display:inline-flex;gap:1px">${stars}</span>
+          ${avg ? `<span style="font-size:11px;color:#666;font-weight:500">${avg}</span>` : '<span style="font-size:11px;color:#ccc">미평가</span>'}
+        </div>
+      </div>
+      ${dist ? `<span style="font-size:11px;color:var(--brown);flex-shrink:0">${dist}</span>` : ''}
+      <span style="font-size:11px;color:${p.visited?'#4A7C59':'#ccc'};flex-shrink:0">${p.visited?'✓':''}</span>
+    </div>`;
+  }).join('');
 }
 
 function editMemo(id) {
@@ -1893,7 +1954,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 82;
+const APP_VERSION = 83;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
