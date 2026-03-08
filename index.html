@@ -1557,7 +1557,6 @@ function renderMarkers() {
       ${avg?`<div style="font-size:12px;margin-top:3px;color:#F1C40F;display:flex;align-items:center;gap:2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> ${avg}</div>`:''}
       ${p.addr?`<div style="font-size:11px;color:#8B6F5E;margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;display:inline-flex;align-items:center;padding:1px 4px;border:1px solid #ddd;border-radius:3px;background:#fafafa;margin-left:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B6F5E" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></span></div>`:''}
       ${p.memo?`<div style="font-size:11px;color:#999;margin-top:3px;font-style:italic">${p.memo}</div>`:''}
-      ${p.photos&&p.photos.length?`<div style="display:flex;gap:4px;margin-top:4px">${p.photos.map((src,i)=>`<img src="${src}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;cursor:pointer" data-action="photo" data-photo-idx="${i}">`).join('')}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
         <button class="iw-btn" data-action="kakao">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#FEE500" stroke="#8B6914" stroke-width="0.8"><path d="M12 3C6.48 3 2 6.58 2 10.94c0 2.8 1.86 5.27 4.66 6.67-.15.53-.96 3.4-.99 3.62 0 0-.02.17.09.24.11.06.24.01.24.01.32-.04 3.7-2.44 4.28-2.86.55.08 1.13.12 1.72.12 5.52 0 10-3.58 10-7.8C22 6.58 17.52 3 12 3z"/></svg>
@@ -1584,9 +1583,6 @@ function renderMarkers() {
     iwEl.querySelector('[data-action="visit"]').onclick = () => { toggleV(p.id); };
     const addrBtn = iwEl.querySelector('[data-action="addr-search"]');
     if (addrBtn) addrBtn.onclick = () => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}`, '_blank');
-    iwEl.querySelectorAll('[data-action="photo"]').forEach(img => {
-      img.onclick = () => viewPhoto(p.id, parseInt(img.dataset.photoIdx));
-    });
     // 팝업 클릭 시 지도 이벤트 전파 완전 차단
     ['click','mousedown','mouseup','touchstart','touchend','pointerdown','pointerup'].forEach(evt => {
       iwEl.addEventListener(evt, e => e.stopPropagation());
@@ -1940,15 +1936,17 @@ function _doLocClick() {
   }
   const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
   function onLocError(err) {
-    document.getElementById('locBtn').classList.remove('tracking');
     if (err.code === 1) {
+      document.getElementById('locBtn').classList.remove('tracking');
       toast('위치 권한이 거부되었어요. 브라우저 설정에서 허용해주세요');
     } else if (err.code === 2) {
       // 높은 정확도 실패 시 낮은 정확도로 재시도 (PC/모바일 공통)
       navigator.geolocation.getCurrentPosition(onLocSuccess, err2 => {
+        document.getElementById('locBtn').classList.remove('tracking');
         toast('위치를 가져올 수 없어요. 위치 서비스를 확인해주세요');
       }, { enableHighAccuracy: false, timeout: 15000 });
     } else {
+      document.getElementById('locBtn').classList.remove('tracking');
       toast('위치 확인 시간 초과. 다시 시도해주세요');
     }
   }
@@ -2138,7 +2136,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 96;
+const APP_VERSION = 97;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
