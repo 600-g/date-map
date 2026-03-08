@@ -88,6 +88,18 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .photo-viewer img{max-width:90vw;max-height:75vh;border-radius:8px;object-fit:contain}
 .photo-viewer .pv-close{position:absolute;top:12px;right:16px;color:white;font-size:28px;cursor:pointer;line-height:1}
 .photo-viewer .pv-del{color:#E74C3C;font-size:13px;cursor:pointer;padding:6px 14px;background:rgba(255,255,255,.15);border-radius:8px;border:1px solid rgba(255,255,255,.2)}
+/* 월드컵 */
+.wc-vs{display:flex;align-items:center;gap:10px;justify-content:center;margin:10px 0}
+.wc-card{flex:1;border:2px solid #eee;border-radius:12px;padding:10px;text-align:center;cursor:pointer;transition:all .15s;background:white;max-width:140px}
+.wc-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.1)}
+.wc-card:active{transform:scale(.97)}
+.wc-card img{width:100%;height:90px;object-fit:cover;border-radius:8px;margin-bottom:6px}
+.wc-card .wc-noimg{width:100%;height:90px;border-radius:8px;margin-bottom:6px;display:flex;align-items:center;justify-content:center;font-size:28px}
+.wc-card .wc-name{font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.wc-card .wc-cat{font-size:10px;color:var(--brown);margin-top:2px}
+.wc-winner{text-align:center;padding:20px 10px}
+.wc-winner img{width:140px;height:140px;object-fit:cover;border-radius:12px;border:3px solid #F1C40F;margin-bottom:10px}
+.wc-winner .wc-noimg{width:140px;height:140px;border-radius:12px;border:3px solid #F1C40F;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:48px}
 /* 별점 */
 .pi-rating{margin-top:6px;font-size:12px;color:var(--brown)}
 .pi-rating-avg{font-weight:600;color:var(--dark);font-size:13px;margin-bottom:2px}
@@ -201,7 +213,7 @@ header .lc svg{width:18px;height:18px}
 </head>
 <body>
 <header>
-  <h1><img src="icon-192.png?v=3" width="22" height="22" style="vertical-align:middle;margin-right:4px;border-radius:4px"> 김춘식 데이트 맵</h1>
+  <h1><img src="icon-192.png?v=3" width="22" height="22" style="vertical-align:middle;margin-right:4px;border-radius:4px;cursor:pointer" id="appIcon" ondblclick="startWorldCup()"> 김춘식 데이트 맵</h1>
   <div class="badge" onclick="openPlaceListModal()" style="cursor:pointer"><div class="dot"></div><span id="cnt">0</span>개 장소</div>
 </header>
 <div class="main">
@@ -356,6 +368,18 @@ header .lc svg{width:18px;height:18px}
       <button class="btn btn-sm btn-outline plm-sort" data-sort="rating-asc" onclick="sortPlaceList('rating-asc')" style="font-size:11px;padding:4px 10px">평점낮은순</button>
     </div>
     <div id="plmList" style="overflow-y:auto;max-height:calc(85vh - 100px)"></div>
+  </div>
+</div>
+
+<!-- 월드컵 게임 모달 -->
+<div class="modal-overlay" id="wcModal" onclick="if(event.target===this)closeWorldCup()">
+  <div class="modal" style="width:340px;max-height:90vh;padding:16px;overflow-y:auto">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <h3 style="margin:0;font-size:15px" id="wcTitle">🏆 장소 월드컵</h3>
+      <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="closeWorldCup()">&times;</span>
+    </div>
+    <div id="wcRound" style="text-align:center;font-size:13px;color:var(--brown);margin-bottom:10px"></div>
+    <div id="wcBody"></div>
   </div>
 </div>
 
@@ -992,6 +1016,102 @@ function renderPlaceListModal() {
       <span style="font-size:11px;color:${p.visited?'#4A7C59':'#ccc'};flex-shrink:0">${p.visited?'✓':''}</span>
     </div>`;
   }).join('');
+}
+
+// ── 장소 월드컵 ──
+let _wc = { candidates:[], round:[], roundIdx:0, winners:[], totalLabel:'' };
+
+function startWorldCup() {
+  const visited = places.filter(p => p.visited);
+  if (visited.length < 2) { toast('다녀온 장소가 2개 이상이어야 해요'); return; }
+  // 강수 결정: 2,4,8,16,32,64 중 후보 수 이하 최대값
+  let sizes = [64,32,16,8,4,2];
+  let size = sizes.find(s => s <= visited.length) || 2;
+  // 셔플
+  let pool = [...visited].sort(() => Math.random() - 0.5).slice(0, size);
+  _wc.candidates = pool;
+  _wc.round = [...pool];
+  _wc.roundIdx = 0;
+  _wc.winners = [];
+  _wc.totalLabel = size + '강';
+  document.getElementById('wcModal').classList.add('open');
+  renderWcRound();
+}
+
+function closeWorldCup() {
+  document.getElementById('wcModal').classList.remove('open');
+}
+
+function getRoundLabel(count) {
+  if (count === 2) return '결승';
+  return count + '강';
+}
+
+function renderWcRound() {
+  const body = document.getElementById('wcBody');
+  const roundInfo = document.getElementById('wcRound');
+  const total = _wc.round.length;
+  const matchNum = Math.floor(_wc.roundIdx / 2) + 1;
+  const totalMatches = Math.floor(total / 2);
+  roundInfo.textContent = `${getRoundLabel(total)} (${matchNum}/${totalMatches})`;
+
+  const a = _wc.round[_wc.roundIdx];
+  const b = _wc.round[_wc.roundIdx + 1];
+  if (!a || !b) return;
+
+  const catA = getCat(a.cat), catB = getCat(b.cat);
+  body.innerHTML = `
+    <div class="wc-vs">
+      <div class="wc-card" onclick="wcPick(0)">
+        ${a.photos && a.photos[0] ? `<img src="${a.photos[0]}">` : `<div class="wc-noimg" style="background:${catA.color}">${getIcon(catA.emoji,28)||catA.emoji}</div>`}
+        <div class="wc-name">${a.name}</div>
+        <div class="wc-cat">${catA.name}</div>
+      </div>
+      <span style="font-size:18px;font-weight:700;color:var(--brown)">VS</span>
+      <div class="wc-card" onclick="wcPick(1)">
+        ${b.photos && b.photos[0] ? `<img src="${b.photos[0]}">` : `<div class="wc-noimg" style="background:${catB.color}">${getIcon(catB.emoji,28)||catB.emoji}</div>`}
+        <div class="wc-name">${b.name}</div>
+        <div class="wc-cat">${catB.name}</div>
+      </div>
+    </div>
+  `;
+}
+
+function wcPick(idx) {
+  const winner = _wc.round[_wc.roundIdx + idx];
+  _wc.winners.push(winner);
+  _wc.roundIdx += 2;
+
+  if (_wc.roundIdx >= _wc.round.length) {
+    // 라운드 끝
+    if (_wc.winners.length === 1) {
+      // 우승!
+      renderWcWinner(_wc.winners[0]);
+      return;
+    }
+    // 다음 라운드
+    _wc.round = [..._wc.winners];
+    _wc.winners = [];
+    _wc.roundIdx = 0;
+  }
+  renderWcRound();
+}
+
+function renderWcWinner(p) {
+  const c = getCat(p.cat);
+  const avg = getAvgRating(p);
+  document.getElementById('wcRound').textContent = '🎉 우승!';
+  document.getElementById('wcBody').innerHTML = `
+    <div class="wc-winner">
+      ${p.photos && p.photos[0] ? `<img src="${p.photos[0]}">` : `<div class="wc-noimg" style="background:${c.color}">${getIcon(c.emoji,48)||c.emoji}</div>`}
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px">🏆 ${p.name}</div>
+      <div style="font-size:13px;color:var(--brown)">${c.name}</div>
+      ${avg ? `<div style="margin-top:4px;color:#F1C40F;font-size:14px">⭐ ${avg}</div>` : ''}
+      ${p.memo ? `<div style="margin-top:4px;font-size:12px;color:#999;font-style:italic">${p.memo}</div>` : ''}
+      <button class="btn btn-dark btn-sm" onclick="startWorldCup()" style="margin-top:12px">다시 하기</button>
+      <button class="btn btn-outline btn-sm" onclick="closeWorldCup()" style="margin-top:12px">닫기</button>
+    </div>
+  `;
 }
 
 function editMemo(id) {
@@ -2136,7 +2256,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 97;
+const APP_VERSION = 98;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
