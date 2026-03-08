@@ -519,6 +519,8 @@ function saveCats() {
   saveCatsData();
   saveData();
   renderAll();
+  renderCatEditor();
+  document.getElementById('nickChange').value = myNick;
   toast('✅ 카테고리 저장됨');
 }
 
@@ -564,7 +566,11 @@ function renderAll() {
 
 function renderList() {
   const list = document.getElementById('placeList');
-  const f = curFilter==='전체' ? places : places.filter(p=>p.cat===curFilter);
+  let f = curFilter==='전체' ? [...places] : places.filter(p=>p.cat===curFilter);
+  // 위치 추적 중이면 가까운 순 정렬
+  if (myLat !== null) {
+    f.sort((a,b) => getDistanceKm(myLat,myLng,a.lat,a.lng) - getDistanceKm(myLat,myLng,b.lat,b.lng));
+  }
   if (!f.length) {
     list.innerHTML='<div class="empty"><div class="ico"><i data-lucide="map-pin" class="lc"></i></div><p>장소가 없어요</p></div>'; lucide.createIcons(); return;
   }
@@ -823,7 +829,8 @@ function changeNick() {
     }
   });
   saveData(); renderAll();
-  toast('닉네임 변경됨');
+  document.getElementById('nickChange').value = myNick;
+  toast('✅ 닉네임 변경됨');
 }
 
 // ── 별점 ──
