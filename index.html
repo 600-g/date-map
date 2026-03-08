@@ -12,7 +12,7 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 :root{--cream:#F5F0E8;--warm:#E8DDD0;--brown:#8B6F5E;--dark:#2C1810;--green:#4A7C59;--red:#C0392B}
 body{font-family:'Noto Sans KR',sans-serif;background:var(--cream);color:var(--dark);height:100dvh;height:100vh;display:flex;flex-direction:column;overflow:hidden}
 @supports(height:100dvh){body{height:100dvh}}
@@ -21,9 +21,10 @@ header h1{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:600}
 .badge{font-size:11px;background:var(--green);color:white;padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:5px}
 .dot{width:6px;height:6px;background:#7FD49A;border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes locPulse{0%{transform:scale(1);opacity:.4}100%{transform:scale(2.5);opacity:0}}
 .main{display:flex;flex:1;overflow:hidden}
 .panel{width:320px;background:white;border-right:1px solid var(--warm);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
-#map{flex:1;background:#e8e0d8}
+#map{flex:1;background:#e8e0d8;touch-action:auto}
 .tabs{display:flex;border-bottom:1px solid var(--warm);flex-shrink:0}
 .tab{flex:1;padding:10px 2px;text-align:center;font-size:11px;font-weight:500;color:var(--brown);cursor:pointer;border:none;border-bottom:2px solid transparent;background:none;transition:all .2s}
 .tab.active{color:var(--dark);border-bottom-color:var(--dark)}
@@ -92,8 +93,8 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .cat-handle{cursor:grab;color:var(--brown);font-size:16px;padding:4px 6px;flex-shrink:0;touch-action:none;user-select:none;-webkit-user-select:none}
 .cat-handle:active{cursor:grabbing}
 .cat-row.dragging{opacity:.4;background:var(--warm);transform:scale(0.95)}
-.cat-row.drag-over{box-shadow:0 -2px 0 0 var(--dark)}
-.cat-row.touch-dragging{z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.2);transform:scale(1.03);background:white}
+.cat-row.drag-over{box-shadow:0 -3px 0 0 var(--green);background:#e8f5e9;transition:background 0.1s}
+.cat-row.touch-dragging{z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.25);transform:scale(1.04);background:white;opacity:.9}
 .cat-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:15px;padding:4px 6px;flex-shrink:0}
 .cat-del:hover{color:var(--red)}
 .cat-summary-item{display:inline-block;font-size:11px;padding:3px 8px;border-radius:12px;margin:2px;border:1px solid var(--warm);background:white}
@@ -984,7 +985,7 @@ function updateMyLocMarker() {
   const pos = new kakao.maps.LatLng(myLat, myLng);
   if (!myLocOverlay) {
     const el = document.createElement('div');
-    el.innerHTML = '<div style="width:16px;height:16px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(66,133,244,.5)"></div>';
+    el.innerHTML = '<div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center"><div style="position:absolute;width:28px;height:28px;background:rgba(66,133,244,.15);border-radius:50%;animation:locPulse 2s infinite"></div><div style="width:14px;height:14px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 6px rgba(66,133,244,.6);position:relative;z-index:1"></div></div>';
     myLocOverlay = new kakao.maps.CustomOverlay({ position: pos, content: el, zIndex: 999 });
     myLocOverlay.setMap(map);
   } else {
