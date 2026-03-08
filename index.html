@@ -583,63 +583,68 @@ function setupCatDrag() {
     });
   });
 
-  // ── Mobile: Touch drag ──
+  // ── Mobile: Touch drag (DOM 재배치 방식) ──
   rows.forEach(row => {
     const handle = row.querySelector('.cat-handle');
     if (!handle) return;
-    let startY = 0, curY = 0, dragging = false;
+    let dragging = false, startY = 0, rowH = 0;
 
     handle.addEventListener('touchstart', e => {
       e.preventDefault();
       dragging = true;
       dragFromIdx = parseInt(row.dataset.idx);
       startY = e.touches[0].clientY;
+      rowH = row.offsetHeight + 4; // row높이 + gap
       row.classList.add('touch-dragging');
     }, { passive: false });
 
     handle.addEventListener('touchmove', e => {
       if (!dragging) return;
       e.preventDefault();
-      curY = e.touches[0].clientY;
+      const curY = e.touches[0].clientY;
       const dy = curY - startY;
-      row.style.transform = `translateY(${dy}px) scale(1.03)`;
+      row.style.transform = `translateY(${dy}px) scale(1.04)`;
 
-      // 드래그 row를 잠시 숨겨서 아래 row 감지
-      rows.forEach(r => r.classList.remove('drag-over'));
-      row.style.visibility = 'hidden';
-      const target = document.elementFromPoint(e.touches[0].clientX, curY);
-      row.style.visibility = '';
-      const targetRow = target?.closest?.('.cat-row');
-      if (targetRow && targetRow !== row) targetRow.classList.add('drag-over');
+      // dy가 row 높이 이상 이동하면 실제 DOM 순서 교체
+      const curIdx = parseInt(row.dataset.idx);
+      if (dy > rowH && curIdx < cats.length - 1) {
+        // 아래로 이동
+        const [moved] = cats.splice(curIdx, 1);
+        cats.splice(curIdx + 1, 0, moved);
+        startY += rowH;
+        rebuildCatRows();
+      } else if (dy < -rowH && curIdx > 0) {
+        // 위로 이동
+        const [moved] = cats.splice(curIdx, 1);
+        cats.splice(curIdx - 1, 0, moved);
+        startY -= rowH;
+        rebuildCatRows();
+      }
     }, { passive: false });
 
     handle.addEventListener('touchend', e => {
       if (!dragging) return;
       dragging = false;
-      row.style.transform = '';
-      rows.forEach(r => r.classList.remove('drag-over'));
-
-      // 드래그 row 숨기고 아래 row 감지
-      row.style.visibility = 'hidden';
-      const target = document.elementFromPoint(
-        e.changedTouches[0].clientX,
-        e.changedTouches[0].clientY
-      );
-      row.style.visibility = '';
       row.classList.remove('touch-dragging');
-
-      const targetRow = target?.closest?.('.cat-row');
-      if (targetRow && targetRow !== row) {
-        const toIdx = parseInt(targetRow.dataset.idx);
-        if (dragFromIdx !== null && dragFromIdx !== toIdx) {
-          const [moved] = cats.splice(dragFromIdx, 1);
-          cats.splice(toIdx, 0, moved);
-          renderCatEditor();
-        }
-      }
-      dragFromIdx = null;
+      row.style.transform = '';
+      renderCatEditor(); // 최종 상태로 렌더
     });
   });
+}
+
+// 터치 드래그 중 DOM만 빠르게 갱신 (이벤트 재등록 포함)
+function rebuildCatRows() {
+  const list = document.getElementById('catList');
+  list.innerHTML = cats.map((c,i)=>`
+    <div class="cat-row" draggable="true" data-idx="${i}">
+      <span class="cat-handle" title="드래그로 순서 변경">☰</span>
+      <span class="cat-emoji" title="이모지 클릭해서 변경" onclick="editEmoji(${i})">${c.emoji}</span>
+      <input class="cat-name-input" value="${c.name}" onchange="cats[${i}].name=this.value" placeholder="카테고리 이름">
+      <input type="color" class="cat-color" value="${c.color}" title="배경색" onchange="cats[${i}].color=this.value">
+      <button class="cat-del" onclick="delCat(${i})" title="삭제">✕</button>
+    </div>
+  `).join('');
+  setupCatDrag();
 }
 
 function delCat(idx) {
