@@ -885,17 +885,19 @@ function renderMarkers() {
     marker.setMap(map);
     markers.push(marker); iws.push(iw);
   });
-  // 위치 추적 중이 아닐 때만 전체 장소로 뷰 맞춤
-  if (places.length && watchId === null) {
+  // 최초 로드 시에만 전체 장소로 뷰 맞춤 (이후에는 현재 뷰 유지)
+  if (!mapInitialBoundsSet && places.length && watchId === null) {
     const b = new kakao.maps.LatLngBounds();
     places.forEach(p=>{
       if(p.lat&&p.lng) b.extend(new kakao.maps.LatLng(p.lat,p.lng));
     });
     map.setBounds(b);
+    mapInitialBoundsSet = true;
   }
 }
 
 let focusedPlaceId = null;
+let mapInitialBoundsSet = false;
 function closeAllIw() {
   iws.forEach(w=>{ try{w.setMap(null);}catch(e){} });
   document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
