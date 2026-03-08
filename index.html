@@ -59,6 +59,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--brown)}
 .bx:hover{border-color:var(--brown);color:var(--brown)}
 .bx.vis{background:var(--green);color:white;border-color:var(--green)}
 .bx.del:hover{border-color:var(--red);color:var(--red)}
+/* 별점 */
+.pi-rating{margin-top:6px;font-size:11px;color:var(--brown)}
+.pi-rating-avg{font-weight:600;color:var(--dark);font-size:12px;margin-bottom:2px}
+.pi-rating-row{display:flex;align-items:center;gap:4px;margin-bottom:2px}
+.pi-rating-name{font-size:10px;color:var(--brown);min-width:36px}
+.star{cursor:pointer;font-size:14px;transition:transform .1s}
+.star:hover{transform:scale(1.3)}
+.star.on{color:#F1C40F}
+.star.off{color:#ddd}
 /* 설정/공유 */
 .cfg-wrap{padding:14px;overflow-y:auto;flex:1}
 .s-title{font-size:13px;font-weight:600;margin-bottom:4px}
@@ -182,6 +191,14 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
         <button class="btn btn-dark" style="width:100%;margin-bottom:6px" onclick="importCode()">불러오기</button>
 
         <hr class="div">
+        <div class="s-title">👤 내 닉네임</div>
+        <div class="s-desc">별점에 표시되는 이름</div>
+        <div class="row" style="margin-bottom:6px">
+          <input id="nickChange" type="text" style="margin-bottom:0">
+          <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" onclick="changeNick()">변경</button>
+        </div>
+
+        <hr class="div">
         <div class="s-title">🗑 초기화</div>
         <div class="s-desc">모든 장소를 삭제합니다</div>
         <button class="btn btn-outline" style="width:100%" onclick="clearAll()">전체 초기화</button>
@@ -214,6 +231,17 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
   </div>
 </div>
 
+<!-- 닉네임 설정 모달 -->
+<div class="modal-overlay" id="nickModal">
+  <div class="modal" style="text-align:center">
+    <div style="font-size:32px;margin-bottom:10px">👋</div>
+    <h3 style="margin-bottom:8px">닉네임을 알려주세요</h3>
+    <p style="font-size:12px;color:var(--brown);margin-bottom:12px;line-height:1.6">별점에 이름이 표시돼요</p>
+    <input id="nickInput" type="text" placeholder="예: 두근, 혜진" style="text-align:center;margin-bottom:10px">
+    <button class="btn btn-dark" style="width:100%" onclick="saveNick()">시작하기</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -229,6 +257,7 @@ const DEFAULT_CATS = [
 let places = [], cats = [...DEFAULT_CATS];
 let markers = [], iws = [], map, curFilter = '전체';
 let editingPlaceId = null;
+let myNick = localStorage.getItem('datemap-nick') || '';
 
 const REST_KEY = 'f05925b16ad652c4bb02b5aac5e56b06';
 
@@ -262,7 +291,7 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('.tab')[['list','add','cfg'].indexOf(name)].classList.add('active');
-  if (name==='cfg') { updateExport(); renderCatEditor(); }
+  if (name==='cfg') { updateExport(); renderCatEditor(); document.getElementById('nickChange').value = myNick; }
   if (name==='add') populateCatSelect();
 }
 
@@ -478,6 +507,7 @@ function renderList() {
       </div>
       ${p.addr?`<div class="pi-addr">📍 ${p.addr}</div>`:''}
       ${p.memo?`<div class="pi-memo">${p.memo}</div>`:''}
+      ${renderRatingBlock(p)}
       <div class="pi-acts">
         <button class="bx${p.visited?' vis':''}" onclick="event.stopPropagation();toggleV(${p.id})">${p.visited?'✅ 다녀옴':'⬜ 미방문'}</button>
         <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})">삭제</button>
@@ -575,6 +605,89 @@ function confirmClear() {
   toast('초기화됐어요');
 }
 
+// ── 닉네임 ──
+function saveNick() {
+  const v = document.getElementById('nickInput').value.trim();
+  if (!v) { toast('닉네임을 입력해주세요'); return; }
+  myNick = v;
+  localStorage.setItem('datemap-nick', myNick);
+  document.getElementById('nickModal').classList.remove('open');
+  renderAll();
+}
+
+function checkNick() {
+  if (!myNick) document.getElementById('nickModal').classList.add('open');
+}
+
+function changeNick() {
+  const v = document.getElementById('nickChange').value.trim();
+  if (!v) { toast('닉네임을 입력해주세요'); return; }
+  const oldNick = myNick;
+  myNick = v;
+  localStorage.setItem('datemap-nick', myNick);
+  // 기존 별점의 닉네임도 변경
+  places.forEach(p => {
+    if (p.ratings && p.ratings[oldNick] !== undefined) {
+      p.ratings[myNick] = p.ratings[oldNick];
+      delete p.ratings[oldNick];
+    }
+  });
+  saveData(); renderAll();
+  toast('닉네임 변경됨');
+}
+
+// ── 별점 ──
+function renderStars(placeId, nick, score) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    html += `<span class="star ${i<=score?'on':'off'}" onclick="event.stopPropagation();setRating(${placeId},'${nick}',${i})">★</span>`;
+  }
+  return html;
+}
+
+function setRating(placeId, nick, score) {
+  if (nick !== myNick) { toast('본인 별점만 수정할 수 있어요'); return; }
+  const p = places.find(x => x.id === placeId);
+  if (!p) return;
+  if (!p.ratings) p.ratings = {};
+  p.ratings[nick] = score;
+  saveData(); renderAll();
+}
+
+function getAvgRating(p) {
+  if (!p.ratings) return null;
+  const vals = Object.values(p.ratings);
+  if (!vals.length) return null;
+  return (vals.reduce((a,b) => a+b, 0) / vals.length).toFixed(1);
+}
+
+function renderRatingBlock(p) {
+  if (!p.ratings) p.ratings = {};
+  const nicks = [...Object.keys(p.ratings)];
+  if (myNick && !nicks.includes(myNick)) nicks.push(myNick);
+  const avg = getAvgRating(p);
+  let html = '<div class="pi-rating">';
+  if (avg) html += `<div class="pi-rating-avg">⭐ ${avg}</div>`;
+  nicks.forEach(nick => {
+    const score = p.ratings[nick] || 0;
+    const isMe = nick === myNick;
+    html += `<div class="pi-rating-row">
+      <span class="pi-rating-name">${nick}</span>
+      ${isMe ? renderStars(p.id, nick, score) : renderStarsReadonly(score)}
+    </div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function renderStarsReadonly(score) {
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    html += `<span class="star ${i<=score?'on':'off'}" style="cursor:default">★</span>`;
+  }
+  return html;
+}
+
 function toast(msg) {
   const el=document.getElementById('toast');
   el.textContent=msg; el.classList.add('show');
@@ -584,6 +697,7 @@ function toast(msg) {
 // ── 시작 ──
 window.addEventListener('load', () => {
   loadData();
+  checkNick();
   // 카카오 지도 SDK 동적 로드
   const script = document.createElement('script');
   script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=fc85da8522a1e81f1e19c6777c002a55&autoload=false';
