@@ -679,33 +679,64 @@ function setFilter(btn, cat) {
 }
 
 // ── 카카오 REST API 검색 (CORS 우회용 프록시 없이 직접) ──
-async function doSearch() {
-  const q = document.getElementById('sq').value.trim();
+let _searchPage = 1;
+let _searchQuery = '';
+let _searchEnd = false;
+
+async function doSearch(append) {
+  const q = append ? _searchQuery : document.getElementById('sq').value.trim();
   if (!q) return;
   const box = document.getElementById('sr');
-  box.innerHTML = '<div class="search-loading">🔍 검색 중...</div>';
+  if (!append) {
+    _searchPage = 1;
+    _searchQuery = q;
+    _searchEnd = false;
+    window._sd = [];
+    window._srChecked = new Set();
+    box.innerHTML = '<div class="search-loading">🔍 검색 중...</div>';
+  }
   try {
-    const res = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(q)}&size=5`, {
+    let url = `https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(q)}&size=5&page=${_searchPage}`;
+    if (myLat !== null) url += `&y=${myLat}&x=${myLng}&sort=distance`;
+    const res = await fetch(url, {
       headers: { 'Authorization': `KakaoAK ${REST_KEY}` }
     });
     const data = await res.json();
     if (!data.documents || !data.documents.length) {
-      box.innerHTML = '<div class="search-loading">결과가 없어요</div>'; return;
+      if (!append) box.innerHTML = '<div class="search-loading">결과가 없어요</div>';
+      _searchEnd = true;
+      return;
     }
-    window._sd = data.documents;
-    window._srChecked = new Set();
-    box.innerHTML = data.documents.map((p,i)=>
-      `<div class="sr-item" style="display:flex;align-items:center;gap:8px">
-        <div style="flex:1;cursor:pointer" onclick="pickSearch(${i})">
+    const startIdx = window._sd.length;
+    window._sd.push(...data.documents);
+    _searchEnd = data.meta.is_end;
+    const newHtml = data.documents.map((p,i) => {
+      const idx = startIdx + i;
+      return `<div class="sr-item" style="display:flex;align-items:center;gap:8px">
+        <div style="flex:1;cursor:pointer" onclick="pickSearch(${idx})">
           <div class="sr-name">${p.place_name}</div>
           <div class="sr-addr">${p.road_address_name || p.address_name}</div>
         </div>
-        <input type="checkbox" class="sr-chk" data-idx="${i}" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--accent);cursor:pointer" onclick="event.stopPropagation();toggleSrChk(${i},this)">
-      </div>`
-    ).join('');
+        <input type="checkbox" class="sr-chk" data-idx="${idx}" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--accent);cursor:pointer" onclick="event.stopPropagation();toggleSrChk(${idx},this)">
+      </div>`;
+    }).join('');
+    // 더보기 버튼 제거 후 새 결과 추가
+    const oldMore = box.querySelector('.sr-more');
+    if (oldMore) oldMore.remove();
+    if (append) box.insertAdjacentHTML('beforeend', newHtml);
+    else box.innerHTML = newHtml;
+    // 더보기 버튼
+    if (!_searchEnd && _searchPage < 45) {
+      box.insertAdjacentHTML('beforeend', `<div class="sr-more" style="text-align:center;padding:8px;cursor:pointer;color:var(--accent);font-size:13px;font-weight:500" onclick="loadMoreSearch()">더보기 ▼</div>`);
+    }
   } catch(e) {
-    box.innerHTML = '<div class="search-loading" style="color:var(--red)">검색 실패. 잠시 후 다시 시도해주세요</div>';
+    if (!append) box.innerHTML = '<div class="search-loading" style="color:var(--red)">검색 실패. 잠시 후 다시 시도해주세요</div>';
   }
+}
+
+function loadMoreSearch() {
+  _searchPage++;
+  doSearch(true);
 }
 
 function toggleSrChk(i, el) {
@@ -1828,7 +1859,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 72;
+const APP_VERSION = 73;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
