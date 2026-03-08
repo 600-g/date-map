@@ -140,6 +140,15 @@ header .lc svg{width:18px;height:18px}
 .tab .lc svg{width:15px;height:15px}
 .my-loc-btn .lc svg{width:20px;height:20px}
 .empty .lc svg{width:36px;height:36px;stroke-width:1.5}
+/* 목록 상단 검색/추가 바 */
+.list-top-bar{padding:8px 10px 4px;flex-shrink:0;border-bottom:1px solid var(--warm);background:white}
+.list-search-row{display:flex;gap:6px;align-items:center}
+.list-search-box{display:flex;align-items:center;gap:6px;flex:1;background:var(--cream);border:1px solid var(--warm);border-radius:10px;padding:6px 10px;transition:border-color .2s}
+.list-search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,108,247,.1)}
+.list-search-box input{font-size:12px}
+.add-toggle-btn{display:flex;align-items:center;gap:3px;border-radius:10px !important;padding:7px 14px !important}
+.add-panel{border-bottom:1px solid var(--warm);background:#FAFAF7;max-height:0;overflow:hidden;transition:max-height .3s ease}
+.add-panel.open{max-height:600px;overflow-y:auto;display:block}
 /* 토스트 */
 .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(80px);background:rgba(26,26,46,.92);backdrop-filter:blur(8px);color:white;padding:11px 22px;border-radius:14px;font-size:13px;transition:transform .3s;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2)}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -164,61 +173,66 @@ header .lc svg{width:18px;height:18px}
 </head>
 <body>
 <header>
-  <h1><i data-lucide="map-pinned" class="lc"></i> 김춘식 데이트맵</h1>
+  <h1><svg width="20" height="20" viewBox="0 0 24 24" fill="none" style="vertical-align:middle;margin-right:4px"><path d="M12 21s-8-4.5-8-11a5 5 0 0110 0 5 5 0 0110 0c0 6.5-8 11-8 11z" fill="#FFB3C6" stroke="#FF6B8A" stroke-width="1.5"/><circle cx="12" cy="10" r="2.5" fill="white" opacity=".7"/></svg> 김춘식 데이트맵</h1>
   <div class="badge"><div class="dot"></div><span id="cnt">0</span>개 장소</div>
 </header>
 <div class="main">
   <div class="panel">
     <div class="tabs">
       <button class="tab active" onclick="showTab('list')"><i data-lucide="list" class="lc lc-sm"></i> 목록</button>
-      <button class="tab" onclick="showTab('add')"><i data-lucide="plus-circle" class="lc lc-sm"></i> 추가</button>
       <button class="tab" onclick="showTab('cfg')"><i data-lucide="settings" class="lc lc-sm"></i> 설정</button>
     </div>
 
-    <!-- 목록 탭 -->
+    <!-- 목록+추가 통합 탭 -->
     <div id="tab-list" class="tab-content active">
+      <!-- 검색/추가 토글 영역 -->
+      <div class="list-top-bar">
+        <div class="list-search-row">
+          <div class="list-search-box">
+            <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0"></i>
+            <input id="listSearchInput" type="text" placeholder="등록된 장소 검색" oninput="filterListSearch()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
+          </div>
+          <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()"><i data-lucide="plus" class="lc lc-sm"></i> 추가</button>
+        </div>
+      </div>
+      <!-- 장소 추가 패널 (접이식) -->
+      <div id="addPanel" class="add-panel" style="display:none">
+        <div class="add-wrap" style="padding:10px 12px">
+          <div class="lbl" style="margin-top:0"><i data-lucide="search" class="lc lc-sm"></i> 카카오 장소 검색</div>
+          <div class="row" style="margin-bottom:6px">
+            <input id="sq" type="text" placeholder="예: 안국 한옥카페" onkeydown="if(event.key==='Enter')doSearch()">
+            <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" onclick="doSearch()">검색</button>
+          </div>
+          <div id="sr"></div>
+          <div id="searchConfirm" style="display:none;background:var(--cream);border:1px solid var(--warm);border-radius:8px;padding:12px;margin-top:6px">
+            <div style="font-size:13px;font-weight:500;margin-bottom:2px" id="scName"></div>
+            <div style="font-size:11px;color:var(--brown);margin-bottom:8px" id="scAddr"></div>
+            <div class="lbl" style="margin-top:0">카테고리</div>
+            <select id="scCat" style="margin-bottom:6px"></select>
+            <div class="lbl" style="margin-top:0">메모</div>
+            <textarea id="scMemo" rows="2" placeholder="영업시간, 예약여부 등" style="resize:none"></textarea>
+            <div class="row" style="margin-top:6px">
+              <button class="btn btn-outline" style="flex:1" onclick="cancelSearch()">취소</button>
+              <button class="btn btn-dark" style="flex:1" onclick="confirmSearch()">추가하기</button>
+            </div>
+          </div>
+          <hr class="div" style="margin:8px 0">
+          <div class="lbl" style="margin-top:0"><i data-lucide="pencil" class="lc lc-sm"></i> 직접 입력</div>
+          <input id="mName" type="text" placeholder="장소 이름 *">
+          <input id="mAddr" type="text" placeholder="주소 (선택 — 지도 핀 위치용)">
+          <div class="lbl" style="margin-top:0">카테고리</div>
+          <select id="mCat" style="margin-bottom:6px"></select>
+          <div class="lbl" style="margin-top:0">메모</div>
+          <textarea id="mMemo" rows="2" placeholder="영업시간, 예약여부 등" style="resize:none"></textarea>
+          <button class="btn btn-dark" style="width:100%" onclick="addManual()">추가하기</button>
+        </div>
+      </div>
       <div class="filter-bar" id="filterBar">
         <button class="fb active" onclick="setFilter(this,'전체')">전체</button>
       </div>
       <div id="myLocStatus" style="display:none;padding:6px 12px;font-size:11px;color:var(--green);background:#e8f5e9;border-bottom:1px solid var(--warm);display:flex;align-items:center;gap:6px"></div>
       <div class="place-list" id="placeList">
-        <div class="empty"><div class="ico"><i data-lucide="map-pin" class="lc"></i></div><p>아직 장소가 없어요<br>추가 탭에서 더해보세요</p></div>
-      </div>
-    </div>
-
-    <!-- 추가 탭 -->
-    <div id="tab-add" class="tab-content">
-      <div class="add-wrap">
-        <div class="lbl"><i data-lucide="search" class="lc lc-sm"></i> 카카오 장소 검색</div>
-        <div class="row" style="margin-bottom:6px">
-          <input id="sq" type="text" placeholder="예: 안국 한옥카페" onkeydown="if(event.key==='Enter')doSearch()">
-          <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" onclick="doSearch()">검색</button>
-        </div>
-        <div id="sr"></div>
-
-        <!-- 검색 결과 선택 후 카테고리/메모 입력 -->
-        <div id="searchConfirm" style="display:none;background:var(--cream);border:1px solid var(--warm);border-radius:8px;padding:12px;margin-top:6px">
-          <div style="font-size:13px;font-weight:500;margin-bottom:2px" id="scName"></div>
-          <div style="font-size:11px;color:var(--brown);margin-bottom:8px" id="scAddr"></div>
-          <div class="lbl" style="margin-top:0">카테고리</div>
-          <select id="scCat" style="margin-bottom:6px"></select>
-          <div class="lbl" style="margin-top:0">메모</div>
-          <textarea id="scMemo" rows="2" placeholder="영업시간, 예약여부 등" style="resize:none"></textarea>
-          <div class="row" style="margin-top:6px">
-            <button class="btn btn-outline" style="flex:1" onclick="cancelSearch()">취소</button>
-            <button class="btn btn-dark" style="flex:1" onclick="confirmSearch()">추가하기</button>
-          </div>
-        </div>
-
-        <hr class="div" style="margin:10px 0">
-        <div class="lbl"><i data-lucide="pencil" class="lc lc-sm"></i> 직접 입력</div>
-        <input id="mName" type="text" placeholder="장소 이름 *">
-        <input id="mAddr" type="text" placeholder="주소 (선택 — 지도 핀 위치용)">
-        <div class="lbl" style="margin-top:0">카테고리</div>
-        <select id="mCat" style="margin-bottom:6px"></select>
-        <div class="lbl" style="margin-top:0">메모</div>
-        <textarea id="mMemo" rows="2" placeholder="영업시간, 예약여부 등" style="resize:none"></textarea>
-        <button class="btn btn-dark" style="width:100%" onclick="addManual()">추가하기</button>
+        <div class="empty"><div class="ico"><i data-lucide="map-pin" class="lc"></i></div><p>아직 장소가 없어요<br>위의 추가 버튼을 눌러보세요</p></div>
       </div>
     </div>
 
@@ -430,9 +444,33 @@ function showTab(name) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
-  document.querySelectorAll('.tab')[['list','add','cfg'].indexOf(name)].classList.add('active');
+  document.querySelectorAll('.tab')[['list','cfg'].indexOf(name)].classList.add('active');
   if (name==='cfg') { catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; document.getElementById('currentNick').textContent = myNick||'(미설정)'; document.getElementById('appVer').textContent = 'v' + APP_VERSION; try{lucide.createIcons();}catch(e){} }
-  if (name==='add') populateCatSelect();
+  if (name==='list') populateCatSelect();
+}
+
+// ── 추가 패널 토글 ──
+function toggleAddPanel() {
+  const panel = document.getElementById('addPanel');
+  const btn = document.getElementById('addToggleBtn');
+  if (panel.classList.contains('open')) {
+    panel.classList.remove('open');
+    panel.style.display = 'none';
+    btn.innerHTML = '<i data-lucide="plus" class="lc lc-sm"></i> 추가';
+  } else {
+    panel.style.display = 'block';
+    requestAnimationFrame(() => panel.classList.add('open'));
+    btn.innerHTML = '<i data-lucide="x" class="lc lc-sm"></i> 닫기';
+    populateCatSelect();
+  }
+  try { lucide.createIcons(); } catch(e) {}
+}
+
+// ── 등록 장소 검색/필터 ──
+let listSearchQuery = '';
+function filterListSearch() {
+  listSearchQuery = document.getElementById('listSearchInput').value.trim().toLowerCase();
+  renderList();
 }
 
 // ── 카테고리 셀렉트 채우기 ──
@@ -510,7 +548,11 @@ function confirmSearch() {
     document.getElementById('sq').value = '';
     document.getElementById('sr').innerHTML = '';
     window._selectedSearch = null;
-    showTab('list');
+    // 추가 패널 닫기
+    const panel = document.getElementById('addPanel');
+    if (panel) { panel.classList.remove('open'); panel.style.display = 'none'; }
+    const btn = document.getElementById('addToggleBtn');
+    if (btn) { btn.innerHTML = '<i data-lucide="plus" class="lc lc-sm"></i> 추가'; try{lucide.createIcons();}catch(e){} }
   }
 }
 
@@ -533,7 +575,11 @@ function addManual() {
       document.getElementById('mName').value='';
       document.getElementById('mAddr').value='';
       document.getElementById('mMemo').value='';
-      showTab('list');
+      // 추가 패널 닫기
+      const panel = document.getElementById('addPanel');
+      if (panel) { panel.classList.remove('open'); panel.style.display = 'none'; }
+      const btn = document.getElementById('addToggleBtn');
+      if (btn) { btn.innerHTML = '<i data-lucide="plus" class="lc lc-sm"></i> 추가'; try{lucide.createIcons();}catch(e){} }
     }
   };
 
@@ -592,6 +638,12 @@ const SVG_ICONS = {
   plane: '<svg viewBox="0 0 24 24" width="16" height="16" fill="#3498DB" stroke="none"><path d="M21 16v-2l-8-5V3.5A1.5 1.5 0 0011.5 2 1.5 1.5 0 0010 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z"/></svg>',
   palette: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="8" cy="9" r="1.5" fill="#E74C3C"/><circle cx="12" cy="7" r="1.5" fill="#F39C12"/><circle cx="16" cy="9" r="1.5" fill="#3498DB"/><circle cx="15" cy="14" r="1.5" fill="#27AE60"/></svg>',
   spa: '<svg viewBox="0 0 24 24" width="16" height="16" fill="#E8A0BF" stroke="#C77DA3" stroke-width="1"><path d="M12 2C8 6 4 10 4 14a8 8 0 0016 0c0-4-4-8-8-12z"/></svg>',
+  rice: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2" stroke-linecap="round"><path d="M4 20h16M4 16c0-2 2-4 4-4h8c2 0 4 2 4 4M5 16v4M19 16v4"/><ellipse cx="12" cy="8" rx="7" ry="4"/><path d="M5 8v2M19 8v2M12 4v4"/></svg>',
+  cafe: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8B4513" stroke-width="2" stroke-linecap="round"><path d="M17 8h1a4 4 0 010 8h-1M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><path d="M7 3s1 1 3 1 3-1 3-1" stroke-width="1.5"/></svg>',
+  house: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8E6C4F" stroke-width="2" stroke-linecap="round"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1v-9.5z"/><path d="M9 21v-7h6v7"/></svg>',
+  bike: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E67E22" stroke-width="2" stroke-linecap="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 100-2 1 1 0 000 2zM12 17.5V14l-3-3 4-3 2 3h3"/></svg>',
+  bread: '<svg viewBox="0 0 24 24" width="16" height="16" fill="#F5C542" stroke="#D4A017" stroke-width="1.5" stroke-linecap="round"><path d="M5 18c-1.1 0-2-.9-2-2 0-.8.5-1.5 1.2-1.8C3.5 13.7 3 12.9 3 12c0-1.4 1.1-2.5 2.5-2.5.2 0 .4 0 .6.1C6.7 8.1 8.2 7 10 7c1.2 0 2.3.5 3 1.3.7-.8 1.8-1.3 3-1.3 1.8 0 3.3 1.1 3.9 2.6.2-.1.4-.1.6-.1 1.4 0 2.5 1.1 2.5 2.5 0 .9-.5 1.7-1.2 2.2.7.3 1.2 1 1.2 1.8 0 1.1-.9 2-2 2H5z"/><path d="M5 18v1c0 .6.4 1 1 1h12c.6 0 1-.4 1-1v-1"/></svg>',
+  beer: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#F39C12" stroke-width="2" stroke-linecap="round"><path d="M17 11h1a3 3 0 010 6h-1M5 8h12v10a2 2 0 01-2 2H7a2 2 0 01-2-2V8z"/><path d="M5 8l1-4h10l1 4" stroke-width="1.5"/><path d="M8 8v10M11 8v10" stroke="#F39C12" stroke-width="1" opacity=".4"/></svg>',
 };
 const SVG_KEYS = Object.keys(SVG_ICONS);
 
@@ -889,6 +941,10 @@ function renderList() {
     locStatus.style.display = 'none';
   }
   let f = curFilter==='전체' ? [...places] : places.filter(p=>p.cat===curFilter);
+  // 목록 내 텍스트 검색
+  if (listSearchQuery) {
+    f = f.filter(p => (p.name && p.name.toLowerCase().includes(listSearchQuery)) || (p.addr && p.addr.toLowerCase().includes(listSearchQuery)) || (p.memo && p.memo.toLowerCase().includes(listSearchQuery)));
+  }
   // 위치 추적 중이면 가까운 순 정렬
   if (myLat !== null) {
     f.sort((a,b) => getDistanceKm(myLat,myLng,a.lat,a.lng) - getDistanceKm(myLat,myLng,b.lat,b.lng));
@@ -1265,15 +1321,16 @@ function changeNick() {
     }
   });
   saveData(); renderAll();
+  // renderAll 이후 DOM 재설정
   document.getElementById('nickChange').value = myNick;
   document.getElementById('currentNick').textContent = myNick;
-  // 버튼 피드백
   const btn = document.getElementById('nickBtn');
-  btn.textContent = '✅ 저장됨';
-  btn.classList.add('save-success');
-  setTimeout(() => { btn.textContent = '변경'; btn.classList.remove('save-success'); }, 1500);
-  // renderAll 후 약간 딜레이로 토스트 확실히 표시
-  setTimeout(() => toast('✅ 닉네임이 "' + myNick + '"(으)로 변경됐어요'), 100);
+  if (btn) {
+    btn.textContent = '✅ 저장됨';
+    btn.classList.add('save-success');
+    setTimeout(() => { const b = document.getElementById('nickBtn'); if(b){b.textContent='변경';b.classList.remove('save-success');} }, 1500);
+  }
+  toast('닉네임이 "' + myNick + '"(으)로 변경됐어요');
 }
 
 // ── 별점 ──
@@ -1341,7 +1398,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 19;
+const APP_VERSION = 20;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
