@@ -15,7 +15,7 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 :root{--cream:#FAFAF7;--warm:#EEEBE5;--brown:#8B7E74;--dark:#3B4C6B;--green:#2D8659;--red:#E05252;--accent:#5B7DB8;--card-shadow:0 1px 4px rgba(0,0,0,.06)}
-body{font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;font-weight:450;background:var(--dark);color:#333;height:100dvh;height:100vh;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top, 0px)}
+body{font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;font-weight:450;background:var(--dark);color:#333;height:100dvh;height:100vh;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top, 0px);padding-left:env(safe-area-inset-left, 0px);padding-right:env(safe-area-inset-right, 0px)}
 @supports(height:100dvh){body{height:100dvh}}
 header{background:linear-gradient(135deg,#3B4C6B,#4E6490);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 header h1{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:17px;font-weight:700;letter-spacing:-.3px}
@@ -323,12 +323,12 @@ header .lc svg{width:18px;height:18px}
     <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
     <!-- 주변 검색 퀵버튼 -->
     <div class="nearby-bar" id="nearbyBar">
-      <button class="nb-btn" onclick="searchNearby('CE7','카페',this,'cafe')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="#6F4E37" stroke="none"><ellipse cx="12" cy="12" rx="6" ry="9"/><path d="M12 3c-1 3-1 6 0 9s1 6 0 9" stroke="#4A2F0A" stroke-width="1.2" fill="none"/></svg> 카페</button>
-      <button class="nb-btn" onclick="searchNearbyKeyword('스타벅스','스벅',this,'starbucks')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#00704A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 9c2 0 4 1 4 3s-2 3-4 3"/><line x1="6" y1="3" x2="6" y2="6"/><line x1="10" y1="3" x2="10" y2="6"/></svg> 스벅</button></invoke>
-      <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마','영화관',this,'movie')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3B4C6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg> 영화관</button>
-      <button class="nb-btn" onclick="searchNearby('CS2','편의점',this,'conv')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg> 편의점</button>
-      <button class="nb-btn" onclick="searchNearby('PM9','약국',this,'pharmacy')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="9" y="3" width="6" height="18" rx="1" fill="#E74C3C"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#E74C3C"/></svg> 약국</button>
-      <button class="nb-btn" onclick="searchNearbyKeyword('공중화장실 OR 화장실','화장실',this,'toilet')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="6.5" cy="4" r="2.2" fill="#3498DB"/><polygon points="3,8 10,8 8,15 5,15" fill="#3498DB"/><rect x="5" y="15" width="1.2" height="3" rx=".4" fill="#3498DB"/><rect x="7.5" y="15" width="1.2" height="3" rx=".4" fill="#3498DB"/><line x1="12" y1="1" x2="12" y2="19" stroke="#ddd" stroke-width=".6"/><circle cx="17.5" cy="4" r="2.2" fill="#E74C3C"/><polygon points="14,8 21,8 17.5,15" fill="#E74C3C"/><rect x="16" y="15" width="1.2" height="3" rx=".4" fill="#E74C3C"/><rect x="18.5" y="15" width="1.2" height="3" rx=".4" fill="#E74C3C"/></svg> 화장실</button>
+      <button class="nb-btn" onclick="searchNearby('CE7','카페',event.currentTarget,'cafe')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="#6F4E37" stroke="none"><ellipse cx="12" cy="12" rx="6" ry="9"/><path d="M12 3c-1 3-1 6 0 9s1 6 0 9" stroke="#4A2F0A" stroke-width="1.2" fill="none"/></svg> 카페</button>
+      <button class="nb-btn" onclick="searchNearbyKeyword('스타벅스','스벅',event.currentTarget,'starbucks')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#00704A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="3"/><path d="M16 9c2 0 4 1 4 3s-2 3-4 3"/><line x1="6" y1="3" x2="6" y2="6"/><line x1="10" y1="3" x2="10" y2="6"/></svg> 스벅</button></invoke>
+      <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마','영화관',event.currentTarget,'movie')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3B4C6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg> 영화관</button>
+      <button class="nb-btn" onclick="searchNearby('CS2','편의점',event.currentTarget,'conv')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg> 편의점</button>
+      <button class="nb-btn" onclick="searchNearby('PM9','약국',event.currentTarget,'pharmacy')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="9" y="3" width="6" height="18" rx="1" fill="#E74C3C"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#E74C3C"/></svg> 약국</button>
+      <button class="nb-btn" onclick="searchNearbyKeyword('공중화장실 OR 화장실','화장실',event.currentTarget,'toilet')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="6.5" cy="4" r="2.2" fill="#3498DB"/><polygon points="3,8 10,8 8,15 5,15" fill="#3498DB"/><rect x="5" y="15" width="1.2" height="3" rx=".4" fill="#3498DB"/><rect x="7.5" y="15" width="1.2" height="3" rx=".4" fill="#3498DB"/><line x1="12" y1="1" x2="12" y2="19" stroke="#ddd" stroke-width=".6"/><circle cx="17.5" cy="4" r="2.2" fill="#E74C3C"/><polygon points="14,8 21,8 17.5,15" fill="#E74C3C"/><rect x="16" y="15" width="1.2" height="3" rx=".4" fill="#E74C3C"/><rect x="18.5" y="15" width="1.2" height="3" rx=".4" fill="#E74C3C"/></svg> 화장실</button>
     </div>
   </div>
 </div>
@@ -1826,8 +1826,6 @@ let nearbyActiveCategory = null;
 async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
   const key = 'kw_' + keyword;
   if (nearbyActiveCategory === key) { clearNearbyMarkers(); return; }
-  clearNearbyMarkers();
-  nearbyActiveCategory = key;
   document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
   let lat, lng;
@@ -1853,6 +1851,9 @@ async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
     allDocs.sort((a, b) => (parseInt(a.distance)||0) - (parseInt(b.distance)||0));
     allDocs = allDocs.slice(0, 15);
     if (!allDocs.length) { clearNearbyMarkers(); toast(`주변에 ${label}이(가) 없어요`); return; }
+    clearNearbyMarkers();
+    nearbyActiveCategory = key;
+    if (btnEl) btnEl.classList.add('active');
     renderNearbyResults(allDocs, icon);
     toast(`${label} ${allDocs.length}곳 발견`);
   } catch(e) { clearNearbyMarkers(); toast('검색 실패'); }
@@ -1860,8 +1861,7 @@ async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
 
 async function searchNearby(categoryCode, label, btnEl, icon) {
   if (nearbyActiveCategory === categoryCode) { clearNearbyMarkers(); return; }
-  clearNearbyMarkers();
-  nearbyActiveCategory = categoryCode;
+  // 즉시 버튼 상태 변경
   document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
   if (btnEl) btnEl.classList.add('active');
   let lat, lng;
@@ -1874,6 +1874,9 @@ async function searchNearby(categoryCode, label, btnEl, icon) {
     });
     const data = await res.json();
     if (!data.documents || !data.documents.length) { clearNearbyMarkers(); toast(`주변에 ${label}이(가) 없어요`); return; }
+    clearNearbyMarkers();
+    nearbyActiveCategory = categoryCode;
+    if (btnEl) btnEl.classList.add('active');
     renderNearbyResults(data.documents, icon);
     toast(`${label} ${data.documents.length}곳 발견`);
   } catch(e) { clearNearbyMarkers(); toast('검색 실패'); }
@@ -1893,7 +1896,7 @@ function renderNearbyResults(docs, iconKey) {
     const dist = d.distance ? (d.distance >= 1000 ? (d.distance/1000).toFixed(1)+'km' : d.distance+'m') : '';
     const el = document.createElement('div');
     el.innerHTML = `<div style="background:white;border:2px solid #ddd;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15);cursor:pointer">${svgIcon||'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'}</div>`;
-    const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:1 });
+    const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:2 });
     const iwEl = document.createElement('div');
     iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:13px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;max-width:220px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
     iwEl.innerHTML = `
@@ -2274,7 +2277,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 103;
+const APP_VERSION = 104;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
