@@ -234,7 +234,7 @@ header .lc svg{width:18px;height:18px}
         <div class="list-search-row">
           <div class="list-search-box collapsed" id="listSearchBox" onclick="expandListSearch()">
             <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();toggleListSearch()"></i>
-            <input id="listSearchInput" type="text" placeholder="등록된 장소 검색 (예: ㅅㅂㅅ)" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
+            <input id="listSearchInput" type="text" placeholder="Ex) 매장명, 초성 (ㅅㅂㅅ)" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
           </div>
           <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()"><i data-lucide="plus" class="lc lc-sm"></i> 추가</button>
         </div>
@@ -244,12 +244,12 @@ header .lc svg{width:18px;height:18px}
         <div class="add-wrap" style="padding:10px 12px">
           <div class="lbl" style="margin-top:0"><i data-lucide="search" class="lc lc-sm"></i> 카카오 장소 검색</div>
           <div class="row" style="margin-bottom:6px">
-            <input id="sq" type="text" placeholder="예: 안국 한옥카페" onkeydown="if(event.key==='Enter')doSearch()">
+            <input id="sq" type="text" placeholder="Ex) 매장명, 판매 상품, 지역명" onkeydown="if(event.key==='Enter')doSearch()">
             <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" onclick="doSearch()">검색</button>
           </div>
-          <div id="srBatchBar" style="display:none;background:var(--accent);color:white;padding:8px 12px;border-radius:8px;margin-bottom:6px;align-items:center;justify-content:space-between;cursor:pointer;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.15)" onclick="showBatchConfirm()">
-            <span id="srBatchCount" style="font-size:13px;font-weight:550"></span>
-            <span style="font-size:12px;background:rgba(255,255,255,.25);padding:4px 12px;border-radius:6px">추가하기</span>
+          <div id="srBatchBar" style="display:none;background:var(--accent);color:white;padding:8px 12px;border-radius:8px;margin-bottom:6px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.15)">
+            <span style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:6px;cursor:pointer" onclick="event.stopPropagation();toggleSelectAll()">전체선택</span> <span id="srBatchCount" style="font-size:13px;font-weight:550"></span></span>
+            <span style="font-size:12px;background:rgba(255,255,255,.25);padding:4px 12px;border-radius:6px;cursor:pointer" onclick="showBatchConfirm()">추가하기</span>
           </div>
           <div id="sr"></div>
           <div id="searchConfirm" style="display:none;background:var(--cream);border:1px solid var(--warm);border-radius:8px;padding:12px;margin-top:6px;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.1)">
@@ -787,6 +787,13 @@ async function doSearch(append) {
     if (oldMore) oldMore.remove();
     if (append) box.insertAdjacentHTML('beforeend', newHtml);
     else box.innerHTML = newHtml;
+    // 배치바 표시 (검색 결과 있으면 항상)
+    const bar = document.getElementById('srBatchBar');
+    const cnt = document.getElementById('srBatchCount');
+    if (bar) {
+      bar.style.display = 'flex';
+      if (cnt) cnt.textContent = (window._srChecked ? window._srChecked.size : 0) + '개 선택됨';
+    }
     // 더보기 버튼
     if (!_searchEnd && _searchPage < 45) {
       box.insertAdjacentHTML('beforeend', `<div class="sr-more" style="text-align:center;padding:8px;cursor:pointer;color:var(--accent);font-size:13px;font-weight:500" onclick="loadMoreSearch()">더보기 ▼</div>`);
@@ -799,6 +806,27 @@ async function doSearch(append) {
 function loadMoreSearch() {
   _searchPage++;
   doSearch(true);
+}
+
+function toggleSelectAll() {
+  if (!window._sd || !window._sd.length) return;
+  const chks = document.querySelectorAll('.sr-chk');
+  const allChecked = window._srChecked && window._srChecked.size === chks.length;
+  if (allChecked) {
+    // 전체 해제
+    window._srChecked = new Set();
+    chks.forEach(c => c.checked = false);
+  } else {
+    // 전체 선택
+    window._srChecked = new Set();
+    chks.forEach(c => { c.checked = true; window._srChecked.add(parseInt(c.dataset.idx)); });
+  }
+  const bar = document.getElementById('srBatchBar');
+  const cnt = document.getElementById('srBatchCount');
+  if (bar) {
+    bar.style.display = window._srChecked.size > 0 ? 'flex' : 'none';
+    if (cnt) cnt.textContent = window._srChecked.size + '개 선택됨';
+  }
 }
 
 function toggleSrChk(i, el) {
@@ -2276,7 +2304,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 106;
+const APP_VERSION = 107;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
