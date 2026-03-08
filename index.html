@@ -1694,7 +1694,7 @@ function renderMarkers() {
     const markerEl = document.createElement('div');
     const isSvg = SVG_ICONS[c.emoji];
     markerEl.innerHTML = `<div style="width:32px;height:32px;background:${c.color};border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;${isSvg?'':'font-size:16px;'}box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer">${getIcon(c.emoji, 16)}</div>`;
-    const marker = new kakao.maps.CustomOverlay({ position:pos, content:markerEl, yAnchor:1, zIndex:1 });
+    const marker = new kakao.maps.CustomOverlay({ position:pos, content:markerEl, yAnchor:1, zIndex:3 });
     const avg = getAvgRating(p);
     // 팝업도 CustomOverlay로 (InfoWindow 대신 — auto-pan 문제 해결)
     const iwEl = document.createElement('div');
@@ -1826,12 +1826,15 @@ let nearbyActiveCategory = null;
 async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
   const key = 'kw_' + keyword;
   if (nearbyActiveCategory === key) { clearNearbyMarkers(); return; }
+  clearNearbyMarkers();
+  nearbyActiveCategory = key;
+  document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
   let lat, lng;
   if (myLat !== null) { lat = myLat; lng = myLng; }
   else { const c = map.getCenter(); lat = c.getLat(); lng = c.getLng(); }
   toast(`🔍 주변 ${label} 검색 중...`);
   try {
-    // 여러 키워드는 각각 검색 후 합침
     const keywords = keyword.split(' OR ');
     let allDocs = [];
     for (const kw of keywords) {
@@ -1841,55 +1844,39 @@ async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
       const data = await res.json();
       if (data.documents) allDocs = allDocs.concat(data.documents);
     }
-    // 중복 제거 (id 기준)
     const seen = new Set();
     allDocs = allDocs.filter(d => { if (seen.has(d.id)) return false; seen.add(d.id); return true; });
-    // 카테고리 필터 (영화관 등 정확도 향상)
     if (catFilter) {
       const filters = catFilter.split(',');
       allDocs = allDocs.filter(d => filters.some(f => (d.category_name||'').includes(f) || (d.category_group_name||'').includes(f)));
     }
-    // 거리순 정렬
     allDocs.sort((a, b) => (parseInt(a.distance)||0) - (parseInt(b.distance)||0));
     allDocs = allDocs.slice(0, 15);
-    if (!allDocs.length) { toast(`주변에 ${label}이(가) 없어요`); return; }
-    clearNearbyMarkers();
-    nearbyActiveCategory = key;
-    document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
-    if (btnEl) btnEl.classList.add('active');
+    if (!allDocs.length) { clearNearbyMarkers(); toast(`주변에 ${label}이(가) 없어요`); return; }
     renderNearbyResults(allDocs, icon);
     toast(`${label} ${allDocs.length}곳 발견`);
-  } catch(e) { toast('검색 실패'); }
+  } catch(e) { clearNearbyMarkers(); toast('검색 실패'); }
 }
 
 async function searchNearby(categoryCode, label, btnEl, icon) {
-  // 토글: 같은 카테고리 다시 누르면 해제
-  if (nearbyActiveCategory === categoryCode) {
-    clearNearbyMarkers();
-    return;
-  }
-  // 위치 기준 결정: 내 위치 > 지도 중심
+  if (nearbyActiveCategory === categoryCode) { clearNearbyMarkers(); return; }
+  clearNearbyMarkers();
+  nearbyActiveCategory = categoryCode;
+  document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
+  if (btnEl) btnEl.classList.add('active');
   let lat, lng;
   if (myLat !== null) { lat = myLat; lng = myLng; }
   else { const c = map.getCenter(); lat = c.getLat(); lng = c.getLng(); }
-
   toast(`🔍 주변 ${label} 검색 중...`);
   try {
     const res = await fetch(`https://dapi.kakao.com/v2/local/search/category.json?category_group_code=${categoryCode}&x=${lng}&y=${lat}&radius=2000&sort=distance&size=15`, {
       headers: { 'Authorization': `KakaoAK ${REST_KEY}` }
     });
     const data = await res.json();
-    if (!data.documents || !data.documents.length) { toast(`주변에 ${label}이(가) 없어요`); return; }
-
-    clearNearbyMarkers();
-    nearbyActiveCategory = categoryCode;
-    document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
-    if (btnEl) btnEl.classList.add('active');
+    if (!data.documents || !data.documents.length) { clearNearbyMarkers(); toast(`주변에 ${label}이(가) 없어요`); return; }
     renderNearbyResults(data.documents, icon);
     toast(`${label} ${data.documents.length}곳 발견`);
-  } catch(e) {
-    toast('검색 실패');
-  }
+  } catch(e) { clearNearbyMarkers(); toast('검색 실패'); }
 }
 const NEARBY_ICONS = {
   cafe: '<svg viewBox="0 0 24 24" width="18" height="18" fill="#6F4E37" stroke="none"><ellipse cx="12" cy="12" rx="6" ry="9"/><path d="M12 3c-1 3-1 6 0 9s1 6 0 9" stroke="#4A2F0A" stroke-width="1.2" fill="none"/></svg>',
@@ -1905,8 +1892,8 @@ function renderNearbyResults(docs, iconKey) {
     const pos = new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
     const dist = d.distance ? (d.distance >= 1000 ? (d.distance/1000).toFixed(1)+'km' : d.distance+'m') : '';
     const el = document.createElement('div');
-    el.innerHTML = `<div style="background:white;border:1.5px solid #bbb;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.12);cursor:pointer;opacity:.85">${svgIcon?svgIcon.replace(/width="18"/g,'width="14"').replace(/height="18"/g,'height="14"'):'<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#E74C3C" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'}</div>`;
-    const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:2 });
+    el.innerHTML = `<div style="background:white;border:2px solid #ddd;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15);cursor:pointer">${svgIcon||'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'}</div>`;
+    const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:1 });
     const iwEl = document.createElement('div');
     iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:13px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;max-width:220px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
     iwEl.innerHTML = `
@@ -2287,7 +2274,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 102;
+const APP_VERSION = 103;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
