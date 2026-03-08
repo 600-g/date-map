@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>우리 데이트 맵</title>
+<title>김춘식 데이트맵</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600&family=Noto+Sans+KR:wght@300;400;500&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
@@ -82,6 +82,9 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .cat-emoji{font-size:16px;cursor:pointer;min-width:24px;text-align:center}
 .cat-name-input{flex:1;margin-bottom:0;font-size:12px;padding:4px 8px}
 .cat-color{width:28px;height:28px;border-radius:4px;border:1px solid var(--warm);cursor:pointer;flex-shrink:0;padding:0}
+.cat-move{background:none;border:1px solid var(--warm);border-radius:4px;cursor:pointer;color:var(--brown);font-size:10px;padding:2px 4px;flex-shrink:0}
+.cat-move:hover{background:var(--cream);border-color:var(--brown)}
+.cat-move:disabled{opacity:.3;cursor:default}
 .cat-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:14px;padding:2px 4px;flex-shrink:0}
 .cat-del:hover{color:var(--red)}
 .cat-summary-item{display:inline-block;font-size:11px;padding:3px 8px;border-radius:12px;margin:2px;border:1px solid var(--warm);background:white}
@@ -134,7 +137,7 @@ header .lc svg{width:16px;height:16px}
 </head>
 <body>
 <header>
-  <h1><i data-lucide="map-pinned" class="lc"></i> 우리 데이트 맵</h1>
+  <h1><i data-lucide="map-pinned" class="lc"></i> 김춘식 데이트맵</h1>
   <div class="badge"><div class="dot"></div><span id="cnt">0</span>개 장소</div>
 </header>
 <div class="main">
@@ -200,7 +203,7 @@ header .lc svg{width:16px;height:16px}
           <span><i data-lucide="tags" class="lc lc-sm"></i> 카테고리 관리</span>
           <i data-lucide="chevron-down" class="lc lc-sm" id="catChevron" style="transition:transform .2s"></i>
         </div>
-        <div class="s-desc">목록을 눌러 편집</div>
+        <div class="s-desc">눌러서 편집 · ▲▼로 순서 변경</div>
         <div id="catEditorWrap" style="display:none">
           <div class="cat-list" id="catList"></div>
           <button class="btn btn-outline btn-sm" style="width:100%;margin-bottom:4px" onclick="addCat()">+ 카테고리 추가</button>
@@ -500,6 +503,8 @@ function renderCatEditor() {
   const list = document.getElementById('catList');
   list.innerHTML = cats.map((c,i)=>`
     <div class="cat-row" data-idx="${i}">
+      <button class="cat-move" onclick="moveCat(${i},-1)" ${i===0?'disabled':''}  title="위로">▲</button>
+      <button class="cat-move" onclick="moveCat(${i},1)" ${i===cats.length-1?'disabled':''} title="아래로">▼</button>
       <span class="cat-emoji" title="이모지 클릭해서 변경" onclick="editEmoji(${i})">${c.emoji}</span>
       <input class="cat-name-input" value="${c.name}" onchange="cats[${i}].name=this.value" placeholder="카테고리 이름">
       <input type="color" class="cat-color" value="${c.color}" title="글자색" onchange="cats[${i}].color=this.value" style="background:${c.bg}">
@@ -515,6 +520,13 @@ function editEmoji(idx) {
 
 function addCat() {
   cats.push({ id: 'cat_'+Date.now(), name: '새 카테고리', emoji: '📌', bg: '#F2F3F4', color: '#7F8C8D' });
+  renderCatEditor();
+}
+
+function moveCat(idx, dir) {
+  const to = idx + dir;
+  if (to < 0 || to >= cats.length) return;
+  [cats[idx], cats[to]] = [cats[to], cats[idx]];
   renderCatEditor();
 }
 
@@ -636,12 +648,15 @@ function renderList() {
 
 function renderMarkers() {
   if (!map) return;
-  markers.forEach(m=>m.setMap(null)); iws.forEach(w=>w.close());
+  markers.forEach(m=>{ try{m.setMap(null);}catch(e){} }); iws.forEach(w=>w.close());
   markers=[]; iws=[];
   places.forEach((p)=>{
     const pos = new kakao.maps.LatLng(p.lat, p.lng);
     const c = getCat(p.cat);
-    const marker = new kakao.maps.Marker({ position:pos, map });
+    // 이모지 커스텀 마커
+    const markerEl = document.createElement('div');
+    markerEl.innerHTML = `<div style="width:32px;height:32px;background:${c.bg};border:2px solid ${c.color};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer">${c.emoji}</div>`;
+    const marker = new kakao.maps.CustomOverlay({ position:pos, content:markerEl, yAnchor:1, zIndex:1 });
     const avg = getAvgRating(p);
     const iwContent = document.createElement('div');
     iwContent.style.cssText = 'padding:10px 12px;font-size:12px;font-family:Noto Sans KR;min-width:160px';
@@ -668,12 +683,13 @@ function renderMarkers() {
     iwContent.querySelector('[data-action="visit"]').onclick = () => { toggleV(p.id); };
 
     const iw = new kakao.maps.InfoWindow({ content: iwContent });
-    kakao.maps.event.addListener(marker,'click',()=>{
-      iws.forEach(w=>w.close()); iw.open(map,marker);
+    markerEl.onclick = () => {
+      iws.forEach(w=>w.close()); iw.open(map);
       document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
       const el=document.getElementById('pi-'+p.id);
       if(el){el.classList.add('sel');el.scrollIntoView({behavior:'smooth',block:'nearest'});}
-    });
+    };
+    marker.setMap(map);
     markers.push(marker); iws.push(iw);
   });
   // 위치 추적 중이 아닐 때만 전체 장소로 뷰 맞춤
