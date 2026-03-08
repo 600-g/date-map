@@ -984,8 +984,9 @@ function openCatModal(placeId) {
 
 function changeCat(catId) {
   const p = places.find(x=>x.id===editingPlaceId);
+  const wasOpen = focusedPlaceId;
   closeModal();
-  if (p) { p.cat=catId; saveData(); renderAll(); }
+  if (p) { _reopenAfterRender = wasOpen; p.cat=catId; saveData(); renderAll(); }
   toast('카테고리 변경됨');
 }
 
@@ -1070,7 +1071,7 @@ function renderMarkers() {
     iwEl.innerHTML = `
       <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:#aaa;line-height:1" data-action="close">&times;</div>
       <b style="font-size:13px">${p.name}</b>
-      <div style="font-size:11px;margin-top:2px"><span style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:10px;display:inline-flex;align-items:center;gap:2px;max-width:80px;overflow:hidden;white-space:nowrap">${c.emoji} ${c.name}</span></div>
+      <div style="font-size:11px;margin-top:2px"><span data-action="cat" style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:10px;display:inline-flex;align-items:center;gap:2px;max-width:80px;overflow:hidden;white-space:nowrap;cursor:pointer">${c.emoji} ${c.name}</span></div>
       ${avg?`<div style="font-size:11px;margin-top:3px;color:#F1C40F;display:flex;align-items:center;gap:2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> ${avg}</div>`:''}
       ${p.addr?`<div style="font-size:10px;color:#8B6F5E;margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;font-size:9px;padding:1px 5px;border:1px solid #ddd;border-radius:3px;background:#fafafa;color:#8B6F5E;margin-left:2px">검색</span></div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
@@ -1090,6 +1091,7 @@ function renderMarkers() {
     iwEl.querySelector('[data-action="kakao"]').onclick = () => openKakaoMap(p.id);
     iwEl.querySelector('[data-action="naver"]').onclick = () => openNaverMap(p.id);
     iwEl.querySelector('[data-action="navi"]').onclick = () => openNavi(p.id);
+    iwEl.querySelector('[data-action="cat"]').onclick = () => openCatModal(p.id);
     iwEl.querySelector('[data-action="visit"]').onclick = () => { toggleV(p.id); };
     const addrBtn = iwEl.querySelector('[data-action="addr-search"]');
     if (addrBtn) addrBtn.onclick = () => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}`, '_blank');
@@ -1122,6 +1124,14 @@ function renderMarkers() {
     map.setBounds(b);
     mapInitialBoundsSet = true;
   }
+  // 체크 등으로 renderAll 후 팝업 재오픈
+  if (_reopenAfterRender && iwMap[_reopenAfterRender]) {
+    iwMap[_reopenAfterRender].setMap(map);
+    focusedPlaceId = _reopenAfterRender;
+    const el = document.getElementById('pi-'+_reopenAfterRender);
+    if (el) el.classList.add('sel');
+    _reopenAfterRender = null;
+  }
 }
 
 let focusedPlaceId = null;
@@ -1147,20 +1157,10 @@ function toggleV(id) {
   const p=places.find(x=>x.id===id);
   if(!p) return;
   p.visited=!p.visited;
-  const wasFocused = focusedPlaceId;
+  _reopenAfterRender = focusedPlaceId === id ? id : null;
   saveData(); renderAll();
-  // 팝업이 열려있었으면 다시 열기
-  if (wasFocused === id) {
-    setTimeout(() => {
-      if (iwMap[id]) {
-        iwMap[id].setMap(map);
-        focusedPlaceId = id;
-        const el = document.getElementById('pi-'+id);
-        if (el) el.classList.add('sel');
-      }
-    }, 50);
-  }
 }
+let _reopenAfterRender = null;
 function openKakaoMap(id) {
   const p = places.find(x=>x.id===id); if(!p) return;
   window.open(`https://map.kakao.com/link/map/${encodeURIComponent(p.name)},${p.lat},${p.lng}`, '_blank');
@@ -1624,7 +1624,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 31;
+const APP_VERSION = 32;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
