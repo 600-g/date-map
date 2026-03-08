@@ -77,6 +77,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .bx:hover{border-color:var(--brown);color:var(--brown);background:white}
 .bx.vis{background:var(--green);color:white;border-color:var(--green)}
 .bx.del:hover{border-color:var(--red);color:var(--red);background:#FFF5F5}
+/* 사진 */
+.pi-photos{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
+.pi-photo{width:56px;height:56px;border-radius:8px;object-fit:cover;cursor:pointer;border:1px solid #eee}
+.pi-photo-add{width:56px;height:56px;border-radius:8px;border:1.5px dashed #ccc;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#bbb;font-size:20px;background:#fafafa;flex-shrink:0}
+.pi-photo-add:hover{border-color:var(--brown);color:var(--brown);background:var(--cream)}
+.photo-viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px}
+.photo-viewer img{max-width:90vw;max-height:75vh;border-radius:8px;object-fit:contain}
+.photo-viewer .pv-close{position:absolute;top:12px;right:16px;color:white;font-size:28px;cursor:pointer;line-height:1}
+.photo-viewer .pv-del{color:#E74C3C;font-size:13px;cursor:pointer;padding:6px 14px;background:rgba(255,255,255,.15);border-radius:8px;border:1px solid rgba(255,255,255,.2)}
 /* 별점 */
 .pi-rating{margin-top:6px;font-size:12px;color:var(--brown)}
 .pi-rating-avg{font-weight:600;color:var(--dark);font-size:13px;margin-bottom:2px}
@@ -991,6 +1000,92 @@ function editMemo(id) {
   saveData(); renderAll();
 }
 
+// ── 사진 기능 ──
+function compressPhoto(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX = 400;
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > MAX) { h = h * MAX / w; w = MAX; } }
+        else { if (h > MAX) { w = w * MAX / h; h = MAX; } }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', 0.6));
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function addPhoto(id) {
+  const p = places.find(x => x.id === id);
+  if (!p) return;
+  if (!p.photos) p.photos = [];
+  if (p.photos.length >= 3) { toast('사진은 최대 3장까지 등록할 수 있어요'); return; }
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*';
+  input.multiple = true;
+  input.onchange = async () => {
+    const files = [...input.files];
+    const remain = 3 - p.photos.length;
+    const toAdd = files.slice(0, remain);
+    if (files.length > remain) toast(`최대 3장이라 ${remain}장만 추가돼요`);
+    toast('📷 사진 압축 중...');
+    for (const f of toAdd) {
+      const compressed = await compressPhoto(f);
+      p.photos.push(compressed);
+    }
+    saveData(); renderAll();
+    toast(`📷 사진 ${toAdd.length}장 추가 완료!`);
+  };
+  input.click();
+}
+
+function viewPhoto(id, idx) {
+  const p = places.find(x => x.id === id);
+  if (!p || !p.photos || !p.photos[idx]) return;
+  const viewer = document.createElement('div');
+  viewer.className = 'photo-viewer';
+  viewer.innerHTML = `
+    <span class="pv-close">&times;</span>
+    <img src="${p.photos[idx]}">
+    <span class="pv-del" onclick="event.stopPropagation();deletePhoto(${id},${idx})">삭제</span>
+  `;
+  viewer.querySelector('.pv-close').onclick = () => viewer.remove();
+  viewer.onclick = e => { if (e.target === viewer) viewer.remove(); };
+  document.body.appendChild(viewer);
+}
+
+function deletePhoto(id, idx) {
+  const p = places.find(x => x.id === id);
+  if (!p || !p.photos) return;
+  p.photos.splice(idx, 1);
+  saveData(); renderAll();
+  document.querySelector('.photo-viewer')?.remove();
+  toast('사진 삭제됨');
+}
+
+function renderPhotos(p) {
+  if (!p.photos) p.photos = [];
+  let html = '<div class="pi-photos">';
+  p.photos.forEach((src, i) => {
+    html += `<img class="pi-photo" src="${src}" onclick="event.stopPropagation();viewPhoto(${p.id},${i})">`;
+  });
+  if (p.photos.length < 3) {
+    html += `<div class="pi-photo-add" onclick="event.stopPropagation();addPhoto(${p.id})">+</div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
 // ── 카테고리 편집 ──
 function renderCatEditor() {
   const list = document.getElementById('catList');
@@ -1369,6 +1464,7 @@ function renderList() {
       ${p.addr?`<div class="pi-addr"><i data-lucide="map-pin" class="lc lc-sm" style="color:#E74C3C"></i> ${p.addr} <span class="addr-search" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')"><i data-lucide="external-link" class="lc" style="width:10px;height:10px"></i></span></div>`:''}
       ${myLat!==null&&p.lat?`<div class="pi-dist"><i data-lucide="ruler" class="lc lc-sm"></i> ${formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng))} · ${formatWalkTime(getDistanceKm(myLat,myLng,p.lat,p.lng))} · ${formatCarTime(getDistanceKm(myLat,myLng,p.lat,p.lng))}</div>`:''}
       <div class="pi-memo">${p.memo||'<span style="color:#bbb">메모 없음</span>'} <span onclick="event.stopPropagation();editMemo(${p.id})" style="cursor:pointer;display:inline-flex;align-items:center;padding:4px;border-radius:4px;vertical-align:middle;margin-left:1px" title="메모 수정"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></span></div>
+      ${renderPhotos(p)}
       ${renderRatingBlock(p)}
       <div class="pi-acts">
         <button class="bx${p.visited?' vis':''}" onclick="event.stopPropagation();toggleV(${p.id})">${p.visited?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg> 다녀옴':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> 미방문'}</button>
@@ -1446,6 +1542,7 @@ function renderMarkers() {
       ${avg?`<div style="font-size:12px;margin-top:3px;color:#F1C40F;display:flex;align-items:center;gap:2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> ${avg}</div>`:''}
       ${p.addr?`<div style="font-size:11px;color:#8B6F5E;margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;display:inline-flex;align-items:center;padding:1px 4px;border:1px solid #ddd;border-radius:3px;background:#fafafa;margin-left:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B6F5E" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></span></div>`:''}
       ${p.memo?`<div style="font-size:11px;color:#999;margin-top:3px;font-style:italic">${p.memo}</div>`:''}
+      ${p.photos&&p.photos.length?`<div style="display:flex;gap:4px;margin-top:4px">${p.photos.map((src,i)=>`<img src="${src}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;cursor:pointer" data-action="photo" data-photo-idx="${i}">`).join('')}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
         <button class="iw-btn" data-action="kakao">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#FEE500" stroke="#8B6914" stroke-width="0.8"><path d="M12 3C6.48 3 2 6.58 2 10.94c0 2.8 1.86 5.27 4.66 6.67-.15.53-.96 3.4-.99 3.62 0 0-.02.17.09.24.11.06.24.01.24.01.32-.04 3.7-2.44 4.28-2.86.55.08 1.13.12 1.72.12 5.52 0 10-3.58 10-7.8C22 6.58 17.52 3 12 3z"/></svg>
@@ -1472,6 +1569,9 @@ function renderMarkers() {
     iwEl.querySelector('[data-action="visit"]').onclick = () => { toggleV(p.id); };
     const addrBtn = iwEl.querySelector('[data-action="addr-search"]');
     if (addrBtn) addrBtn.onclick = () => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}`, '_blank');
+    iwEl.querySelectorAll('[data-action="photo"]').forEach(img => {
+      img.onclick = () => viewPhoto(p.id, parseInt(img.dataset.photoIdx));
+    });
     // 팝업 클릭 시 지도 이벤트 전파 완전 차단
     ['click','mousedown','mouseup','touchstart','touchend','pointerdown','pointerup'].forEach(evt => {
       iwEl.addEventListener(evt, e => e.stopPropagation());
@@ -2022,7 +2122,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 92;
+const APP_VERSION = 93;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
