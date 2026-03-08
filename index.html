@@ -374,6 +374,58 @@ let firestoreReady = false;
 
 const REST_KEY = 'f05925b16ad652c4bb02b5aac5e56b06';
 
+// ── 이모지→SVG키 마이그레이션 ──
+const EMOJI_TO_SVG = {
+  '🍽':'fork','🍽️':'fork','🍜':'noodle','🍕':'pizza','🍔':'burger','🍣':'sushi','🍲':'rice','🥩':'meat','🍱':'bento',
+  '☕':'coffee','🥐':'croissant','🍰':'cake','🧁':'cake','🍦':'icecream','🍩':'donut',
+  '🍺':'beer','🍷':'wine','🍸':'cocktail','🥂':'cocktail',
+  '🎬':'movie','🎵':'music','🎮':'game','🎤':'mic','🎧':'headphone','🎪':'theater','🎭':'theater',
+  '🌿':'leaf','🌳':'tree','🌊':'wave','⛰️':'mountain','⛰':'mountain','🏖️':'beach','🏖':'beach','🌸':'flower','🍀':'clover',
+  '🛍️':'bag','🛍':'bag','👗':'dress','👟':'shoe','💇':'scissors','💇‍♀️':'scissors',
+  '💪':'gym','🏊':'swim','⚽':'soccer','🚴':'bike','⛳':'golf','🎯':'target',
+  '📸':'cam','🎨':'palette','📚':'book','🏛️':'museum','🏛':'museum',
+  '🏠':'home','✈️':'plane','✈':'plane','🚗':'car','🚆':'train',
+  '💑':'couple','💝':'heart','🎁':'gift','🎂':'birthday','💍':'ring',
+  '🐶':'dog','🐱':'cat','💊':'pill','🏥':'hospital',
+  '📌':'pin','⭐':'star','❤️':'heartfill','❤':'heartfill','🔥':'fire','✨':'sparkle',
+};
+function migrateCats() {
+  let changed = false;
+  cats.forEach(c => {
+    if (c.emoji && EMOJI_TO_SVG[c.emoji]) {
+      c.emoji = EMOJI_TO_SVG[c.emoji];
+      changed = true;
+    }
+    // raw SVG 문자열도 키로 변환
+    if (c.emoji && c.emoji.includes && c.emoji.includes('<svg')) {
+      // SVG 내용으로 매칭
+      if (c.emoji.includes('fork') || (c.emoji.includes('M3 2v7') && c.emoji.includes('M7 2v20'))) c.emoji = 'fork';
+      else if (c.emoji.includes('#8B4513') || c.emoji.includes('#6F4E37') || c.emoji.includes('M17 8h1a4')) c.emoji = 'coffee';
+      else if (c.emoji.includes('#27AE60') || c.emoji.includes('#1E8449')) c.emoji = 'leaf';
+      else if (c.emoji.includes('circle cx="12" cy="12" r="10"') && c.emoji.includes('r="6"') && c.emoji.includes('r="2"')) c.emoji = 'target';
+      else if (c.emoji.includes('M21 10c0 7-9 13')) c.emoji = 'pin';
+      else if (c.emoji.includes('croissant') || c.emoji.includes('#D4A017')) c.emoji = 'croissant';
+      else if (c.emoji.includes('#9B59B6') && c.emoji.includes('M4 2l8')) c.emoji = 'cocktail';
+      else if (c.emoji.includes('M6 2L3 6v14')) c.emoji = 'bag';
+      else if (c.emoji.includes('M23 19a2')) c.emoji = 'cam';
+      else if (c.emoji.includes('#FF6B81') || c.emoji.includes('20.84 4.61')) c.emoji = 'heart';
+      else if (c.emoji.includes('M9 18V5l12')) c.emoji = 'music';
+      else if (c.emoji.includes('M6.5 6.5h11')) c.emoji = 'gym';
+      else if (c.emoji.includes('M8 10 5.9 16')) c.emoji = 'leaf';
+      else if (c.emoji.includes('M21 16v-2l-8-5')) c.emoji = 'plane';
+      else if (c.emoji.includes('palette') || c.emoji.includes('cx="8" cy="9"')) c.emoji = 'palette';
+      else if (c.emoji.includes('E8A0BF') || c.emoji.includes('M12 2C8 6')) c.emoji = 'spa';
+      else if (c.emoji.includes('M4 16c0-2')) c.emoji = 'rice';
+      else if (c.emoji.includes('M5 8h12v10')) c.emoji = 'beer';
+      else if (c.emoji.includes('M3 9l9-7')) c.emoji = 'home';
+      else if (c.emoji.includes('cx="5.5" cy="17.5"')) c.emoji = 'bike';
+      else c.emoji = 'pin'; // 알 수 없는 SVG → 기본 핀
+      changed = true;
+    }
+  });
+  return changed;
+}
+
 // ── 스토리지 (Firestore + localStorage 백업) ──
 function loadData() {
   // localStorage에서 먼저 로드 (오프라인/빠른 로딩용)
@@ -383,6 +435,8 @@ function loadData() {
     const r2 = localStorage.getItem('datemap-cats');
     if (r2) cats = JSON.parse(r2);
   } catch(e) { places = []; cats = [...DEFAULT_CATS]; }
+  // 이모지/SVG문자열 → SVG키 마이그레이션
+  if (migrateCats()) { saveCatsData(); }
 }
 
 function saveData() {
@@ -413,6 +467,7 @@ function startRealtimeSync() {
           JSON.stringify(newCats) !== JSON.stringify(cats)) {
         places = newPlaces;
         cats = newCats.length ? newCats : [...DEFAULT_CATS];
+        migrateCats();
         // localStorage 백업
         try { localStorage.setItem('datemap-v2', JSON.stringify(places)); } catch(e) {}
         try { localStorage.setItem('datemap-cats', JSON.stringify(cats)); } catch(e) {}
@@ -1682,7 +1737,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 43;
+const APP_VERSION = 44;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
