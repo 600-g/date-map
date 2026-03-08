@@ -736,15 +736,8 @@ function editEmoji(idx) {
     html += `<span class="ep-item" data-svg="${k}" style="display:flex;align-items:center;justify-content:center;cursor:pointer;padding:6px;border-radius:8px;border:1px solid #eee;transition:all .15s" onmouseover="this.style.background='#f0ebe3';this.style.borderColor='#ccc'" onmouseout="this.style.background='';this.style.borderColor='#eee'">${SVG_ICONS[k]}</span>`;
   });
   html += '</div>';
-  // 이모지 그리드
-  html += '<div style="font-size:10px;color:var(--brown);margin-bottom:4px;font-weight:500">이모지</div>';
-  html += '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:10px;max-height:120px;overflow-y:auto">';
-  EMOJI_PICKS.forEach(em => {
-    html += `<span class="ep-item" data-emoji="${em}" style="display:flex;align-items:center;justify-content:center;cursor:pointer;padding:4px;border-radius:6px;font-size:18px;border:1px solid transparent;transition:all .1s" onmouseover="this.style.background='#f0ebe3';this.style.borderColor='#ddd'" onmouseout="this.style.background='';this.style.borderColor='transparent'">${em}</span>`;
-  });
-  html += '</div>';
   // 직접 입력 (이모지/글자)
-  html += '<div style="font-size:10px;color:var(--brown);margin-bottom:4px;font-weight:500">직접 입력</div>';
+  html += '<div style="font-size:10px;color:var(--brown);margin-bottom:4px;font-weight:500">직접 입력 (이모지·글자)</div>';
   html += '<div style="display:flex;gap:6px;align-items:center">';
   html += '<input id="customEmojiInput" type="text" placeholder="이모지 또는 글자 입력" style="flex:1;font-size:16px;padding:8px;border:1px solid var(--warm);border-radius:8px;text-align:center">';
   html += '<button class="btn btn-dark btn-sm" style="flex-shrink:0;margin:0;padding:8px 14px" id="customEmojiBtn">적용</button>';
@@ -1554,7 +1547,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 23;
+const APP_VERSION = 24;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
