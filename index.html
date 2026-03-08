@@ -1828,7 +1828,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 71;
+const APP_VERSION = 72;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -1843,7 +1843,7 @@ function forceUpdate() {
       toast('🔄 새 버전 발견! 업데이트 중...');
       doForceReload();
     } else {
-      toast('✅ 최신 버전이에요 (v' + APP_VERSION + ')');
+      toast('🤖 최신 버전이에요 (v' + APP_VERSION + ')');
     }
   }).catch(() => {
     // version.json 못 가져와도 강제 새로고침 시도
