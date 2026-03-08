@@ -601,7 +601,8 @@ function renderMarkers() {
     });
     markers.push(marker); iws.push(iw);
   });
-  if (places.length) {
+  // 위치 추적 중이 아닐 때만 전체 장소로 뷰 맞춤
+  if (places.length && watchId === null) {
     const b = new kakao.maps.LatLngBounds();
     places.forEach(p=>b.extend(new kakao.maps.LatLng(p.lat,p.lng)));
     map.setBounds(b);
@@ -700,7 +701,10 @@ function toggleTracking() {
     map.setCenter(new kakao.maps.LatLng(myLat, myLng));
     map.setLevel(4);
     renderList();
-  });
+  }, err => {
+    toast('위치를 가져올 수 없어요. 위치 권한을 확인해주세요');
+    stopTracking();
+  }, { enableHighAccuracy: true, timeout: 10000 });
   toast('📍 내 위치 추적 시작');
 }
 
