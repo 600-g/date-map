@@ -590,7 +590,7 @@ function renderList() {
         <div class="pi-name">${p.name}</div>
         <div class="pi-cat" style="background:${c.bg};color:${c.color}" onclick="event.stopPropagation();openCatModal(${p.id})" title="클릭해서 카테고리 변경">${c.emoji} ${c.name}</div>
       </div>
-      ${p.addr?`<div class="pi-addr"><i data-lucide="map-pin" class="lc lc-sm"></i> ${p.addr}</div>`:''}
+      ${p.addr?`<div class="pi-addr" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')" style="cursor:pointer"><i data-lucide="map-pin" class="lc lc-sm"></i> ${p.addr}</div>`:''}
       ${myLat!==null&&p.lat?`<div class="pi-dist"><i data-lucide="ruler" class="lc lc-sm"></i> ${formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng))}</div>`:''}
       ${p.memo?`<div class="pi-memo">${p.memo}</div>`:''}
       ${renderRatingBlock(p)}
