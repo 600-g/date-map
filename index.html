@@ -156,8 +156,8 @@ header .lc svg{width:18px;height:18px}
 .list-search-box input{font-size:13px}
 .list-search-box.collapsed input{display:none}
 .add-toggle-btn{display:flex;align-items:center;gap:3px;border-radius:10px !important;padding:7px 14px !important}
-.add-panel{border-bottom:1px solid var(--warm);background:#FAFAF7;max-height:0;overflow:hidden;transition:max-height .3s ease}
-.add-panel.open{max-height:600px;overflow:hidden;display:block}
+.add-panel{border-bottom:1px solid var(--warm);background:#FAFAF7;display:none;max-height:50vh;overflow:hidden}
+.add-panel.open{display:flex;flex-direction:column}
 /* 주변 검색 */
 .nearby-bar{position:absolute;top:12px;left:12px;z-index:10;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 70px);transition:opacity .2s,visibility .2s}
 .nearby-bar.hidden{opacity:0;pointer-events:none;visibility:hidden}
@@ -529,9 +529,8 @@ function initMap() {
   });
   kakao.maps.event.addListener(map, 'click', () => closeAllIw());
   renderAll();
-  // 앱 시작 시: 항상 위치 버튼 ON + 위치 확보 시도
-  const locBtn = document.getElementById('locBtn');
-  locBtn.classList.add('tracking');
+  // 앱 시작 시: savedLoc으로 즉시 마커+거리 표시
+  document.getElementById('locBtn').classList.add('tracking');
   if (savedLoc) {
     try {
       const loc = JSON.parse(savedLoc);
@@ -540,35 +539,45 @@ function initMap() {
       renderList();
     } catch(e) {}
   }
-  // 조용히 GPS 시도 (실패해도 버튼 ON 유지)
-  setTimeout(() => {
-    if (!navigator.geolocation) return;
+  // iOS PWA는 사용자 제스처 없이 GPS 불가 → 첫 터치 시 자동 GPS 시작
+  function _autoGps() {
+    document.removeEventListener('touchstart', _autoGps);
+    document.removeEventListener('click', _autoGps);
+    if (watchId !== null) return; // 이미 추적 중
+    _silentGps();
+  }
+  document.addEventListener('touchstart', _autoGps, {once:true});
+  document.addEventListener('click', _autoGps, {once:true});
+  // PC에서는 setTimeout도 시도
+  if (!/iPhone|iPad|Android/i.test(navigator.userAgent)) {
+    setTimeout(() => _silentGps(), 500);
+  }
+}
+
+function _silentGps() {
+  if (!navigator.geolocation || watchId !== null) return;
+  navigator.geolocation.getCurrentPosition(pos => {
+    myLat = pos.coords.latitude;
+    myLng = pos.coords.longitude;
+    localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
+    updateMyLocMarker();
+    map.setCenter(new kakao.maps.LatLng(myLat, myLng));
+    map.setLevel(4);
+    renderList();
+    if (watchId === null) {
+      watchId = navigator.geolocation.watchPosition(wp => {
+        if (wp.coords.accuracy > 1000) return;
+        myLat = wp.coords.latitude; myLng = wp.coords.longitude;
+        updateMyLocMarker(); renderList();
+      }, ()=>{}, {enableHighAccuracy:true, maximumAge:5000, timeout:15000});
+    }
+  }, () => {
     navigator.geolocation.getCurrentPosition(pos => {
-      myLat = pos.coords.latitude;
-      myLng = pos.coords.longitude;
+      myLat = pos.coords.latitude; myLng = pos.coords.longitude;
       localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
-      updateMyLocMarker();
-      map.setCenter(new kakao.maps.LatLng(myLat, myLng));
-      renderList();
-      if (watchId === null) {
-        watchId = navigator.geolocation.watchPosition(wp => {
-          if (wp.coords.accuracy > 1000) return;
-          myLat = wp.coords.latitude; myLng = wp.coords.longitude;
-          updateMyLocMarker(); renderList();
-        }, ()=>{}, {enableHighAccuracy:true, maximumAge:5000, timeout:15000});
-      }
-    }, () => {
-      // 높은 정확도 실패 → 낮은 정확도로 재시도
-      navigator.geolocation.getCurrentPosition(pos => {
-        myLat = pos.coords.latitude;
-        myLng = pos.coords.longitude;
-        localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
-        updateMyLocMarker();
-        map.setCenter(new kakao.maps.LatLng(myLat, myLng));
-        renderList();
-      }, ()=>{/* 둘 다 실패해도 버튼 ON 유지 */}, {enableHighAccuracy:false, timeout:15000});
-    }, {enableHighAccuracy:true, timeout:10000});
-  }, 500);
+      updateMyLocMarker(); map.setCenter(new kakao.maps.LatLng(myLat, myLng)); map.setLevel(4); renderList();
+    }, ()=>{}, {enableHighAccuracy:false, timeout:15000});
+  }, {enableHighAccuracy:true, timeout:10000});
 }
 
 // ── 탭 ──
@@ -589,8 +598,7 @@ function toggleAddPanel() {
 }
 function openAddPanel() {
   const panel = document.getElementById('addPanel');
-  panel.style.display = 'block';
-  requestAnimationFrame(() => panel.classList.add('open'));
+  panel.classList.add('open');
   document.getElementById('addToggleBtn').innerHTML = '<i data-lucide="x" class="lc lc-sm"></i> 닫기';
   addPanelOpen = true;
   populateCatSelect();
@@ -607,12 +615,8 @@ function openAddPanel() {
 }
 function closeAddPanel() {
   addPanelOpen = false;
-  // 패널 숨기기
   const panel = document.getElementById('addPanel');
-  if (panel) {
-    panel.classList.remove('open');
-    panel.style.cssText = 'display:none';
-  }
+  if (panel) panel.classList.remove('open');
   // 버튼 복원
   const btn = document.getElementById('addToggleBtn');
   if (btn) btn.innerHTML = '<i data-lucide="plus" class="lc lc-sm"></i> 추가';
@@ -1878,7 +1882,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 78;
+const APP_VERSION = 79;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
