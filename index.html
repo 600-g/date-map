@@ -57,7 +57,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .fb svg{width:13px;height:13px;vertical-align:middle;flex-shrink:0;overflow:visible}
 .fb.active{background:var(--dark);color:white;border-color:var(--dark)}
 .place-list{flex:1;overflow-y:auto;padding:8px}
-.pi{background:white;border:1px solid transparent;border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s;box-shadow:var(--card-shadow)}
+.pi-wrap{position:relative;overflow:hidden;border-radius:12px;margin-bottom:8px}
+.pi-del-bg{position:absolute;right:0;top:0;bottom:0;width:100%;background:#E74C3C;display:flex;align-items:center;justify-content:flex-end;padding-right:20px;color:white;font-size:13px;font-weight:550;border-radius:12px}
+.pi{background:white;border:1px solid transparent;border-radius:12px;padding:12px 14px;cursor:pointer;transition:transform .15s;box-shadow:var(--card-shadow);position:relative;z-index:1}
 .pi:hover{box-shadow:0 3px 12px rgba(0,0,0,.1);transform:translateY(-1px)}
 .pi.sel{border-color:var(--accent);background:#F0F3F9;box-shadow:0 2px 12px rgba(91,125,184,.15)}
 .pi-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
@@ -204,8 +206,8 @@ header .lc svg{width:18px;height:18px}
       <div class="list-top-bar">
         <div class="list-search-row">
           <div class="list-search-box collapsed" id="listSearchBox" onclick="expandListSearch()">
-            <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0"></i>
-            <input id="listSearchInput" type="text" placeholder="등록된 장소 검색 (예: ㅅㅂㅅ)" oninput="filterListSearch()" onblur="collapseListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
+            <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();toggleListSearch()"></i>
+            <input id="listSearchInput" type="text" placeholder="등록된 장소 검색 (예: ㅅㅂㅅ)" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
           </div>
           <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()"><i data-lucide="plus" class="lc lc-sm"></i> 추가</button>
         </div>
@@ -689,18 +691,21 @@ function expandListSearch() {
   setTimeout(() => document.getElementById('listSearchInput').focus(), 50);
 }
 function collapseListSearch() {
-  const input = document.getElementById('listSearchInput');
-  if (input.value.trim()) return;
-  setTimeout(() => {
-    // blur 후 다시 input에 포커스가 간 경우 닫지 않음
-    if (document.activeElement === input) return;
-    const box = document.getElementById('listSearchBox');
-    box.classList.remove('expanded');
-    box.classList.add('collapsed');
-    box.onclick = expandListSearch;
-    listSearchQuery = '';
-    renderList();
-  }, 200);
+  const box = document.getElementById('listSearchBox');
+  box.classList.remove('expanded');
+  box.classList.add('collapsed');
+  box.onclick = expandListSearch;
+  document.getElementById('listSearchInput').value = '';
+  listSearchQuery = '';
+  renderList();
+}
+function toggleListSearch() {
+  const box = document.getElementById('listSearchBox');
+  if (box.classList.contains('expanded')) {
+    collapseListSearch();
+  } else {
+    expandListSearch();
+  }
 }
 
 // ── 카테고리 셀렉트 채우기 ──
@@ -1350,6 +1355,8 @@ function renderList() {
   list.innerHTML = f.map(p => {
     const c = getCat(p.cat);
     return `
+    <div class="pi-wrap" data-pid="${p.id}">
+    <div class="pi-del-bg"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg> 삭제</div>
     <div class="pi" id="pi-${p.id}" onclick="focusPlace(${p.id})">
       <div class="pi-top">
         <div class="pi-name">${p.name}</div>
@@ -1366,9 +1373,48 @@ function renderList() {
         <button class="bx" onclick="event.stopPropagation();openNavi(${p.id})" style="background:#5B7DB8;color:white;border-color:#5B7DB8;padding:4px 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1" style="vertical-align:middle"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></button>
         <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
       </div>
+    </div>
     </div>`;
   }).join('');
   lucide.createIcons();
+  setupSwipeDelete();
+}
+
+function setupSwipeDelete() {
+  document.querySelectorAll('.pi-wrap').forEach(wrap => {
+    const pi = wrap.querySelector('.pi');
+    let startX = 0, currentX = 0, swiping = false;
+    const threshold = -120;
+    wrap.addEventListener('touchstart', e => {
+      startX = e.touches[0].clientX;
+      currentX = 0;
+      swiping = true;
+      pi.style.transition = 'none';
+    }, {passive:true});
+    wrap.addEventListener('touchmove', e => {
+      if (!swiping) return;
+      const dx = e.touches[0].clientX - startX;
+      if (dx > 0) { currentX = 0; pi.style.transform = ''; return; }
+      currentX = dx;
+      pi.style.transform = `translateX(${dx}px)`;
+    }, {passive:true});
+    wrap.addEventListener('touchend', () => {
+      if (!swiping) return;
+      swiping = false;
+      pi.style.transition = 'transform .2s';
+      if (currentX < threshold) {
+        pi.style.transform = 'translateX(-100%)';
+        const pid = parseInt(wrap.dataset.pid);
+        setTimeout(() => {
+          places = places.filter(x => x.id !== pid);
+          saveData(); renderAll();
+          toast('삭제됐어요');
+        }, 200);
+      } else {
+        pi.style.transform = '';
+      }
+    });
+  });
 }
 
 function renderMarkers() {
@@ -1954,7 +2000,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 83;
+const APP_VERSION = 84;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
