@@ -1490,15 +1490,7 @@ function renderMarkers() {
     marker.setMap(map);
     markers.push(marker); iws.push(iw);
   });
-  // 최초 로드 시에만 전체 장소로 뷰 맞춤 (이후에는 현재 뷰 유지)
-  if (!mapInitialBoundsSet && places.length && watchId === null) {
-    const b = new kakao.maps.LatLngBounds();
-    places.forEach(p=>{
-      if(p.lat&&p.lng) b.extend(new kakao.maps.LatLng(p.lat,p.lng));
-    });
-    map.setBounds(b);
-    mapInitialBoundsSet = true;
-  }
+  // mapInitialBoundsSet은 제거 — 항상 현위치 또는 savedLoc 중심 유지
   // 체크 등으로 renderAll 후 팝업 재오픈
   if (_reopenAfterRender && iwMap[_reopenAfterRender]) {
     iwMap[_reopenAfterRender].setMap(map);
@@ -1510,7 +1502,6 @@ function renderMarkers() {
 }
 
 let focusedPlaceId = null;
-let mapInitialBoundsSet = false;
 function closeAllIw() {
   iws.forEach(w=>{ try{w.setMap(null);}catch(e){} });
   document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
@@ -2000,7 +1991,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 85;
+const APP_VERSION = 86;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
