@@ -286,8 +286,9 @@ header .lc svg{width:18px;height:18px}
     <div class="nearby-bar" id="nearbyBar">
       <button class="nb-btn" onclick="searchNearby('CE7','카페',this,'cafe')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#8B4513" stroke-width="2" stroke-linecap="round"><path d="M17 8h1a4 4 0 010 8h-1M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><path d="M7 3s1 1 3 1 3-1 3-1" stroke-width="1.5"/></svg> 카페</button>
       <button class="nb-btn" onclick="searchNearbyKeyword('스타벅스','스벅',this,'starbucks')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="10" fill="#00704A"/><circle cx="12" cy="10" r="4.5" fill="none" stroke="white" stroke-width="1.2"/><path d="M12 5.5c-1.2 0-2.2.5-2.8 1.2" stroke="white" stroke-width="0.8" fill="none"/><path d="M9 14.5c0 0 1.5 2 3 2s3-2 3-2" stroke="white" stroke-width="1" fill="none"/><path d="M7.5 10l-1.5-2M16.5 10l1.5-2" stroke="white" stroke-width="0.8"/><path d="M8.5 13l-2 1.5M15.5 13l2 1.5" stroke="white" stroke-width="0.8"/><circle cx="12" cy="10" r="1.5" fill="white"/></svg> 스벅</button>
-      <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마','영화관',this,'movie','영화,극장')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#E74C3C" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20M2 12h20M6 4v16M10 4v16M14 4v16M18 4v16"/></svg> 영화관</button>
+      <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마','영화관',this,'movie','영화,극장')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="#1A1A2E" stroke="#1A1A2E" stroke-width="1"><rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="#1A1A2E" stroke-width="2"/><rect x="3" y="5" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/><rect x="10" y="5" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/><rect x="17" y="5" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/><rect x="3" y="11" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/><rect x="10" y="11" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/><rect x="17" y="11" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/></svg> 영화관</button>
       <button class="nb-btn" onclick="searchNearby('CS2','편의점',this,'conv')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg> 편의점</button>
+      <button class="nb-btn" onclick="searchNearby('PM9','약국',this,'pharmacy')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#E74C3C" stroke-width="2.5" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg> 약국</button>
     </div>
   </div>
 </div>
@@ -800,7 +801,9 @@ function closeEmojiPicker() {
 
 function addCat() {
   cats.push({ id: 'cat_'+Date.now(), name: '새 카테고리', emoji: '📌', bg: '#F2F3F4', color: '#7F8C8D' });
-  autosaveCats(); renderCatEditor();
+  renderCatEditor();
+  autosaveCats();
+  toast('카테고리 추가됨');
 }
 
 let dragFromIdx = null;
@@ -910,10 +913,11 @@ function setupCatDrag() {
 function delCat(idx) {
   if (cats.length <= 1) { toast('최소 1개는 있어야 해요'); return; }
   const catId = cats[idx].id;
-  // 해당 카테고리의 장소는 첫 번째 카테고리로 이동
   places.forEach(p=>{ if(p.cat===catId) p.cat=cats[0].id; });
   cats.splice(idx,1);
-  autosaveCats(); renderCatEditor();
+  renderCatEditor();
+  autosaveCats();
+  toast('카테고리 삭제됨');
 }
 
 let catEditorOpen = false;
@@ -1267,8 +1271,9 @@ async function searchNearby(categoryCode, label, btnEl, icon) {
 const NEARBY_ICONS = {
   cafe: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8B4513" stroke-width="2" stroke-linecap="round"><path d="M17 8h1a4 4 0 010 8h-1M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><path d="M7 3s1 1 3 1 3-1 3-1" stroke-width="1.5"/></svg>',
   starbucks: '<svg viewBox="0 0 24 24" width="22" height="22"><circle cx="12" cy="12" r="11" fill="#00704A"/><circle cx="12" cy="10" r="4.5" fill="none" stroke="white" stroke-width="1.2"/><path d="M12 5.5c-1.2 0-2.2.5-2.8 1.2" stroke="white" stroke-width="0.8" fill="none"/><path d="M9 14.5c0 0 1.5 2 3 2s3-2 3-2" stroke="white" stroke-width="1" fill="none"/><path d="M7.5 10l-1.5-2M16.5 10l1.5-2" stroke="white" stroke-width="0.8"/><path d="M8.5 13l-2 1.5M15.5 13l2 1.5" stroke="white" stroke-width="0.8"/><circle cx="12" cy="10" r="1.5" fill="white"/></svg>',
-  movie: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#E74C3C" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M2 8h20M2 12h20M6 4v16M10 4v16M14 4v16M18 4v16"/></svg>',
+  movie: '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="2" y="4" width="20" height="16" rx="2" fill="none" stroke="#1A1A2E" stroke-width="2"/><rect x="3" y="5" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/><rect x="10" y="5" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/><rect x="17" y="5" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/><rect x="3" y="11" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/><rect x="10" y="11" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/><rect x="17" y="11" width="4" height="4" rx="0.5" fill="#1A1A2E" opacity=".3"/></svg>',
   conv: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg>',
+  pharmacy: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#E74C3C" stroke-width="2.5" stroke-linecap="round"><path d="M12 6v12M6 12h12"/></svg>',
 };
 function renderNearbyResults(docs, iconKey) {
   const svgIcon = NEARBY_ICONS[iconKey] || '';
@@ -1636,7 +1641,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 37;
+const APP_VERSION = 38;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
