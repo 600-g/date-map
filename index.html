@@ -621,14 +621,52 @@ async function doSearch() {
       box.innerHTML = '<div class="search-loading">결과가 없어요</div>'; return;
     }
     window._sd = data.documents;
+    window._srChecked = new Set();
     box.innerHTML = data.documents.map((p,i)=>
-      `<div class="sr-item" onclick="pickSearch(${i})">
-        <div class="sr-name">${p.place_name}</div>
-        <div class="sr-addr">${p.road_address_name || p.address_name}</div>
+      `<div class="sr-item" style="display:flex;align-items:center;gap:8px">
+        <input type="checkbox" class="sr-chk" data-idx="${i}" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--accent);cursor:pointer" onclick="event.stopPropagation();toggleSrChk(${i},this)">
+        <div style="flex:1;cursor:pointer" onclick="pickSearch(${i})">
+          <div class="sr-name">${p.place_name}</div>
+          <div class="sr-addr">${p.road_address_name || p.address_name}</div>
+        </div>
       </div>`
-    ).join('');
+    ).join('') + '<div id="srBatchBar" style="display:none;margin-top:6px"><button class="btn btn-dark" style="width:100%" onclick="batchAddSearch()">선택한 장소 일괄 추가</button></div>';
   } catch(e) {
     box.innerHTML = '<div class="search-loading" style="color:var(--red)">검색 실패. 잠시 후 다시 시도해주세요</div>';
+  }
+}
+
+function toggleSrChk(i, el) {
+  if (!window._srChecked) window._srChecked = new Set();
+  if (el.checked) window._srChecked.add(i);
+  else window._srChecked.delete(i);
+  const bar = document.getElementById('srBatchBar');
+  if (bar) bar.style.display = window._srChecked.size > 0 ? 'block' : 'none';
+}
+
+function batchAddSearch() {
+  if (!window._srChecked || !window._srChecked.size) return;
+  const cat = cats[0]?.id || '기타';
+  let added = 0;
+  window._srChecked.forEach(i => {
+    const p = window._sd[i];
+    if (!p) return;
+    const ok = addPlace({
+      id: Date.now() + added,
+      name: p.place_name,
+      addr: p.road_address_name || p.address_name,
+      lat: parseFloat(p.y), lng: parseFloat(p.x),
+      cat, memo: '', visited: false
+    });
+    if (ok) added++;
+  });
+  if (added) {
+    toast(`${added}개 장소 추가됨`);
+    document.getElementById('sr').innerHTML = '';
+    document.getElementById('sq').value = '';
+    window._srChecked = new Set();
+    closeAddPanel();
+    showTab('list');
   }
 }
 
@@ -662,6 +700,7 @@ function confirmSearch() {
     document.getElementById('sr').innerHTML = '';
     window._selectedSearch = null;
     closeAddPanel();
+    showTab('list');
   }
 }
 
@@ -1676,7 +1715,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 56;
+const APP_VERSION = 57;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
