@@ -1162,10 +1162,15 @@ function renderStarsReadonly(score) {
   return html;
 }
 
+let _toastTimer = null;
 function toast(msg) {
   const el=document.getElementById('toast');
+  if (_toastTimer) clearTimeout(_toastTimer);
+  el.classList.remove('show');
+  // 강제 리플로우 후 다시 표시 (연속 호출 시에도 확실히 보이게)
+  void el.offsetWidth;
   el.textContent=msg; el.classList.add('show');
-  setTimeout(()=>el.classList.remove('show'),2500);
+  _toastTimer = setTimeout(()=>{ el.classList.remove('show'); _toastTimer=null; },2500);
 }
 
 // ── 시작 ──
