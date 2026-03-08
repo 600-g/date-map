@@ -154,8 +154,8 @@ header .lc svg{width:18px;height:18px}
 .nb-btn{font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.12);transition:all .15s;white-space:nowrap}
 .nb-btn:hover,.nb-btn.active{background:var(--dark);color:white;border-color:var(--dark)}
 /* 토스트 */
-.toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(80px);background:rgba(26,26,46,.92);backdrop-filter:blur(8px);color:white;padding:11px 22px;border-radius:14px;font-size:13px;transition:transform .3s;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2)}
-.toast.show{transform:translateX(-50%) translateY(0)}
+.toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(120px);background:rgba(26,26,46,.92);backdrop-filter:blur(8px);color:white;padding:11px 22px;border-radius:14px;font-size:13px;transition:transform .3s,opacity .3s;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
 @media(max-width:680px){
   .main{flex-direction:column}
   .panel{width:100%;height:48dvh;height:48vh;border-right:none;border-bottom:1px solid var(--warm)}
@@ -283,11 +283,11 @@ header .lc svg{width:18px;height:18px}
     <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
     <!-- 주변 검색 퀵버튼 -->
     <div class="nearby-bar" id="nearbyBar">
-      <button class="nb-btn" onclick="searchNearby('CE7','카페')">☕ 카페</button>
-      <button class="nb-btn" onclick="searchNearby('FD6','음식점')">🍽 음식점</button>
-      <button class="nb-btn" onclick="searchNearby('CT1','영화관')">🎬 영화관</button>
-      <button class="nb-btn" onclick="searchNearby('AT4','관광')">📸 관광</button>
-      <button class="nb-btn" onclick="searchNearby('SW8','지하철')">🚇 지하철</button>
+      <button class="nb-btn" onclick="searchNearby('CE7','카페',this)">☕ 카페</button>
+      <button class="nb-btn" onclick="searchNearby('FD6','음식점',this)">🍽 음식점</button>
+      <button class="nb-btn" onclick="searchNearby('CT1','영화관',this)">🎬 영화관</button>
+      <button class="nb-btn" onclick="searchNearby('AT4','관광',this)">📸 관광</button>
+      <button class="nb-btn" onclick="searchNearby('SW8','지하철',this)">🚇 지하철</button>
     </div>
   </div>
 </div>
@@ -424,8 +424,14 @@ function startRealtimeSync() {
 
 // ── 지도 초기화 ──
 function initMap() {
+  // 저장된 위치가 있으면 바로 사용
+  const savedLoc = localStorage.getItem('datemap-lastloc');
+  let initLat = 37.5665, initLng = 126.9780, initLevel = 5;
+  if (savedLoc) {
+    try { const loc = JSON.parse(savedLoc); initLat = loc.lat; initLng = loc.lng; initLevel = 4; } catch(e) {}
+  }
   map = new kakao.maps.Map(document.getElementById('map'), {
-    center: new kakao.maps.LatLng(37.5665,126.9780), level:5
+    center: new kakao.maps.LatLng(initLat, initLng), level: initLevel
   });
   kakao.maps.event.addListener(map, 'click', () => closeAllIw());
   renderAll();
@@ -434,6 +440,7 @@ function initMap() {
     navigator.geolocation.getCurrentPosition(pos => {
       myLat = pos.coords.latitude;
       myLng = pos.coords.longitude;
+      localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
       updateMyLocMarker();
       map.setCenter(new kakao.maps.LatLng(myLat, myLng));
       map.setLevel(4);
@@ -454,6 +461,7 @@ function initMap() {
         navigator.geolocation.getCurrentPosition(pos => {
           myLat = pos.coords.latitude;
           myLng = pos.coords.longitude;
+          localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
           updateMyLocMarker();
           map.setCenter(new kakao.maps.LatLng(myLat, myLng));
           map.setLevel(5);
@@ -1151,7 +1159,7 @@ function openNaverMap(id) {
 // ── 주변 카테고리 검색 ──
 let nearbyMarkers = [];
 let nearbyActiveCategory = null;
-async function searchNearby(categoryCode, label) {
+async function searchNearby(categoryCode, label, btnEl) {
   // 토글: 같은 카테고리 다시 누르면 해제
   if (nearbyActiveCategory === categoryCode) {
     clearNearbyMarkers();
@@ -1174,7 +1182,7 @@ async function searchNearby(categoryCode, label) {
     nearbyActiveCategory = categoryCode;
     // 버튼 활성화 표시
     document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
-    event.target.closest('.nb-btn').classList.add('active');
+    if (btnEl) btnEl.classList.add('active');
 
     data.documents.forEach(d => {
       const pos = new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
@@ -1547,7 +1555,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 24;
+const APP_VERSION = 25;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
