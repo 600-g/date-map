@@ -96,6 +96,11 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .empty{text-align:center;padding:40px 16px;color:var(--brown)}
 .empty .ico{font-size:36px;margin-bottom:10px}
 .empty p{font-size:12px;line-height:1.7}
+/* 내 위치 버튼 */
+.my-loc-btn{position:absolute;bottom:20px;right:12px;z-index:10;width:40px;height:40px;border-radius:50%;background:white;border:1px solid var(--warm);box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.my-loc-btn:hover{background:var(--cream);box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.my-loc-btn.tracking{background:var(--dark);color:white;border-color:var(--dark)}
+.pi-dist{font-size:10px;color:var(--green);margin-top:2px;font-weight:500}
 /* 토스트 */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--dark);color:white;padding:10px 20px;border-radius:20px;font-size:13px;transition:transform .3s;z-index:9999}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -206,7 +211,10 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
     </div>
   </div>
 
-  <div id="map"></div>
+  <div style="position:relative;flex:1;display:flex">
+    <div id="map" style="flex:1"></div>
+    <button class="my-loc-btn" id="locBtn" onclick="toggleTracking()" title="내 위치">📍</button>
+  </div>
 </div>
 
 <!-- 카테고리 변경 모달 -->
@@ -258,6 +266,7 @@ let places = [], cats = [...DEFAULT_CATS];
 let markers = [], iws = [], map, curFilter = '전체';
 let editingPlaceId = null;
 let myNick = localStorage.getItem('datemap-nick') || '';
+let myLocMarker = null, myLocOverlay = null, watchId = null, myLat = null, myLng = null;
 
 const REST_KEY = 'f05925b16ad652c4bb02b5aac5e56b06';
 
@@ -506,6 +515,7 @@ function renderList() {
         <div class="pi-cat" style="background:${c.bg};color:${c.color}" onclick="event.stopPropagation();openCatModal(${p.id})" title="클릭해서 카테고리 변경">${c.emoji} ${c.name}</div>
       </div>
       ${p.addr?`<div class="pi-addr">📍 ${p.addr}</div>`:''}
+      ${myLat!==null&&p.lat?`<div class="pi-dist">📐 ${formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng))}</div>`:''}
       ${p.memo?`<div class="pi-memo">${p.memo}</div>`:''}
       ${renderRatingBlock(p)}
       <div class="pi-acts">
@@ -603,6 +613,68 @@ function confirmClear() {
   places=[]; saveData(); renderAll();
   document.getElementById('clearModal').classList.remove('open');
   toast('초기화됐어요');
+}
+
+// ── 내 위치 ──
+function toggleTracking() {
+  if (watchId !== null) { stopTracking(); return; }
+  if (!navigator.geolocation) { toast('이 브라우저에서 위치를 지원하지 않아요'); return; }
+  document.getElementById('locBtn').classList.add('tracking');
+  watchId = navigator.geolocation.watchPosition(pos => {
+    myLat = pos.coords.latitude;
+    myLng = pos.coords.longitude;
+    updateMyLocMarker();
+    renderList(); // 거리 업데이트
+  }, err => {
+    toast('위치 권한을 허용해주세요');
+    stopTracking();
+  }, { enableHighAccuracy: true, maximumAge: 5000 });
+  // 처음에 현재 위치로 이동
+  navigator.geolocation.getCurrentPosition(pos => {
+    myLat = pos.coords.latitude;
+    myLng = pos.coords.longitude;
+    updateMyLocMarker();
+    map.setCenter(new kakao.maps.LatLng(myLat, myLng));
+    map.setLevel(4);
+    renderList();
+  });
+  toast('📍 내 위치 추적 시작');
+}
+
+function stopTracking() {
+  if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
+  document.getElementById('locBtn').classList.remove('tracking');
+  if (myLocMarker) { myLocMarker.setMap(null); myLocMarker = null; }
+  if (myLocOverlay) { myLocOverlay.setMap(null); myLocOverlay = null; }
+  myLat = null; myLng = null;
+  renderList();
+  toast('위치 추적 종료');
+}
+
+function updateMyLocMarker() {
+  if (!map || myLat === null) return;
+  const pos = new kakao.maps.LatLng(myLat, myLng);
+  if (!myLocOverlay) {
+    const el = document.createElement('div');
+    el.innerHTML = '<div style="width:16px;height:16px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(66,133,244,.5)"></div>';
+    myLocOverlay = new kakao.maps.CustomOverlay({ position: pos, content: el, zIndex: 999 });
+    myLocOverlay.setMap(map);
+  } else {
+    myLocOverlay.setPosition(pos);
+  }
+}
+
+function getDistanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2-lat1)*Math.PI/180;
+  const dLng = (lng2-lng1)*Math.PI/180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function formatDist(km) {
+  if (km < 1) return Math.round(km*1000) + 'm';
+  return km.toFixed(1) + 'km';
 }
 
 // ── 닉네임 ──
