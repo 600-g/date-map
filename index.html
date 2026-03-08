@@ -1024,17 +1024,41 @@ let _wc = { candidates:[], round:[], roundIdx:0, winners:[], totalLabel:'' };
 function startWorldCup() {
   const visited = places.filter(p => p.visited);
   if (visited.length < 2) { toast('다녀온 장소가 2개 이상이어야 해요'); return; }
-  // 강수 결정: 2,4,8,16,32,64 중 후보 수 이하 최대값
+  document.getElementById('wcModal').classList.add('open');
+  // 카테고리 선택 화면
+  const body = document.getElementById('wcBody');
+  const roundInfo = document.getElementById('wcRound');
+  roundInfo.textContent = '카테고리를 선택하세요';
+  // 카테고리별 방문 장소 수 계산
+  const catCounts = {};
+  visited.forEach(p => { catCounts[p.cat] = (catCounts[p.cat]||0) + 1; });
+  let html = `<div style="display:flex;flex-direction:column;gap:6px">`;
+  html += `<button class="btn btn-dark btn-sm" style="width:100%;padding:10px" onclick="launchWc('all')">🏆 전체 (${visited.length}곳)</button>`;
+  cats.forEach(c => {
+    const cnt = catCounts[c.id] || 0;
+    if (cnt >= 2) {
+      html += `<button class="btn btn-outline btn-sm" style="width:100%;padding:10px;display:flex;align-items:center;gap:6px;justify-content:center" onclick="launchWc('${c.id}')">
+        <span style="width:20px;height:20px;background:${c.color};border-radius:50%;display:inline-flex;align-items:center;justify-content:center">${svgSized(getIcon(c.emoji),12)||c.emoji}</span>
+        ${c.name} (${cnt}곳)
+      </button>`;
+    }
+  });
+  html += `</div>`;
+  body.innerHTML = html;
+}
+
+function launchWc(catId) {
+  let pool = places.filter(p => p.visited);
+  if (catId !== 'all') pool = pool.filter(p => p.cat === catId);
+  if (pool.length < 2) { toast('2개 이상 필요해요'); return; }
   let sizes = [64,32,16,8,4,2];
-  let size = sizes.find(s => s <= visited.length) || 2;
-  // 셔플
-  let pool = [...visited].sort(() => Math.random() - 0.5).slice(0, size);
+  let size = sizes.find(s => s <= pool.length) || 2;
+  pool = [...pool].sort(() => Math.random() - 0.5).slice(0, size);
   _wc.candidates = pool;
   _wc.round = [...pool];
   _wc.roundIdx = 0;
   _wc.winners = [];
-  _wc.totalLabel = size + '강';
-  document.getElementById('wcModal').classList.add('open');
+  _wc.catId = catId;
   renderWcRound();
 }
 
@@ -2251,7 +2275,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 99;
+const APP_VERSION = 100;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
