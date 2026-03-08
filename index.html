@@ -78,9 +78,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .bx.vis{background:var(--green);color:white;border-color:var(--green)}
 .bx.del:hover{border-color:var(--red);color:var(--red);background:#FFF5F5}
 /* 사진 */
+.pi-photo-btn{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:var(--brown);cursor:pointer;padding:2px 0;margin-top:2px}
+.pi-photo-btn:hover{color:var(--dark)}
 .pi-photos{display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center}
 .pi-photo{width:56px;height:56px;border-radius:8px;object-fit:cover;cursor:pointer;border:1px solid #eee}
-.pi-photo-add{width:56px;height:56px;border-radius:8px;border:1.5px dashed #ccc;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#bbb;font-size:20px;background:#fafafa;flex-shrink:0}
+.pi-photo-add{width:36px;height:36px;border-radius:6px;border:1.5px dashed #ccc;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#bbb;font-size:16px;background:#fafafa;flex-shrink:0}
 .pi-photo-add:hover{border-color:var(--brown);color:var(--brown);background:var(--cream)}
 .photo-viewer{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:10000;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px}
 .photo-viewer img{max-width:90vw;max-height:75vh;border-radius:8px;object-fit:contain}
@@ -1068,19 +1070,30 @@ function viewPhoto(id, idx) {
 function deletePhoto(id, idx) {
   const p = places.find(x => x.id === id);
   if (!p || !p.photos) return;
+  document.querySelector('.photo-viewer')?.remove();
   p.photos.splice(idx, 1);
   saveData(); renderAll();
-  document.querySelector('.photo-viewer')?.remove();
   toast('사진 삭제됨');
+}
+
+function togglePhotos(id) {
+  const el = document.getElementById('photos-'+id);
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'flex' : 'none';
 }
 
 function renderPhotos(p) {
   if (!p.photos) p.photos = [];
-  let html = '<div class="pi-photos">';
+  const cnt = p.photos.length;
+  let html = `<span class="pi-photo-btn" onclick="event.stopPropagation();${cnt ? `togglePhotos(${p.id})` : `addPhoto(${p.id})`}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>`;
+  if (cnt) html += ` ${cnt}`;
+  else html += ` 사진 추가`;
+  html += `</span>`;
+  html += `<div class="pi-photos" id="photos-${p.id}" style="display:none">`;
   p.photos.forEach((src, i) => {
     html += `<img class="pi-photo" src="${src}" onclick="event.stopPropagation();viewPhoto(${p.id},${i})">`;
   });
-  if (p.photos.length < 3) {
+  if (cnt < 3) {
     html += `<div class="pi-photo-add" onclick="event.stopPropagation();addPhoto(${p.id})">+</div>`;
   }
   html += '</div>';
@@ -2125,7 +2138,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 95;
+const APP_VERSION = 96;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
