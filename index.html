@@ -101,6 +101,15 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .my-loc-btn:hover{background:var(--cream);box-shadow:0 2px 12px rgba(0,0,0,.2)}
 .my-loc-btn.tracking{background:#4285F4;color:white;border-color:#4285F4;box-shadow:0 0 12px rgba(66,133,244,.4)}
 .pi-dist{font-size:10px;color:var(--green);margin-top:2px;font-weight:500}
+/* lucide 아이콘 */
+.lc{display:inline-flex;align-items:center;vertical-align:middle}
+.lc svg{width:14px;height:14px;stroke-width:2}
+.lc-sm svg{width:12px;height:12px}
+.lc-lg svg{width:18px;height:18px}
+header .lc svg{width:16px;height:16px}
+.tab .lc svg{width:13px;height:13px}
+.my-loc-btn .lc svg{width:20px;height:20px}
+.empty .lc svg{width:36px;height:36px;stroke-width:1.5}
 /* 토스트 */
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--dark);color:white;padding:10px 20px;border-radius:20px;font-size:13px;transition:transform .3s;z-index:9999}
 .toast.show{transform:translateX(-50%) translateY(0)}
@@ -110,21 +119,23 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
   #map{height:52vh}
 }
 </style>
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@0.344.0/dist/umd/lucide.min.js"></script>
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <header>
-  <h1>🗺️ 우리 데이트 맵</h1>
+  <h1><i data-lucide="map-pinned" class="lc"></i> 우리 데이트 맵</h1>
   <div class="badge"><div class="dot"></div><span id="cnt">0</span>개 장소</div>
 </header>
 <div class="main">
   <div class="panel">
     <div class="tabs">
-      <button class="tab active" onclick="showTab('list')">📍 목록</button>
-      <button class="tab" onclick="showTab('add')">➕ 추가</button>
-      <button class="tab" onclick="showTab('cfg')">⚙️ 설정/공유</button>
+      <button class="tab active" onclick="showTab('list')"><i data-lucide="list" class="lc lc-sm"></i> 목록</button>
+      <button class="tab" onclick="showTab('add')"><i data-lucide="plus-circle" class="lc lc-sm"></i> 추가</button>
+      <button class="tab" onclick="showTab('cfg')"><i data-lucide="settings" class="lc lc-sm"></i> 설정</button>
     </div>
 
     <!-- 목록 탭 -->
@@ -133,14 +144,14 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
         <button class="fb active" onclick="setFilter(this,'전체')">전체</button>
       </div>
       <div class="place-list" id="placeList">
-        <div class="empty"><div class="ico">📍</div><p>아직 장소가 없어요<br>추가 탭에서 더해보세요</p></div>
+        <div class="empty"><div class="ico"><i data-lucide="map-pin" class="lc"></i></div><p>아직 장소가 없어요<br>추가 탭에서 더해보세요</p></div>
       </div>
     </div>
 
     <!-- 추가 탭 -->
     <div id="tab-add" class="tab-content">
       <div class="add-wrap">
-        <div class="lbl">🔍 카카오 장소 검색</div>
+        <div class="lbl"><i data-lucide="search" class="lc lc-sm"></i> 카카오 장소 검색</div>
         <div class="row" style="margin-bottom:6px">
           <input id="sq" type="text" placeholder="예: 안국 한옥카페" onkeydown="if(event.key==='Enter')doSearch()">
           <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" onclick="doSearch()">검색</button>
@@ -162,7 +173,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
         </div>
 
         <hr class="div" style="margin:10px 0">
-        <div class="lbl">✏️ 직접 입력</div>
+        <div class="lbl"><i data-lucide="pencil" class="lc lc-sm"></i> 직접 입력</div>
         <input id="mName" type="text" placeholder="장소 이름 *">
         <input id="mAddr" type="text" placeholder="주소 (선택 — 지도 핀 위치용)">
         <div class="lbl" style="margin-top:0">카테고리</div>
@@ -178,7 +189,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
       <div class="cfg-wrap">
 
         <!-- 카테고리 관리 -->
-        <div class="s-title">🏷 카테고리 관리</div>
+        <div class="s-title"><i data-lucide="tags" class="lc lc-sm"></i> 카테고리 관리</div>
         <div class="s-desc">이름/이모지/색상 편집, 드래그로 순서 변경</div>
         <div class="cat-list" id="catList"></div>
         <button class="btn btn-outline btn-sm" style="width:100%;margin-bottom:4px" onclick="addCat()">+ 카테고리 추가</button>
@@ -187,19 +198,19 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
         <hr class="div">
 
         <!-- 공유 -->
-        <div class="s-title">📤 내보내기</div>
+        <div class="s-title"><i data-lucide="upload" class="lc lc-sm"></i> 내보내기</div>
         <div class="s-desc">코드를 복사해서 카카오톡으로 보내세요</div>
         <div class="code-box" id="exportCode">장소를 추가하면 코드가 생성돼요</div>
         <button class="btn btn-dark" style="width:100%;margin-bottom:6px" onclick="copyCode()">코드 복사하기</button>
 
         <hr class="div">
-        <div class="s-title">📥 불러오기</div>
+        <div class="s-title"><i data-lucide="download" class="lc lc-sm"></i> 불러오기</div>
         <div class="s-desc">받은 코드를 붙여넣으면 장소가 합쳐져요</div>
         <textarea id="importTxt" rows="3" placeholder="코드 붙여넣기" style="resize:none;font-family:monospace;font-size:11px"></textarea>
         <button class="btn btn-dark" style="width:100%;margin-bottom:6px" onclick="importCode()">불러오기</button>
 
         <hr class="div">
-        <div class="s-title">👤 내 닉네임</div>
+        <div class="s-title"><i data-lucide="user" class="lc lc-sm"></i> 내 닉네임</div>
         <div class="s-desc">별점에 표시되는 이름</div>
         <div class="row" style="margin-bottom:6px">
           <input id="nickChange" type="text" style="margin-bottom:0">
@@ -207,7 +218,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
         </div>
 
         <hr class="div">
-        <div class="s-title">🗑 초기화</div>
+        <div class="s-title"><i data-lucide="trash-2" class="lc lc-sm"></i> 초기화</div>
         <div class="s-desc">모든 장소를 삭제합니다</div>
         <button class="btn btn-outline" style="width:100%" onclick="clearAll()">전체 초기화</button>
       </div>
@@ -216,7 +227,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 
   <div style="position:relative;flex:1;display:flex">
     <div id="map" style="flex:1"></div>
-    <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료">📍</button>
+    <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
   </div>
 </div>
 
@@ -232,7 +243,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 <!-- 초기화 확인 모달 -->
 <div class="modal-overlay" id="clearModal">
   <div class="modal" style="text-align:center">
-    <div style="font-size:32px;margin-bottom:10px">🗑</div>
+    <div style="margin-bottom:10px"><i data-lucide="alert-triangle" class="lc" style="color:var(--red)"></i></div>
     <h3 style="margin-bottom:8px">정말 초기화할까요?</h3>
     <p style="font-size:12px;color:var(--brown);margin-bottom:16px;line-height:1.6">저장된 장소가 모두 삭제돼요<br>이 작업은 되돌릴 수 없어요</p>
     <div style="display:flex;gap:8px">
@@ -245,7 +256,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 <!-- 장소 삭제 확인 모달 -->
 <div class="modal-overlay" id="delModal">
   <div class="modal" style="text-align:center">
-    <div style="font-size:32px;margin-bottom:10px">🗑</div>
+    <div style="margin-bottom:10px"><i data-lucide="trash-2" class="lc lc-lg" style="color:var(--red)"></i></div>
     <h3 style="margin-bottom:8px"><span id="delPlaceName"></span></h3>
     <p style="font-size:12px;color:var(--brown);margin-bottom:16px;line-height:1.6">이 장소를 삭제할까요?</p>
     <div style="display:flex;gap:8px">
@@ -258,7 +269,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 <!-- 닉네임 설정 모달 -->
 <div class="modal-overlay" id="nickModal">
   <div class="modal" style="text-align:center">
-    <div style="font-size:32px;margin-bottom:10px">👋</div>
+    <div style="margin-bottom:10px"><i data-lucide="smile" class="lc lc-lg" style="color:var(--green)"></i></div>
     <h3 style="margin-bottom:8px">닉네임을 알려주세요</h3>
     <p style="font-size:12px;color:var(--brown);margin-bottom:12px;line-height:1.6">별점에 이름이 표시돼요</p>
     <input id="nickInput" type="text" placeholder="예: 개떡, 찰떡" style="text-align:center;margin-bottom:10px">
@@ -562,13 +573,14 @@ function renderAll() {
   document.getElementById('cnt').textContent = places.length;
   populateCatSelect();
   updateExport();
+  try { lucide.createIcons(); } catch(e) {}
 }
 
 function renderList() {
   const list = document.getElementById('placeList');
   const f = curFilter==='전체' ? places : places.filter(p=>p.cat===curFilter);
   if (!f.length) {
-    list.innerHTML='<div class="empty"><div class="ico">📍</div><p>장소가 없어요</p></div>'; return;
+    list.innerHTML='<div class="empty"><div class="ico"><i data-lucide="map-pin" class="lc"></i></div><p>장소가 없어요</p></div>'; lucide.createIcons(); return;
   }
   list.innerHTML = f.map(p => {
     const c = getCat(p.cat);
@@ -578,18 +590,19 @@ function renderList() {
         <div class="pi-name">${p.name}</div>
         <div class="pi-cat" style="background:${c.bg};color:${c.color}" onclick="event.stopPropagation();openCatModal(${p.id})" title="클릭해서 카테고리 변경">${c.emoji} ${c.name}</div>
       </div>
-      ${p.addr?`<div class="pi-addr">📍 ${p.addr}</div>`:''}
-      ${myLat!==null&&p.lat?`<div class="pi-dist">📐 ${formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng))}</div>`:''}
+      ${p.addr?`<div class="pi-addr"><i data-lucide="map-pin" class="lc lc-sm"></i> ${p.addr}</div>`:''}
+      ${myLat!==null&&p.lat?`<div class="pi-dist"><i data-lucide="ruler" class="lc lc-sm"></i> ${formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng))}</div>`:''}
       ${p.memo?`<div class="pi-memo">${p.memo}</div>`:''}
       ${renderRatingBlock(p)}
       <div class="pi-acts">
-        <button class="bx${p.visited?' vis':''}" onclick="event.stopPropagation();toggleV(${p.id})">${p.visited?'✅ 다녀옴':'⬜ 미방문'}</button>
-        <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})">🗺 카카오</button>
-        <button class="bx" onclick="event.stopPropagation();openNaverMap(${p.id})">🟢 네이버</button>
-        <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})">삭제</button>
+        <button class="bx${p.visited?' vis':''}" onclick="event.stopPropagation();toggleV(${p.id})"><i data-lucide="${p.visited?'check-circle':'circle'}" class="lc lc-sm"></i> ${p.visited?'다녀옴':'미방문'}</button>
+        <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})"><i data-lucide="map" class="lc lc-sm"></i> 카카오</button>
+        <button class="bx" onclick="event.stopPropagation();openNaverMap(${p.id})"><i data-lucide="navigation" class="lc lc-sm"></i> 네이버</button>
+        <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})"><i data-lucide="trash-2" class="lc lc-sm"></i></button>
       </div>
     </div>`;
   }).join('');
+  lucide.createIcons();
 }
 
 function renderMarkers() {
@@ -897,6 +910,7 @@ window.addEventListener('load', () => {
   script.onload = () => kakao.maps.load(initMap);
   document.head.appendChild(script);
   renderAll();
+  lucide.createIcons();
 });
 </script>
 </body>
