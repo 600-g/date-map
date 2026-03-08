@@ -1229,18 +1229,24 @@ window.addEventListener('load', () => {
   renderAll();
   lucide.createIcons();
 
-  // Service Worker 등록
+  // Service Worker 등록 + 자동 업데이트
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('sw.js').then(reg => {
-      // 새 버전 감지 시 자동 업데이트
       reg.onupdatefound = () => {
         const sw = reg.installing;
         sw.onstatechange = () => {
-          if (sw.state === 'activated') {
-            toast('새 버전이 적용됐어요!');
+          if (sw.state === 'activated' && navigator.serviceWorker.controller) {
+            // 기존 SW가 있었던 경우 = 업데이트 → 자동 새로고침
+            window.location.reload();
           }
         };
       };
+      // 주기적으로 새 버전 체크 (30분마다)
+      setInterval(() => reg.update(), 30 * 60 * 1000);
+    });
+    // 다른 탭에서 SW가 교체되면 이 탭도 새로고침
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
     });
   }
 });
