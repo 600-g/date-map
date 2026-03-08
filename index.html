@@ -21,7 +21,7 @@ header h1{font-family:'Noto Serif KR',serif;font-size:15px;font-weight:600}
 .badge{font-size:11px;background:var(--green);color:white;padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:5px}
 .dot{width:6px;height:6px;background:#7FD49A;border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-@keyframes locPulse{0%{transform:scale(1);opacity:.4}100%{transform:scale(2.5);opacity:0}}
+@keyframes locPulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.2);opacity:0}}
 .main{display:flex;flex:1;overflow:hidden}
 .panel{width:320px;background:white;border-right:1px solid var(--warm);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
 #map{flex:1;background:#e8e0d8;touch-action:auto}
@@ -1020,7 +1020,11 @@ function updateMyLocMarker() {
   const pos = new kakao.maps.LatLng(myLat, myLng);
   if (!myLocOverlay) {
     const el = document.createElement('div');
-    el.innerHTML = '<div style="position:relative;width:28px;height:28px;display:flex;align-items:center;justify-content:center"><div style="position:absolute;width:28px;height:28px;background:rgba(66,133,244,.15);border-radius:50%;animation:locPulse 2s infinite"></div><div style="width:14px;height:14px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 6px rgba(66,133,244,.6);position:relative;z-index:1"></div></div>';
+    el.innerHTML = '<div style="position:relative;width:48px;height:48px;display:flex;align-items:center;justify-content:center">' +
+      '<div style="position:absolute;width:48px;height:48px;background:rgba(66,133,244,.12);border-radius:50%;animation:locPulse 2s infinite"></div>' +
+      '<div style="position:absolute;width:32px;height:32px;background:rgba(66,133,244,.2);border-radius:50%"></div>' +
+      '<div style="width:18px;height:18px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(66,133,244,.7);position:relative;z-index:1"></div>' +
+      '</div>';
     myLocOverlay = new kakao.maps.CustomOverlay({ position: pos, content: el, zIndex: 999 });
     myLocOverlay.setMap(map);
   } else {
