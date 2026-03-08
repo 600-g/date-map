@@ -1,4 +1,4 @@
-const CACHE_NAME = 'datemap-v48';
+const CACHE_NAME = 'datemap-v49';
 const ASSETS = [
   '/date-map/',
   '/date-map/index.html',

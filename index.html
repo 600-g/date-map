@@ -105,15 +105,15 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .cat-handle{cursor:grab;color:var(--brown);font-size:16px;padding:4px 6px;flex-shrink:0;touch-action:none;user-select:none;-webkit-user-select:none}
 .cat-handle:active{cursor:grabbing}
 .cat-row.dragging{opacity:.4;background:var(--warm);transform:scale(0.95)}
-.cat-row.drag-over{box-shadow:0 -3px 0 0 var(--green);background:#e8f5e9;transition:background 0.1s}
-.cat-row.touch-dragging{z-index:100;box-shadow:0 4px 12px rgba(0,0,0,0.25);transform:scale(1.04);background:white;opacity:.9}
+.cat-row.drag-over{box-shadow:0 -3px 0 0 var(--accent);background:#EEF0FF;border:1px dashed var(--accent);transition:all 0.15s}
+.cat-row.touch-dragging{z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.3);transform:scale(1.04);background:white;opacity:.95;border:1px solid var(--accent)}
 .cat-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:15px;padding:4px 6px;flex-shrink:0}
 .cat-del:hover{color:var(--red)}
 .cat-summary-item{display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:12px;margin:2px;border:1px solid var(--warm);background:white}
 .cat-summary-item svg{width:12px;height:12px}
 .save-success{background:var(--green) !important;border-color:var(--green) !important}
 /* 지도 정보창 버튼 */
-.iw-btn{font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
+.iw-btn{font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:3px 6px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap;min-width:28px;min-height:28px}
 .iw-btn svg{width:14px;height:14px;flex-shrink:0}
 .iw-btn:hover{background:#f5f0e8;border-color:#8B6F5E}
 /* 모달 - 카테고리 변경 */
@@ -155,8 +155,10 @@ header .lc svg{width:18px;height:18px}
 .add-panel{border-bottom:1px solid var(--warm);background:#FAFAF7;max-height:0;overflow:hidden;transition:max-height .3s ease}
 .add-panel.open{max-height:600px;overflow-y:auto;display:block}
 /* 주변 검색 */
-.nearby-bar{position:absolute;top:12px;left:12px;z-index:10;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 70px);transition:opacity .2s}
+.nearby-bar{position:absolute;top:12px;left:12px;z-index:10;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 70px);transition:opacity .2s,visibility .2s}
+.nearby-bar.hidden{opacity:0;pointer-events:none;visibility:hidden}
 .nb-btn{font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.12);transition:all .15s;white-space:nowrap}
+.nb-btn svg{width:14px;height:14px;flex-shrink:0;vertical-align:middle}
 .nb-btn:hover,.nb-btn.active{background:var(--dark);color:white;border-color:var(--dark)}
 /* 토스트 */
 .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(120px);background:rgba(26,26,46,.92);backdrop-filter:blur(8px);color:white;padding:11px 22px;border-radius:14px;font-size:13px;transition:transform .3s,opacity .3s;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;pointer-events:none}
@@ -293,7 +295,7 @@ header .lc svg{width:18px;height:18px}
       <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마 OR 영화관','영화관',this,'movie')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#1A1A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg> 영화관</button>
       <button class="nb-btn" onclick="searchNearby('CS2','편의점',this,'conv')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg> 편의점</button>
       <button class="nb-btn" onclick="searchNearby('PM9','약국',this,'pharmacy')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14"><rect x="9" y="3" width="6" height="18" rx="1" fill="#E74C3C"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#E74C3C"/></svg> 약국</button>
-      <button class="nb-btn" onclick="searchNearbyKeyword('공중화장실 OR 화장실','화장실',this,'toilet')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="4" r="2" fill="#3498DB" stroke="#3498DB"/><path d="M5 9h6v3l-1 8H6l-1-8V9z" fill="#3498DB" stroke="none"/><circle cx="17" cy="4" r="2" fill="#E74C3C" stroke="#E74C3C"/><path d="M14 9h6v2l-1.5 6h-1l-.5-4-.5 4h-1L14 11V9z" fill="#E74C3C" stroke="none"/></svg> 화장실</button>
+      <button class="nb-btn" onclick="searchNearbyKeyword('공중화장실 OR 화장실','화장실',this,'toilet')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none"><circle cx="7" cy="4" r="2.2" fill="#3498DB"/><rect x="4.5" y="8" width="5" height="3" rx=".5" fill="#3498DB"/><rect x="5.5" y="11" width="3" height="7" rx=".5" fill="#3498DB"/><circle cx="17" cy="4" r="2.2" fill="#E74C3C"/><path d="M14 8h6l-.5 2h-5L14 8z" fill="#E74C3C"/><path d="M14.5 10h5l-.3 1.5-1.7 6.5h-1l-1.7-6.5L14.5 10z" fill="#E74C3C"/></svg> 화장실</button>
     </div>
   </div>
 </div>
@@ -1230,7 +1232,7 @@ function renderMarkers() {
       if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
       focusedPlaceId = p.id;
       const nb = document.getElementById('nearbyBar');
-      if (nb) { nb.style.opacity = '0'; nb.style.pointerEvents = 'none'; }
+      if (nb) nb.classList.add('hidden');
     };
     marker.setMap(map);
     markers.push(marker); iws.push(iw);
@@ -1261,7 +1263,7 @@ function closeAllIw() {
   document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
   focusedPlaceId = null;
   const nb = document.getElementById('nearbyBar');
-  if (nb) { nb.style.opacity = '1'; nb.style.pointerEvents = 'auto'; }
+  if (nb) nb.classList.remove('hidden');
 }
 function focusPlace(id) {
   const p=places.find(x=>x.id===id); if(!p) return;
@@ -1274,7 +1276,7 @@ function focusPlace(id) {
   focusedPlaceId = id;
   if (iwMap[id]) iwMap[id].setMap(map);
   const nb = document.getElementById('nearbyBar');
-  if (nb) { nb.style.opacity = '0'; nb.style.pointerEvents = 'none'; }
+  if (nb) nb.classList.add('hidden');
 }
 
 function toggleV(id) {
@@ -1382,7 +1384,7 @@ const NEARBY_ICONS = {
   movie: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1A1A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg>',
   conv: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg>',
   pharmacy: '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="9" y="3" width="6" height="18" rx="1" fill="#E74C3C"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#E74C3C"/></svg>',
-  toilet: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="4" r="2.2" fill="#3498DB" stroke="#3498DB"/><path d="M5 9h6v3l-1 8H6l-1-8V9z" fill="#3498DB" stroke="none"/><circle cx="17" cy="4" r="2.2" fill="#E74C3C" stroke="#E74C3C"/><path d="M14 9h6v2l-1.5 6h-1l-.5-4-.5 4h-1L14 11V9z" fill="#E74C3C" stroke="none"/></svg>',
+  toilet: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="7" cy="4" r="2.2" fill="#3498DB"/><rect x="4.5" y="8" width="5" height="3" rx=".5" fill="#3498DB"/><rect x="5.5" y="11" width="3" height="7" rx=".5" fill="#3498DB"/><circle cx="17" cy="4" r="2.2" fill="#E74C3C"/><path d="M14 8h6l-.5 2h-5L14 8z" fill="#E74C3C"/><path d="M14.5 10h5l-.3 1.5-1.7 6.5h-1l-1.7-6.5L14.5 10z" fill="#E74C3C"/></svg>',
 };
 function renderNearbyResults(docs, iconKey) {
   const svgIcon = NEARBY_ICONS[iconKey] || '';
@@ -1667,17 +1669,23 @@ function changeNick() {
       delete p.ratings[oldNick];
     }
   });
-  saveData(); renderAll();
+  saveData();
+  const newNick = myNick;
+  renderAll();
   // renderAll 이후 DOM 재설정
-  document.getElementById('nickChange').value = myNick;
-  document.getElementById('currentNick').textContent = myNick;
-  const btn = document.getElementById('nickBtn');
-  if (btn) {
-    btn.textContent = '✅ 저장됨';
-    btn.classList.add('save-success');
-    setTimeout(() => { const b = document.getElementById('nickBtn'); if(b){b.textContent='변경';b.classList.remove('save-success');} }, 1500);
-  }
-  toast('닉네임이 "' + myNick + '"(으)로 변경됐어요');
+  setTimeout(() => {
+    const ni = document.getElementById('nickChange');
+    if (ni) ni.value = newNick;
+    const cn = document.getElementById('currentNick');
+    if (cn) cn.textContent = newNick;
+    const btn = document.getElementById('nickBtn');
+    if (btn) {
+      btn.textContent = '저장됨';
+      btn.classList.add('save-success');
+      setTimeout(() => { const b = document.getElementById('nickBtn'); if(b){b.textContent='변경';b.classList.remove('save-success');} }, 1500);
+    }
+    toast('닉네임이 "' + newNick + '"(으)로 변경됐어요');
+  }, 100);
 }
 
 // ── 별점 ──
@@ -1745,7 +1753,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 47;
+const APP_VERSION = 48;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
