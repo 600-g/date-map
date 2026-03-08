@@ -170,6 +170,7 @@ header .lc svg{width:16px;height:16px}
       <div class="filter-bar" id="filterBar">
         <button class="fb active" onclick="setFilter(this,'전체')">전체</button>
       </div>
+      <div id="myLocStatus" style="display:none;padding:6px 12px;font-size:11px;color:var(--green);background:#e8f5e9;border-bottom:1px solid var(--warm);display:flex;align-items:center;gap:6px"></div>
       <div class="place-list" id="placeList">
         <div class="empty"><div class="ico"><i data-lucide="map-pin" class="lc"></i></div><p>아직 장소가 없어요<br>추가 탭에서 더해보세요</p></div>
       </div>
@@ -390,6 +391,7 @@ function initMap() {
   kakao.maps.event.addListener(map, 'click', () => {
     iws.forEach(w=>w.close());
     document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
+    focusedPlaceId = null;
   });
   renderAll();
 }
@@ -725,6 +727,13 @@ function renderAll() {
 
 function renderList() {
   const list = document.getElementById('placeList');
+  const locStatus = document.getElementById('myLocStatus');
+  if (myLat !== null && watchId !== null) {
+    locStatus.style.display = 'flex';
+    locStatus.innerHTML = `<span style="width:8px;height:8px;background:#4285F4;border-radius:50%;display:inline-block;animation:pulse 2s infinite"></span> 내 위치 추적 중 · 가까운 순 정렬`;
+  } else {
+    locStatus.style.display = 'none';
+  }
   let f = curFilter==='전체' ? [...places] : places.filter(p=>p.cat===curFilter);
   // 위치 추적 중이면 가까운 순 정렬
   if (myLat !== null) {
@@ -794,10 +803,17 @@ function renderMarkers() {
 
     const iw = new kakao.maps.InfoWindow({ content: iwContent });
     markerEl.onclick = () => {
+      if (focusedPlaceId === p.id) {
+        iws.forEach(w=>w.close());
+        document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
+        focusedPlaceId = null;
+        return;
+      }
       iws.forEach(w=>w.close()); iw.open(map);
       document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
       const el=document.getElementById('pi-'+p.id);
       if(el){el.classList.add('sel');el.scrollIntoView({behavior:'smooth',block:'nearest'});}
+      focusedPlaceId = p.id;
     };
     marker.setMap(map);
     markers.push(marker); iws.push(iw);
@@ -810,13 +826,22 @@ function renderMarkers() {
   }
 }
 
+let focusedPlaceId = null;
 function focusPlace(id) {
   const p=places.find(x=>x.id===id); if(!p) return;
+  // 같은 장소 다시 누르면 닫기
+  if (focusedPlaceId === id) {
+    iws.forEach(w=>w.close());
+    document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
+    focusedPlaceId = null;
+    return;
+  }
   map.setCenter(new kakao.maps.LatLng(p.lat,p.lng)); map.setLevel(3);
   document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
   document.getElementById('pi-'+id)?.classList.add('sel');
   const idx=places.indexOf(p);
   iws.forEach(w=>w.close()); iws[idx]?.open(map,markers[idx]);
+  focusedPlaceId = id;
 }
 
 function toggleV(id) {
