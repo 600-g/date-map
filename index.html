@@ -1253,7 +1253,8 @@ function changeNick() {
   btn.textContent = '✅ 저장됨';
   btn.classList.add('save-success');
   setTimeout(() => { btn.textContent = '변경'; btn.classList.remove('save-success'); }, 1500);
-  toast('닉네임이 "' + myNick + '"(으)로 변경됨');
+  // renderAll 후 약간 딜레이로 토스트 확실히 표시
+  setTimeout(() => toast('✅ 닉네임이 "' + myNick + '"(으)로 변경됐어요'), 100);
 }
 
 // ── 별점 ──
