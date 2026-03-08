@@ -745,20 +745,23 @@ function confirmClear() {
 }
 
 // ── 내 위치 ──
-let locLongPress = null;
+let locPressTimer = null;
+let locWasLong = false;
 
-// 버튼 이벤트 (load 후 등록)
 function setupLocBtn() {
-  const btn = document.getElementById('locBtn');
-  btn.addEventListener('pointerdown', () => {
-    locLongPress = setTimeout(() => { locLongPress = 'long'; stopTracking(); }, 800);
-  });
-  btn.addEventListener('pointerup', () => {
-    if (locLongPress === 'long') { locLongPress = null; return; }
-    clearTimeout(locLongPress); locLongPress = null;
-    handleLocClick();
-  });
-  btn.addEventListener('pointerleave', () => { clearTimeout(locLongPress); locLongPress = null; });
+  const el = document.getElementById('locBtn');
+  // mousedown/up 사용 (pointerdown이 lucide 재렌더 시 유실 가능)
+  el.onmousedown = el.ontouchstart = function(e) {
+    e.preventDefault();
+    locWasLong = false;
+    locPressTimer = setTimeout(() => { locWasLong = true; stopTracking(); }, 800);
+  };
+  el.onmouseup = el.ontouchend = function(e) {
+    e.preventDefault();
+    clearTimeout(locPressTimer);
+    if (!locWasLong) handleLocClick();
+  };
+  el.onmouseleave = function() { clearTimeout(locPressTimer); };
 }
 
 function handleLocClick() {
@@ -775,17 +778,9 @@ function handleLocClick() {
   }
 
   // 추적 시작
+  toast('📍 위치 확인 중...');
   document.getElementById('locBtn').classList.add('tracking');
-  watchId = navigator.geolocation.watchPosition(pos => {
-    myLat = pos.coords.latitude;
-    myLng = pos.coords.longitude;
-    updateMyLocMarker();
-    renderList();
-  }, err => {
-    toast('위치 권한을 허용해주세요');
-    stopTracking();
-  }, { enableHighAccuracy: true, maximumAge: 5000 });
-  // 처음에 현재 위치로 이동
+
   navigator.geolocation.getCurrentPosition(pos => {
     myLat = pos.coords.latitude;
     myLng = pos.coords.longitude;
@@ -793,11 +788,19 @@ function handleLocClick() {
     map.setCenter(new kakao.maps.LatLng(myLat, myLng));
     map.setLevel(4);
     renderList();
+    toast('📍 내 위치 표시 중 (길게 누르면 종료)');
+
+    // 실시간 추적 시작
+    watchId = navigator.geolocation.watchPosition(pos => {
+      myLat = pos.coords.latitude;
+      myLng = pos.coords.longitude;
+      updateMyLocMarker();
+      renderList();
+    }, err => {}, { enableHighAccuracy: true, maximumAge: 5000 });
   }, err => {
-    toast('위치를 가져올 수 없어요. 위치 권한을 확인해주세요');
-    stopTracking();
-  }, { enableHighAccuracy: true, timeout: 10000 });
-  toast('📍 위치 추적 시작 (길게 누르면 종료)');
+    toast('위치를 가져올 수 없어요 (권한: ' + err.code + ')');
+    document.getElementById('locBtn').classList.remove('tracking');
+  }, { enableHighAccuracy: true, timeout: 15000 });
 }
 
 function stopTracking() {
