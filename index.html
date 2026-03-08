@@ -113,7 +113,8 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .cat-summary-item svg{width:12px;height:12px}
 .save-success{background:var(--green) !important;border-color:var(--green) !important}
 /* 지도 정보창 버튼 */
-.iw-btn{font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.iw-btn{font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:4px;white-space:nowrap}
+.iw-btn svg{width:14px;height:14px;flex-shrink:0}
 .iw-btn:hover{background:#f5f0e8;border-color:#8B6F5E}
 /* 모달 - 카테고리 변경 */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center}
@@ -292,7 +293,7 @@ header .lc svg{width:18px;height:18px}
       <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마 OR 영화관','영화관',this,'movie')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#1A1A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg> 영화관</button>
       <button class="nb-btn" onclick="searchNearby('CS2','편의점',this,'conv')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg> 편의점</button>
       <button class="nb-btn" onclick="searchNearby('PM9','약국',this,'pharmacy')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14"><rect x="9" y="3" width="6" height="18" rx="1" fill="#E74C3C"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#E74C3C"/></svg> 약국</button>
-      <button class="nb-btn" onclick="searchNearbyKeyword('공중화장실 OR 화장실','화장실',this,'toilet')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="4" r="2"/><path d="M5 9h6v3l-1 8H6l-1-8V9z"/><circle cx="17" cy="4" r="2"/><path d="M14 9h6l-2 8h-1l-.7-4.5L15.5 17h-1l-2-8z"/></svg> 화장실</button>
+      <button class="nb-btn" onclick="searchNearbyKeyword('공중화장실 OR 화장실','화장실',this,'toilet')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="4" r="2" fill="#3498DB" stroke="#3498DB"/><path d="M5 9h6v3l-1 8H6l-1-8V9z" fill="#3498DB" stroke="none"/><circle cx="17" cy="4" r="2" fill="#E74C3C" stroke="#E74C3C"/><path d="M14 9h6v2l-1.5 6h-1l-.5-4-.5 4h-1L14 11V9z" fill="#E74C3C" stroke="none"/></svg> 화장실</button>
     </div>
   </div>
 </div>
@@ -822,10 +823,13 @@ const SVG_ICONS = {
 };
 const SVG_KEYS = Object.keys(SVG_ICONS);
 
-// SVG 크기 변환 유틸
+// SVG 크기 변환 유틸 (루트 SVG 태그의 width/height만 변경)
 function svgSized(svgStr, size) {
   if (!svgStr) return '';
-  return svgStr.replace(/width="\d+"/g,`width="${size}"`).replace(/height="\d+"/g,`height="${size}"`);
+  let count = 0;
+  const result = svgStr.replace(/width="\d+"/g, m => count++ < 1 ? `width="${size}"` : m);
+  count = 0;
+  return result.replace(/height="\d+"/g, m => count++ < 1 ? `height="${size}"` : m);
 }
 
 // 아이콘 키 → SVG HTML (키가 아닌 경우 그대로 반환 = 이모지 호환)
@@ -1378,7 +1382,7 @@ const NEARBY_ICONS = {
   movie: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1A1A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg>',
   conv: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg>',
   pharmacy: '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="9" y="3" width="6" height="18" rx="1" fill="#E74C3C"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#E74C3C"/></svg>',
-  toilet: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="4" r="2"/><path d="M5 9h6v3l-1 8H6l-1-8V9z"/><circle cx="17" cy="4" r="2"/><path d="M14 9h6l-2 8h-1l-.7-4.5L15.5 17h-1l-2-8z"/></svg>',
+  toilet: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke-width="2" stroke-linecap="round"><circle cx="8" cy="4" r="2.2" fill="#3498DB" stroke="#3498DB"/><path d="M5 9h6v3l-1 8H6l-1-8V9z" fill="#3498DB" stroke="none"/><circle cx="17" cy="4" r="2.2" fill="#E74C3C" stroke="#E74C3C"/><path d="M14 9h6v2l-1.5 6h-1l-.5-4-.5 4h-1L14 11V9z" fill="#E74C3C" stroke="none"/></svg>',
 };
 function renderNearbyResults(docs, iconKey) {
   const svgIcon = NEARBY_ICONS[iconKey] || '';
@@ -1741,7 +1745,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 46;
+const APP_VERSION = 47;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
