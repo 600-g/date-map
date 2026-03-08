@@ -771,9 +771,17 @@ function editEmoji(idx) {
 
 function pickEmoji(idx, emoji) {
   cats[idx].emoji = emoji;
-  autosaveCats();
   closeEmojiPicker();
+  // 즉시 UI 반영 후 저장
   renderCatEditor();
+  renderFilterBar();
+  renderList();
+  renderMarkers();
+  populateCatSelect();
+  // 저장 (비동기)
+  cats.forEach(c=>{ if(!c.id.startsWith('cat_')) c.id=c.name; });
+  saveCatsData();
+  saveData();
 }
 
 function closeEmojiPicker() {
@@ -1596,7 +1604,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 27;
+const APP_VERSION = 28;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
