@@ -115,7 +115,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .empty .ico{font-size:36px;margin-bottom:10px}
 .empty p{font-size:12px;line-height:1.7}
 /* 내 위치 버튼 */
-.my-loc-btn{position:absolute;bottom:20px;right:12px;z-index:10;width:40px;height:40px;border-radius:50%;background:white;border:1px solid var(--warm);box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.my-loc-btn{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom, 0px));right:12px;z-index:10;width:40px;height:40px;border-radius:50%;background:white;border:1px solid var(--warm);box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .my-loc-btn:hover{background:var(--cream);box-shadow:0 2px 12px rgba(0,0,0,.2)}
 .my-loc-btn.tracking{background:#4285F4;color:white;border-color:#4285F4;box-shadow:0 0 12px rgba(66,133,244,.4)}
 .pi-dist{font-size:10px;color:var(--green);margin-top:2px;font-weight:500}
@@ -135,6 +135,7 @@ header .lc svg{width:16px;height:16px}
   .main{flex-direction:column}
   .panel{width:100%;height:48vh;border-right:none;border-bottom:1px solid var(--warm)}
   #map{height:52vh}
+  .my-loc-btn{bottom:calc(16px + env(safe-area-inset-bottom, 0px));right:10px;width:38px;height:38px}
 }
 </style>
 <!-- Lucide Icons -->
@@ -236,7 +237,7 @@ header .lc svg{width:16px;height:16px}
     </div>
   </div>
 
-  <div style="position:relative;flex:1;display:flex">
+  <div style="position:relative;flex:1;display:flex;min-height:0">
     <div id="map" style="flex:1"></div>
     <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
   </div>
@@ -376,6 +377,11 @@ function startRealtimeSync() {
 function initMap() {
   map = new kakao.maps.Map(document.getElementById('map'), {
     center: new kakao.maps.LatLng(37.5665,126.9780), level:5
+  });
+  // 지도 빈 곳 클릭 시 열린 InfoWindow 닫기
+  kakao.maps.event.addListener(map, 'click', () => {
+    iws.forEach(w=>w.close());
+    document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
   });
   renderAll();
 }
