@@ -600,6 +600,12 @@ function closeAddPanel() {
   const btn = document.getElementById('addToggleBtn');
   if (btn) btn.innerHTML = '<i data-lucide="plus" class="lc lc-sm"></i> 추가';
   addPanelOpen = false;
+  // 검색 상태 초기화
+  const sr = document.getElementById('sr'); if (sr) sr.innerHTML = '';
+  const sq = document.getElementById('sq'); if (sq) sq.value = '';
+  const sc = document.getElementById('searchConfirm'); if (sc) sc.style.display = 'none';
+  window._selectedSearch = null;
+  window._srChecked = new Set();
   try { lucide.createIcons(); } catch(e) {}
 }
 
@@ -692,26 +698,35 @@ function batchAddSearch() {
   if (!window._srChecked || !window._srChecked.size) return;
   const cat = cats[0]?.id || '기타';
   let added = 0;
+  const existSet = new Set(places.map(x => x.name + '||' + x.addr));
   window._srChecked.forEach(i => {
     const p = window._sd[i];
     if (!p) return;
-    const ok = addPlace({
-      id: Date.now() + added,
-      name: p.place_name,
-      addr: p.road_address_name || p.address_name,
+    const name = p.place_name;
+    const addr = p.road_address_name || p.address_name;
+    const key = name + '||' + addr;
+    if (existSet.has(key)) return; // 중복 스킵
+    existSet.add(key);
+    places.push({
+      id: Date.now() + added * 100 + Math.floor(Math.random()*99),
+      name, addr,
       lat: parseFloat(p.y), lng: parseFloat(p.x),
       cat, memo: '', visited: false
     });
-    if (ok) added++;
+    added++;
   });
   if (added) {
+    saveData(); renderAll();
     toast(`${added}개 장소 추가됨`);
-    document.getElementById('sr').innerHTML = '';
-    document.getElementById('sq').value = '';
-    window._srChecked = new Set();
-    closeAddPanel();
-    showTab('list');
   }
+  // 항상 창 닫기
+  document.getElementById('sr').innerHTML = '';
+  document.getElementById('sq').value = '';
+  document.getElementById('searchConfirm').style.display = 'none';
+  window._srChecked = new Set();
+  window._selectedSearch = null;
+  closeAddPanel();
+  showTab('list');
 }
 
 function pickSearch(i) {
@@ -768,6 +783,7 @@ function addManual() {
       document.getElementById('mAddr').value='';
       document.getElementById('mMemo').value='';
       closeAddPanel();
+      showTab('list');
     }
   };
 
@@ -1759,7 +1775,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 59;
+const APP_VERSION = 60;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
