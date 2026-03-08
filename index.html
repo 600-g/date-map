@@ -157,7 +157,7 @@ header .lc svg{width:18px;height:18px}
 .list-search-box.collapsed input{display:none}
 .add-toggle-btn{display:flex;align-items:center;gap:3px;border-radius:10px !important;padding:7px 14px !important}
 .add-panel{border-bottom:1px solid var(--warm);background:#FAFAF7;max-height:0;overflow:hidden;transition:max-height .3s ease}
-.add-panel.open{max-height:600px;overflow-y:auto;display:block}
+.add-panel.open{max-height:600px;overflow:hidden;display:block}
 /* 주변 검색 */
 .nearby-bar{position:absolute;top:12px;left:12px;z-index:10;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 70px);transition:opacity .2s,visibility .2s}
 .nearby-bar.hidden{opacity:0;pointer-events:none;visibility:hidden}
@@ -218,12 +218,12 @@ header .lc svg{width:18px;height:18px}
             <input id="sq" type="text" placeholder="예: 안국 한옥카페" onkeydown="if(event.key==='Enter')doSearch()">
             <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" onclick="doSearch()">검색</button>
           </div>
-          <div id="srBatchBar" style="display:none;background:var(--accent);color:white;padding:8px 12px;border-radius:8px;margin-bottom:6px;display:none;align-items:center;justify-content:space-between;cursor:pointer;position:sticky;top:0;z-index:10" onclick="showBatchConfirm()">
+          <div id="srBatchBar" style="display:none;background:var(--accent);color:white;padding:8px 12px;border-radius:8px;margin-bottom:6px;align-items:center;justify-content:space-between;cursor:pointer;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.15)" onclick="showBatchConfirm()">
             <span id="srBatchCount" style="font-size:13px;font-weight:550"></span>
             <span style="font-size:12px;background:rgba(255,255,255,.25);padding:4px 12px;border-radius:6px">추가하기</span>
           </div>
           <div id="sr"></div>
-          <div id="searchConfirm" style="display:none;background:var(--cream);border:1px solid var(--warm);border-radius:8px;padding:12px;margin-top:6px;position:sticky;top:0;z-index:10">
+          <div id="searchConfirm" style="display:none;background:var(--cream);border:1px solid var(--warm);border-radius:8px;padding:12px;margin-top:6px;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.1)">
             <div style="font-size:13px;font-weight:500;margin-bottom:2px" id="scName"></div>
             <div style="font-size:11px;color:var(--brown);margin-bottom:8px" id="scAddr"></div>
             <div class="lbl" style="margin-top:0">카테고리</div>
@@ -548,7 +548,7 @@ function initMap() {
       myLng = pos.coords.longitude;
       localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
       updateMyLocMarker();
-      if (!savedLoc) { map.setCenter(new kakao.maps.LatLng(myLat, myLng)); map.setLevel(4); }
+      map.setCenter(new kakao.maps.LatLng(myLat, myLng));
       renderList();
       if (watchId === null) {
         watchId = navigator.geolocation.watchPosition(wp => {
@@ -564,7 +564,7 @@ function initMap() {
         myLng = pos.coords.longitude;
         localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
         updateMyLocMarker();
-        if (!savedLoc) { map.setCenter(new kakao.maps.LatLng(myLat, myLng)); map.setLevel(4); }
+        map.setCenter(new kakao.maps.LatLng(myLat, myLng));
         renderList();
       }, ()=>{/* 둘 다 실패해도 버튼 ON 유지 */}, {enableHighAccuracy:false, timeout:15000});
     }, {enableHighAccuracy:true, timeout:10000});
@@ -606,20 +606,28 @@ function openAddPanel() {
   try { lucide.createIcons(); } catch(e) {}
 }
 function closeAddPanel() {
+  addPanelOpen = false;
+  // 패널 숨기기
   const panel = document.getElementById('addPanel');
-  if (panel) { panel.classList.remove('open'); panel.style.display = 'none'; panel.style.maxHeight = ''; }
+  if (panel) {
+    panel.classList.remove('open');
+    panel.style.cssText = 'display:none';
+  }
+  // 버튼 복원
   const btn = document.getElementById('addToggleBtn');
   if (btn) btn.innerHTML = '<i data-lucide="plus" class="lc lc-sm"></i> 추가';
-  addPanelOpen = false;
-  // 검색 상태 초기화
-  const sr = document.getElementById('sr'); if (sr) { sr.innerHTML = ''; sr.style.display = ''; }
-  const sq = document.getElementById('sq'); if (sq) sq.value = '';
-  const sc = document.getElementById('searchConfirm'); if (sc) sc.style.display = 'none';
-  const bb = document.getElementById('srBatchBar'); if (bb) bb.style.display = 'none';
+  // 검색 상태 전체 초기화
+  try {
+    document.getElementById('sr').innerHTML = '';
+    document.getElementById('sr').style.display = '';
+    document.getElementById('sq').value = '';
+    document.getElementById('searchConfirm').style.display = 'none';
+    document.getElementById('srBatchBar').style.display = 'none';
+  } catch(e) {}
   window._selectedSearch = null;
   window._srChecked = new Set();
   window._batchMode = false;
-  // 필터바 복원 + 스크롤 상단으로
+  // 필터바 복원 + 스크롤 상단
   document.getElementById('filterBar').style.display = '';
   const pl = document.getElementById('placeList');
   if (pl) pl.scrollTop = 0;
@@ -1870,7 +1878,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 77;
+const APP_VERSION = 78;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
