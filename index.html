@@ -54,6 +54,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--brown)}
 .pi-cat{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;flex-shrink:0;cursor:pointer}
 .pi-addr{font-size:11px;color:var(--brown);margin-top:3px}
 .pi-memo{font-size:11px;color:#999;margin-top:3px;font-style:italic}
+.addr-search{color:var(--brown);font-size:10px;font-weight:500;cursor:pointer;text-decoration:underline;margin-left:2px}
+.addr-search:hover{color:var(--dark)}
 .pi-acts{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
 .bx{font-size:11px;padding:3px 9px;border-radius:4px;border:1px solid #ddd;background:white;cursor:pointer;color:#888;transition:all .15s;font-family:'Noto Sans KR',sans-serif}
 .bx:hover{border-color:var(--brown);color:var(--brown)}
@@ -582,7 +584,7 @@ function renderList() {
         <div class="pi-name">${p.name}</div>
         <div class="pi-cat" style="background:${c.bg};color:${c.color}" onclick="event.stopPropagation();openCatModal(${p.id})" title="클릭해서 카테고리 변경">${c.emoji} ${c.name}</div>
       </div>
-      ${p.addr?`<div class="pi-addr" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')" style="cursor:pointer"><i data-lucide="map-pin" class="lc lc-sm" style="color:#E74C3C"></i> ${p.addr}</div>`:''}
+      ${p.addr?`<div class="pi-addr"><i data-lucide="map-pin" class="lc lc-sm" style="color:#E74C3C"></i> ${p.addr} <span class="addr-search" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')">[검색]</span></div>`:''}
       ${myLat!==null&&p.lat?`<div class="pi-dist"><i data-lucide="ruler" class="lc lc-sm"></i> ${formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng))}</div>`:''}
       ${p.memo?`<div class="pi-memo">${p.memo}</div>`:''}
       ${renderRatingBlock(p)}
