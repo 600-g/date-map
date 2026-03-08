@@ -737,6 +737,13 @@ function editEmoji(idx) {
     html += `<span class="ep-item" data-svg="${k}" style="display:flex;align-items:center;justify-content:center;cursor:pointer;padding:6px;border-radius:8px;border:1px solid #eee;transition:all .15s" onmouseover="this.style.background='#f0ebe3';this.style.borderColor='#ccc'" onmouseout="this.style.background='';this.style.borderColor='#eee'">${SVG_ICONS[k]}</span>`;
   });
   html += '</div>';
+  // 이모지 그리드
+  html += '<div style="font-size:10px;color:var(--brown);margin-bottom:4px;font-weight:500">이모지</div>';
+  html += '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:10px;max-height:120px;overflow-y:auto">';
+  EMOJI_PICKS.forEach(em => {
+    html += `<span class="ep-item" data-emoji="${em}" style="display:flex;align-items:center;justify-content:center;cursor:pointer;padding:4px;border-radius:6px;font-size:18px;border:1px solid transparent;transition:all .1s" onmouseover="this.style.background='#f0ebe3';this.style.borderColor='#ddd'" onmouseout="this.style.background='';this.style.borderColor='transparent'">${em}</span>`;
+  });
+  html += '</div>';
   // 직접 입력 (이모지/글자)
   html += '<div style="font-size:10px;color:var(--brown);margin-bottom:4px;font-weight:500">직접 입력</div>';
   html += '<div style="display:flex;gap:6px;align-items:center">';
@@ -749,6 +756,7 @@ function editEmoji(idx) {
     e.stopPropagation();
     const item = e.target.closest('.ep-item');
     if (item && item.dataset.svg) { pickEmoji(idx, SVG_ICONS[item.dataset.svg]); return; }
+    if (item && item.dataset.emoji) { pickEmoji(idx, item.dataset.emoji); return; }
     if (e.target.id === 'customEmojiBtn') {
       const v = document.getElementById('customEmojiInput').value.trim();
       if (v) pickEmoji(idx, v);
@@ -1045,7 +1053,7 @@ function renderMarkers() {
     iwEl.innerHTML = `
       <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:#aaa;line-height:1" data-action="close">&times;</div>
       <b style="font-size:13px">${p.name}</b>
-      <div style="font-size:11px;margin-top:2px"><span style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:10px">${c.emoji} ${c.name}</span>${p.visited?' · ✅':''}</div>
+      <div style="font-size:11px;margin-top:2px"><span style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:10px;display:inline-flex;align-items:center;gap:2px;max-width:80px;overflow:hidden;white-space:nowrap">${c.emoji} ${c.name}</span></div>
       ${avg?`<div style="font-size:11px;margin-top:3px;color:#F1C40F;display:flex;align-items:center;gap:2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> ${avg}</div>`:''}
       ${p.addr?`<div style="font-size:10px;color:#8B6F5E;margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;font-size:9px;padding:1px 5px;border:1px solid #ddd;border-radius:3px;background:#fafafa;color:#8B6F5E;margin-left:2px">검색</span></div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
@@ -1118,7 +1126,17 @@ function focusPlace(id) {
 
 function toggleV(id) {
   const p=places.find(x=>x.id===id);
-  if(p){p.visited=!p.visited; saveData(); renderAll();}
+  if(!p) return;
+  p.visited=!p.visited;
+  const wasFocused = focusedPlaceId;
+  saveData(); renderAll();
+  // 팝업이 열려있었으면 다시 열기
+  if (wasFocused === id && iwMap[id]) {
+    iwMap[id].setMap(map);
+    focusedPlaceId = id;
+    const el = document.getElementById('pi-'+id);
+    if (el) el.classList.add('sel');
+  }
 }
 function openKakaoMap(id) {
   const p = places.find(x=>x.id===id); if(!p) return;
@@ -1537,7 +1555,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 21;
+const APP_VERSION = 22;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
