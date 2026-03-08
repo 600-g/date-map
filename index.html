@@ -88,6 +88,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .photo-viewer img{max-width:90vw;max-height:75vh;border-radius:8px;object-fit:contain}
 .photo-viewer .pv-close{position:absolute;top:12px;right:16px;color:white;font-size:28px;cursor:pointer;line-height:1}
 .photo-viewer .pv-del{color:#E74C3C;font-size:13px;cursor:pointer;padding:6px 14px;background:rgba(255,255,255,.15);border-radius:8px;border:1px solid rgba(255,255,255,.2)}
+/* 월드컵 폭죽 */
+@keyframes wcConfetti{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(calc(90vh)) rotate(720deg);opacity:0}}
+.wc-confetti-wrap{position:fixed;inset:0;z-index:10001;pointer-events:none;overflow:hidden}
+.wc-confetti{position:absolute;top:-10px;width:8px;height:8px;border-radius:2px;animation:wcConfetti linear forwards}
 /* 월드컵 */
 .wc-vs{display:flex;align-items:center;gap:10px;justify-content:center;margin:10px 0}
 .wc-card{flex:1;border:2px solid #eee;border-radius:12px;padding:10px;text-align:center;cursor:pointer;transition:all .15s;background:white;max-width:140px}
@@ -1069,6 +1073,32 @@ function launchWc(catId) {
 
 function closeWorldCup() {
   document.getElementById('wcModal').classList.remove('open');
+  document.querySelector('.wc-confetti-wrap')?.remove();
+}
+
+function wcPhoto(p) {
+  if (p.photos && p.photos.length) return p.photos[Math.floor(Math.random() * p.photos.length)];
+  return null;
+}
+
+function wcConfetti() {
+  const wrap = document.createElement('div');
+  wrap.className = 'wc-confetti-wrap';
+  const colors = ['#F1C40F','#E74C3C','#3498DB','#2ECC71','#9B59B6','#FF6B6B','#FF9F43','#00D2D3'];
+  for (let i = 0; i < 60; i++) {
+    const c = document.createElement('div');
+    c.className = 'wc-confetti';
+    c.style.left = Math.random() * 100 + '%';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDuration = (1.5 + Math.random() * 2) + 's';
+    c.style.animationDelay = Math.random() * 0.8 + 's';
+    c.style.width = (5 + Math.random() * 8) + 'px';
+    c.style.height = (5 + Math.random() * 8) + 'px';
+    c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+    wrap.appendChild(c);
+  }
+  document.body.appendChild(wrap);
+  setTimeout(() => wrap.remove(), 4000);
 }
 
 function getRoundLabel(count) {
@@ -1089,16 +1119,17 @@ function renderWcRound() {
   if (!a || !b) return;
 
   const catA = getCat(a.cat), catB = getCat(b.cat);
+  const photoA = wcPhoto(a), photoB = wcPhoto(b);
   body.innerHTML = `
     <div class="wc-vs">
       <div class="wc-card" onclick="wcPick(0)">
-        ${a.photos && a.photos[0] ? `<img src="${a.photos[0]}">` : `<div class="wc-noimg" style="background:${catA.color}">${getIcon(catA.emoji,28)||catA.emoji}</div>`}
+        ${photoA ? `<img src="${photoA}">` : `<div class="wc-noimg" style="background:${catA.color}">${getIcon(catA.emoji,28)||catA.emoji}</div>`}
         <div class="wc-name">${a.name}</div>
         <div class="wc-cat">${catA.name}</div>
       </div>
       <span style="font-size:18px;font-weight:700;color:var(--brown)">VS</span>
       <div class="wc-card" onclick="wcPick(1)">
-        ${b.photos && b.photos[0] ? `<img src="${b.photos[0]}">` : `<div class="wc-noimg" style="background:${catB.color}">${getIcon(catB.emoji,28)||catB.emoji}</div>`}
+        ${photoB ? `<img src="${photoB}">` : `<div class="wc-noimg" style="background:${catB.color}">${getIcon(catB.emoji,28)||catB.emoji}</div>`}
         <div class="wc-name">${b.name}</div>
         <div class="wc-cat">${catB.name}</div>
       </div>
@@ -1129,10 +1160,11 @@ function wcPick(idx) {
 function renderWcWinner(p) {
   const c = getCat(p.cat);
   const avg = getAvgRating(p);
+  const photo = wcPhoto(p);
   document.getElementById('wcRound').textContent = '🎉 우승!';
   document.getElementById('wcBody').innerHTML = `
     <div class="wc-winner">
-      ${p.photos && p.photos[0] ? `<img src="${p.photos[0]}">` : `<div class="wc-noimg" style="background:${c.color}">${getIcon(c.emoji,48)||c.emoji}</div>`}
+      ${photo ? `<img src="${photo}">` : `<div class="wc-noimg" style="background:${c.color}">${getIcon(c.emoji,48)||c.emoji}</div>`}
       <div style="font-size:18px;font-weight:700;margin-bottom:4px">🏆 ${p.name}</div>
       <div style="font-size:13px;color:var(--brown)">${c.name}</div>
       ${avg ? `<div style="margin-top:4px;color:#F1C40F;font-size:14px">⭐ ${avg}</div>` : ''}
@@ -1141,6 +1173,7 @@ function renderWcWinner(p) {
       <button class="btn btn-outline btn-sm" onclick="closeWorldCup()" style="margin-top:12px">닫기</button>
     </div>
   `;
+  wcConfetti();
 }
 
 function editMemo(id) {
@@ -2277,7 +2310,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 104;
+const APP_VERSION = 105;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
