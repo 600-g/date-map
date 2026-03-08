@@ -813,7 +813,7 @@ function autosaveCats() {
   cats.forEach(c=>{ if(!c.id.startsWith('cat_')) c.id=c.name; });
   saveCatsData();
   saveData();
-  renderCatSummary();
+  renderAll();
 }
 
 function getCat(id) {
