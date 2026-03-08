@@ -1045,11 +1045,11 @@ function renderList() {
       ${p.memo?`<div class="pi-memo">${p.memo}</div>`:''}
       ${renderRatingBlock(p)}
       <div class="pi-acts">
-        <button class="bx${p.visited?' vis':''}" onclick="event.stopPropagation();toggleV(${p.id})"><i data-lucide="${p.visited?'check-circle':'circle'}" class="lc lc-sm"></i> ${p.visited?'다녀옴':'미방문'}</button>
+        <button class="bx${p.visited?' vis':''}" onclick="event.stopPropagation();toggleV(${p.id})">${p.visited?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>'} ${p.visited?'다녀옴':'미방문'}</button>
         <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FEE500" stroke="#8B6914" stroke-width="0.8" style="vertical-align:middle"><path d="M12 3C6.48 3 2 6.58 2 10.94c0 2.8 1.86 5.27 4.66 6.67-.15.53-.96 3.4-.99 3.62 0 0-.02.17.09.24.11.06.24.01.24.01.32-.04 3.7-2.44 4.28-2.86.55.08 1.13.12 1.72.12 5.52 0 10-3.58 10-7.8C22 6.58 17.52 3 12 3z"/></svg> 카카오</button>
         <button class="bx" onclick="event.stopPropagation();openNaverMap(${p.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="#03C75A" style="vertical-align:middle"><path d="M16.27 3H7.73A4.73 4.73 0 003 7.73v8.54A4.73 4.73 0 007.73 21h8.54A4.73 4.73 0 0021 16.27V7.73A4.73 4.73 0 0016.27 3zm-2.6 12.41h-2.1l-2.56-3.67v3.67H7.5V8.59h2.1l2.56 3.67V8.59h1.51v6.82z"/></svg> 네이버</button>
-        <button class="bx" onclick="event.stopPropagation();openNavi(${p.id})" style="background:#4A6CF7;color:white;border-color:#4A6CF7"><i data-lucide="navigation" class="lc lc-sm"></i> 길찾기</button>
-        <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})"><i data-lucide="trash-2" class="lc lc-sm"></i></button>
+        <button class="bx" onclick="event.stopPropagation();openNavi(${p.id})" style="background:#4A6CF7;color:white;border-color:#4A6CF7"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1" style="vertical-align:middle"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg> 길찾기</button>
+        <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
       </div>
     </div>`;
   }).join('');
@@ -1079,7 +1079,7 @@ function renderMarkers() {
       <b style="font-size:13px">${p.name}</b>
       <div style="font-size:11px;margin-top:2px"><span data-action="cat" style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:10px;display:inline-flex;align-items:center;gap:2px;max-width:80px;overflow:hidden;white-space:nowrap;cursor:pointer">${emojiSized(c.emoji,12)} ${c.name}</span></div>
       ${avg?`<div style="font-size:11px;margin-top:3px;color:#F1C40F;display:flex;align-items:center;gap:2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> ${avg}</div>`:''}
-      ${p.addr?`<div style="font-size:10px;color:#8B6F5E;margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;font-size:9px;padding:1px 5px;border:1px solid #ddd;border-radius:3px;background:#fafafa;color:#8B6F5E;margin-left:2px">검색</span></div>`:''}
+      ${p.addr?`<div style="font-size:10px;color:#8B6F5E;margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;display:inline-flex;align-items:center;padding:1px 4px;border:1px solid #ddd;border-radius:3px;background:#fafafa;margin-left:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B6F5E" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></span></div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
         <button class="iw-btn" data-action="kakao">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#FEE500" stroke="#8B6914" stroke-width="0.8"><path d="M12 3C6.48 3 2 6.58 2 10.94c0 2.8 1.86 5.27 4.66 6.67-.15.53-.96 3.4-.99 3.62 0 0-.02.17.09.24.11.06.24.01.24.01.32-.04 3.7-2.44 4.28-2.86.55.08 1.13.12 1.72.12 5.52 0 10-3.58 10-7.8C22 6.58 17.52 3 12 3z"/></svg>
@@ -1087,9 +1087,14 @@ function renderMarkers() {
         <button class="iw-btn" data-action="naver">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#03C75A"><path d="M16.27 3H7.73A4.73 4.73 0 003 7.73v8.54A4.73 4.73 0 007.73 21h8.54A4.73 4.73 0 0021 16.27V7.73A4.73 4.73 0 0016.27 3zm-2.6 12.41h-2.1l-2.56-3.67v3.67H7.5V8.59h2.1l2.56 3.67V8.59h1.51v6.82z"/></svg>
         </button>
-        <button class="iw-btn" data-action="navi" style="background:#4A6CF7;color:white;border-color:#4A6CF7;font-size:10px">길찾기</button>
-        <button class="iw-btn" data-action="visit" style="${p.visited?'background:#4A7C59;color:white;border-color:#4A7C59':''}">
-          ${p.visited?'✅':'⬜'}
+        <button class="iw-btn" data-action="navi" style="background:#4A6CF7;border-color:#4A6CF7">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
+        </button>
+        <button class="iw-btn" data-action="visit" style="${p.visited?'background:#4A7C59;border-color:#4A7C59':''}">
+          ${p.visited
+            ?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>'
+            :'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>'
+          }
         </button>
       </div>
     `;
@@ -1280,8 +1285,8 @@ function renderNearbyResults(docs, iconKey) {
       <div style="font-size:10px;color:#8B6F5E;margin-top:2px">${d.road_address_name || d.address_name}${dist?' · '+dist:''}</div>
       ${d.phone?`<div style="font-size:10px;color:var(--accent);margin-top:2px">${d.phone}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px">
-        <button class="iw-btn" data-action="add" style="background:var(--dark);color:white;border-color:var(--dark)">+ 등록</button>
-        <button class="iw-btn" data-action="kakao-nav">길찾기</button>
+        <button class="iw-btn" data-action="add" style="background:var(--dark);color:white;border-color:var(--dark)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> 등록</button>
+        <button class="iw-btn" data-action="kakao-nav" style="background:#4A6CF7;border-color:#4A6CF7"><svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></button>
       </div>
     `;
     ['click','mousedown','mouseup','touchstart','touchend','pointerdown','pointerup'].forEach(evt => {
@@ -1630,7 +1635,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 34;
+const APP_VERSION = 35;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
