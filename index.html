@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>김춘식 데이트 맵</title>
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#2C1810">
+<meta name="theme-color" content="#3B4C6B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="데이트 맵">
@@ -14,12 +14,12 @@
 <style>
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-:root{--cream:#FAFAF7;--warm:#EEEBE5;--brown:#8B7E74;--dark:#1A1A2E;--green:#2D8659;--red:#E05252;--accent:#4A6CF7;--card-shadow:0 1px 4px rgba(0,0,0,.06)}
+:root{--cream:#FAFAF7;--warm:#EEEBE5;--brown:#8B7E74;--dark:#3B4C6B;--green:#2D8659;--red:#E05252;--accent:#5B7DB8;--card-shadow:0 1px 4px rgba(0,0,0,.06)}
 body{font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;font-weight:450;background:var(--dark);color:#333;height:100dvh;height:100vh;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top, 0px)}
 @supports(height:100dvh){body{height:100dvh}}
-header{background:linear-gradient(135deg,#1A1A2E,#2D2B55);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
-header h1{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:15px;font-weight:700;letter-spacing:-.3px}
-.badge{font-size:11px;background:rgba(255,255,255,.15);backdrop-filter:blur(4px);color:white;padding:4px 12px;border-radius:20px;display:flex;align-items:center;gap:5px}
+header{background:linear-gradient(135deg,#3B4C6B,#4E6490);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+header h1{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:17px;font-weight:700;letter-spacing:-.3px}
+.badge{font-size:12px;background:rgba(255,255,255,.15);backdrop-filter:blur(4px);color:white;padding:4px 12px;border-radius:20px;display:flex;align-items:center;gap:5px}
 .dot{width:6px;height:6px;background:#7FD49A;border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes locPulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.2);opacity:0}}
@@ -27,59 +27,59 @@ header h1{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:15px
 .panel{width:320px;background:var(--cream);border-right:1px solid var(--warm);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
 #map{flex:1;background:#e8e0d8;touch-action:auto}
 .tabs{display:flex;border-bottom:1px solid var(--warm);flex-shrink:0;background:white}
-.tab{flex:1;padding:11px 2px;text-align:center;font-size:11px;font-weight:550;color:var(--brown);cursor:pointer;border:none;border-bottom:2.5px solid transparent;background:none;transition:all .2s}
+.tab{flex:1;padding:11px 2px;text-align:center;font-size:13px;font-weight:550;color:var(--brown);cursor:pointer;border:none;border-bottom:2.5px solid transparent;background:none;transition:all .2s}
 .tab.active{color:var(--dark);border-bottom-color:var(--accent);font-weight:650}
 .tab-content{display:none;flex:1;overflow:hidden;flex-direction:column}
 .tab-content.active{display:flex}
 /* 공통 인풋 */
-input,select,textarea{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:13px;border:1px solid #e0e0e0;border-radius:10px;padding:9px 12px;background:white;color:#333;outline:none;transition:all .2s;width:100%;margin-bottom:6px}
-input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,108,247,.1)}
-.lbl{font-size:11px;font-weight:600;color:var(--dark);margin-bottom:4px;margin-top:10px}
+input,select,textarea{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:14px;border:1px solid #e0e0e0;border-radius:10px;padding:9px 12px;background:white;color:#333;outline:none;transition:all .2s;width:100%;margin-bottom:6px}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,125,184,.15)}
+.lbl{font-size:12px;font-weight:600;color:var(--dark);margin-bottom:4px;margin-top:10px}
 .lbl:first-child{margin-top:0}
 .row{display:flex;gap:6px}
 .row input,.row select{margin-bottom:0}
-.btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:12px;font-weight:550;padding:9px 16px;border-radius:10px;border:none;cursor:pointer;transition:all .2s;white-space:nowrap}
+.btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:13px;font-weight:550;padding:9px 16px;border-radius:10px;border:none;cursor:pointer;transition:all .2s;white-space:nowrap}
 .btn-dark{background:var(--dark);color:white}
-.btn-dark:hover{background:#2D2B55;transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.btn-dark:hover{background:#4E6490;transform:translateY(-1px);box-shadow:0 2px 8px rgba(0,0,0,.15)}
 .btn-outline{background:white;border:1px solid #e0e0e0;color:var(--brown)}
 .btn-outline:hover{border-color:var(--brown);background:#fafafa}
-.btn-sm{font-size:11px;padding:5px 12px}
+.btn-sm{font-size:12px;padding:5px 12px}
 /* 검색 */
 .add-wrap{padding:12px;overflow-y:auto;flex:1}
-.sr-item{padding:8px 10px;border:1px solid var(--warm);border-radius:6px;margin-bottom:5px;cursor:pointer;font-size:12px;transition:all .15s}
+.sr-item{padding:8px 10px;border:1px solid var(--warm);border-radius:6px;margin-bottom:5px;cursor:pointer;font-size:13px;transition:all .15s}
 .sr-item:hover{border-color:var(--brown);background:var(--cream)}
 .sr-name{font-weight:500;margin-bottom:2px}
-.sr-addr{color:var(--brown);font-size:11px}
-.search-loading{font-size:12px;color:var(--brown);padding:6px;text-align:center}
+.sr-addr{color:var(--brown);font-size:12px}
+.search-loading{font-size:13px;color:var(--brown);padding:6px;text-align:center}
 /* 목록 */
 .filter-bar{display:flex;gap:4px;padding:8px 8px 4px;flex-wrap:wrap;flex-shrink:0}
-.fb{font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid var(--warm);background:white;color:var(--brown);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:3px}
+.fb{font-size:12px;padding:4px 9px;border-radius:20px;border:1px solid var(--warm);background:white;color:var(--brown);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:3px}
 .fb svg{width:13px;height:13px;vertical-align:middle;flex-shrink:0;overflow:visible}
 .fb.active{background:var(--dark);color:white;border-color:var(--dark)}
 .place-list{flex:1;overflow-y:auto;padding:8px}
 .pi{background:white;border:1px solid transparent;border-radius:12px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all .2s;box-shadow:var(--card-shadow)}
 .pi:hover{box-shadow:0 3px 12px rgba(0,0,0,.1);transform:translateY(-1px)}
-.pi.sel{border-color:var(--accent);background:#F5F7FF;box-shadow:0 2px 12px rgba(74,108,247,.15)}
+.pi.sel{border-color:var(--accent);background:#F0F3F9;box-shadow:0 2px 12px rgba(91,125,184,.15)}
 .pi-top{display:flex;align-items:flex-start;justify-content:space-between;gap:6px}
-.pi-name{font-size:13px;font-weight:550;flex:1}
-.pi-cat{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500;flex-shrink:0;cursor:pointer;display:inline-flex;align-items:center;gap:2px;overflow:hidden;max-width:90px;max-height:22px;line-height:16px;white-space:nowrap;text-overflow:ellipsis}
+.pi-name{font-size:14px;font-weight:550;flex:1}
+.pi-cat{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;flex-shrink:0;cursor:pointer;display:inline-flex;align-items:center;gap:2px;overflow:hidden;max-width:90px;max-height:22px;line-height:16px;white-space:nowrap;text-overflow:ellipsis}
 .pi-cat svg{width:12px;height:12px;vertical-align:middle;flex-shrink:0;overflow:visible}
-.pi-addr{font-size:11px;color:var(--brown);margin-top:3px;display:flex;align-items:center;gap:2px}
+.pi-addr{font-size:12px;color:var(--brown);margin-top:3px;display:flex;align-items:center;gap:2px}
 .pi-addr .lc svg{width:11px;height:11px}
 .pi-dist .lc svg{width:11px;height:11px}
-.pi-memo{font-size:11px;color:#999;margin-top:3px;font-style:italic}
+.pi-memo{font-size:12px;color:#999;margin-top:3px;font-style:italic}
 .addr-search{color:var(--brown);font-size:9px;font-weight:500;cursor:pointer;margin-left:4px;background:var(--cream);border:1px solid var(--warm);border-radius:4px;padding:1px 6px;display:inline-block;vertical-align:middle}
 .addr-search:hover{background:var(--warm);color:var(--dark)}
 .pi-acts{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
-.bx{font-size:11px;padding:4px 10px;border-radius:8px;border:1px solid #eee;background:#fafafa;cursor:pointer;color:#666;transition:all .15s;font-family:'Pretendard Variable',Pretendard,sans-serif;display:inline-flex;align-items:center;gap:3px}
+.bx{font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid #eee;background:#fafafa;cursor:pointer;color:#666;transition:all .15s;font-family:'Pretendard Variable',Pretendard,sans-serif;display:inline-flex;align-items:center;gap:3px}
 .bx:hover{border-color:var(--brown);color:var(--brown);background:white}
 .bx.vis{background:var(--green);color:white;border-color:var(--green)}
 .bx.del:hover{border-color:var(--red);color:var(--red);background:#FFF5F5}
 /* 별점 */
-.pi-rating{margin-top:6px;font-size:11px;color:var(--brown)}
-.pi-rating-avg{font-weight:600;color:var(--dark);font-size:12px;margin-bottom:2px}
+.pi-rating{margin-top:6px;font-size:12px;color:var(--brown)}
+.pi-rating-avg{font-weight:600;color:var(--dark);font-size:13px;margin-bottom:2px}
 .pi-rating-row{display:flex;align-items:center;gap:4px;margin-bottom:2px}
-.pi-rating-name{font-size:10px;color:var(--brown);min-width:36px}
+.pi-rating-name{font-size:11px;color:var(--brown);min-width:36px}
 .star{cursor:pointer;transition:transform .1s;display:inline-flex;vertical-align:middle}
 .star:hover{transform:scale(1.3)}
 .star svg{width:16px;height:16px}
@@ -87,8 +87,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .star.off svg{fill:#e0e0e0;stroke:#ccc}
 /* 설정/공유 */
 .cfg-wrap{padding:14px;overflow-y:auto;flex:1}
-.s-title{font-size:13px;font-weight:650;margin-bottom:4px}
-.s-desc{font-size:11px;color:var(--brown);margin-bottom:8px;line-height:1.5}
+.s-title{font-size:14px;font-weight:650;margin-bottom:4px}
+.s-desc{font-size:12px;color:var(--brown);margin-bottom:8px;line-height:1.5}
 .code-box{background:var(--cream);border:1px solid var(--warm);border-radius:6px;padding:10px;font-size:10px;font-family:monospace;word-break:break-all;max-height:56px;overflow-y:auto;margin-bottom:6px;color:var(--dark)}
 hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 /* 카테고리 편집 */
@@ -96,7 +96,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .cat-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;background:var(--cream);border-radius:8px;padding:8px 10px;position:relative;transition:transform 0.15s,box-shadow 0.15s}
 .cat-emoji{font-size:18px;cursor:pointer;min-width:26px;text-align:center;line-height:1;display:inline-flex;align-items:center;justify-content:center}
 .cat-emoji svg{width:20px;height:20px}
-.cat-name-input{flex:1;margin-bottom:0;font-size:13px;padding:5px 8px;border-radius:6px;border:1px solid var(--warm);background:white}
+.cat-name-input{flex:1;margin-bottom:0;font-size:14px;padding:5px 8px;border-radius:6px;border:1px solid var(--warm);background:white}
 .cat-color-btn{width:28px;height:28px;border-radius:50%;border:2px solid white;box-shadow:0 0 0 1px var(--warm);cursor:pointer;flex-shrink:0}
 .cat-palette{display:flex;flex-wrap:wrap;gap:6px;padding:8px;background:white;border-radius:8px;border:1px solid var(--warm);margin-top:4px;margin-bottom:4px;box-shadow:0 2px 8px rgba(0,0,0,.1)}
 .cat-palette span{width:26px;height:26px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .1s}
@@ -109,28 +109,28 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .cat-row.touch-dragging{z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.3);transform:scale(1.04);background:white;opacity:.95;border:1px solid var(--accent)}
 .cat-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:15px;padding:4px 6px;flex-shrink:0}
 .cat-del:hover{color:var(--red)}
-.cat-summary-item{display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:3px 8px;border-radius:12px;margin:2px;border:1px solid var(--warm);background:white}
+.cat-summary-item{display:inline-flex;align-items:center;gap:3px;font-size:12px;padding:3px 8px;border-radius:12px;margin:2px;border:1px solid var(--warm);background:white}
 .cat-summary-item svg{width:12px;height:12px}
 .save-success{background:var(--green) !important;border-color:var(--green) !important}
 /* 지도 정보창 버튼 */
-.iw-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:11px;padding:3px 6px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap;min-width:28px;min-height:28px}
+.iw-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:12px;padding:3px 6px;border-radius:6px;border:1px solid #ddd;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:2px;white-space:nowrap;min-width:28px;min-height:28px}
 .iw-btn svg{width:14px;height:14px;flex-shrink:0}
 .iw-btn:hover{background:#f5f0e8;border-color:#8B6F5E}
 /* 모달 - 카테고리 변경 */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
 .modal{background:white;border-radius:16px;padding:20px;width:280px;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2)}
-.modal h3{font-size:14px;font-weight:600;margin-bottom:12px}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:12px}
 .modal-cat-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:6px;cursor:pointer;transition:background .15s}
 .modal-cat-item:hover{background:var(--cream)}
 .modal-cat-dot{width:10px;height:10px;border-radius:50%}
-.modal-cat-name{font-size:13px;display:inline-flex;align-items:center;gap:4px}
+.modal-cat-name{font-size:14px;display:inline-flex;align-items:center;gap:4px}
 .modal-cat-name svg{width:14px;height:14px}
-.modal-close{margin-top:10px;width:100%;padding:8px;border:1px solid var(--warm);border-radius:6px;background:white;cursor:pointer;font-size:12px;color:var(--brown)}
+.modal-close{margin-top:10px;width:100%;padding:8px;border:1px solid var(--warm);border-radius:6px;background:white;cursor:pointer;font-size:13px;color:var(--brown)}
 /* 빈 상태 */
 .empty{text-align:center;padding:40px 16px;color:var(--brown)}
 .empty .ico{font-size:36px;margin-bottom:10px}
-.empty p{font-size:12px;line-height:1.7}
+.empty p{font-size:13px;line-height:1.7}
 /* 내 위치 버튼 */
 .my-loc-btn{position:absolute;top:12px;right:12px;z-index:10;width:40px;height:40px;border-radius:50%;background:white;border:1px solid var(--warm);box-shadow:0 2px 8px rgba(0,0,0,.15);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .15s}
 .my-loc-btn:hover{background:var(--cream);box-shadow:0 2px 12px rgba(0,0,0,.2)}
@@ -149,19 +149,19 @@ header .lc svg{width:18px;height:18px}
 .list-top-bar{padding:8px 10px 4px;flex-shrink:0;border-bottom:1px solid var(--warm);background:white}
 .list-search-row{display:flex;gap:6px;align-items:center}
 .list-search-box{display:flex;align-items:center;gap:6px;flex:1;background:var(--cream);border:1px solid var(--warm);border-radius:10px;padding:6px 10px;transition:border-color .2s}
-.list-search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(74,108,247,.1)}
-.list-search-box input{font-size:12px}
+.list-search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,125,184,.15)}
+.list-search-box input{font-size:13px}
 .add-toggle-btn{display:flex;align-items:center;gap:3px;border-radius:10px !important;padding:7px 14px !important}
 .add-panel{border-bottom:1px solid var(--warm);background:#FAFAF7;max-height:0;overflow:hidden;transition:max-height .3s ease}
 .add-panel.open{max-height:600px;overflow-y:auto;display:block}
 /* 주변 검색 */
 .nearby-bar{position:absolute;top:12px;left:12px;z-index:10;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 70px);transition:opacity .2s,visibility .2s}
 .nearby-bar.hidden{opacity:0;pointer-events:none;visibility:hidden}
-.nb-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.12);transition:all .15s;white-space:nowrap}
+.nb-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.12);transition:all .15s;white-space:nowrap}
 .nb-btn svg{width:14px;height:14px;flex-shrink:0;vertical-align:middle}
-.nb-btn:hover,.nb-btn.active{background:var(--dark);color:white;border-color:var(--dark)}
+.nb-btn:hover,.nb-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
 /* 토스트 */
-.toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(120px);background:rgba(26,26,46,.92);backdrop-filter:blur(8px);color:white;padding:11px 22px;border-radius:14px;font-size:13px;transition:transform .3s,opacity .3s;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;pointer-events:none}
+.toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(120px);background:rgba(59,76,107,.92);backdrop-filter:blur(8px);color:white;padding:11px 22px;border-radius:14px;font-size:14px;transition:transform .3s,opacity .3s;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
 @media(max-width:680px){
   .main{flex-direction:column}
@@ -292,7 +292,7 @@ header .lc svg{width:18px;height:18px}
     <div class="nearby-bar" id="nearbyBar">
       <button class="nb-btn" onclick="searchNearby('CE7','카페',this,'cafe')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#6F4E37" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="6" ry="8"/><path d="M9 10c1.5-1 4.5-1 6 0" stroke-width="1.5"/></svg> 카페</button>
       <button class="nb-btn" onclick="searchNearbyKeyword('스타벅스','스벅',this,'starbucks')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#00704A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="12" r="7"/><path d="M17 9a3 3 0 010 6"/></svg> 스벅</button></invoke>
-      <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마 OR 영화관','영화관',this,'movie')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#1A1A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg> 영화관</button>
+      <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마','영화관',this,'movie')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#3B4C6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg> 영화관</button>
       <button class="nb-btn" onclick="searchNearby('CS2','편의점',this,'conv')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg> 편의점</button>
       <button class="nb-btn" onclick="searchNearby('PM9','약국',this,'pharmacy')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14"><rect x="9" y="3" width="6" height="18" rx="1" fill="#E74C3C"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#E74C3C"/></svg> 약국</button>
       <button class="nb-btn" onclick="searchNearbyKeyword('공중화장실 OR 화장실','화장실',this,'toilet')" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="14" height="14" fill="none"><circle cx="7" cy="4" r="2" fill="#3498DB"/><rect x="5" y="7" width="4" height="3" rx=".8" fill="#3498DB"/><rect x="5" y="10" width="1.5" height="5" rx=".5" fill="#3498DB"/><rect x="8.5" y="10" width="1.5" height="5" rx=".5" fill="#3498DB"/><line x1="12" y1="2" x2="12" y2="16" stroke="#ccc" stroke-width=".5"/><circle cx="17" cy="4" r="2" fill="#E74C3C"/><rect x="15" y="7" width="4" height="3" rx=".8" fill="#E74C3C"/><rect x="15" y="10" width="1.5" height="5" rx=".5" fill="#E74C3C"/><rect x="18.5" y="10" width="1.5" height="5" rx=".5" fill="#E74C3C"/></svg> 화장실</button>
@@ -366,7 +366,7 @@ const DEFAULT_CATS = [
   { id:'식사', name:'식사', emoji:'fork', color:'#FFB3B3' },
   { id:'카페', name:'카페', emoji:'coffee', color:'#B5D8A8' },
   { id:'산책', name:'산책', emoji:'leaf', color:'#A8D4E6' },
-  { id:'활동', name:'활동', emoji:'target', color:'#D4B3E8' },
+  { id:'활동', name:'활동', emoji:'bike', color:'#D4B3E8' },
   { id:'기타', name:'기타', emoji:'pin', color:'#D5D5D5' },
 ];
 
@@ -403,13 +403,13 @@ const EMOJI_TO_SVG = {
   '📌':'pin','⭐':'star','❤️':'heart','❤':'heart','🔥':'star','✨':'star',
   // 이전 SVG키 → 현재 키 매핑
   'noodle':'fork','pizza':'fork','burger':'fork','sushi':'fork','rice':'fork','meat':'fork','bento':'fork',
-  'croissant':'coffee','cake':'coffee','icecream':'coffee','donut':'coffee',
-  'beer':'bar','wine':'bar','cocktail':'bar',
-  'movie':'play','music':'play','game':'play','mic':'play','headphone':'play','theater':'play',
+  'croissant':'bread','cake':'bread','icecream':'bread','donut':'bread',
+  'beer':'fork','wine':'fork','cocktail':'fork','bar':'fork',
+  'movie':'star','music':'star','game':'star','mic':'star','headphone':'star','theater':'star','play':'star',
   'tree':'leaf','wave':'leaf','mountain':'leaf','beach':'leaf','flower':'leaf','clover':'leaf',
   'dress':'bag','shoe':'bag','scissors':'bag',
-  'gym':'target','swim':'target','soccer':'target','bike':'target','golf':'target',
-  'palette':'cam','book':'pin','museum':'pin',
+  'gym':'bike','swim':'bike','soccer':'bike','target':'bike','golf':'bike',
+  'palette':'star','book':'pin','museum':'pin','cam':'star',
   'plane':'pin','car':'pin','train':'pin',
   'couple':'heart','gift':'heart','birthday':'heart','ring':'heart',
   'dog':'pin','cat':'pin','pill':'pin','hospital':'pin',
@@ -431,20 +431,20 @@ function migrateCats() {
       else if (c.emoji.includes('circle cx="12" cy="12" r="10"') && c.emoji.includes('r="6"') && c.emoji.includes('r="2"')) c.emoji = 'target';
       else if (c.emoji.includes('M21 10c0 7-9 13')) c.emoji = 'pin';
       else if (c.emoji.includes('croissant') || c.emoji.includes('#D4A017')) c.emoji = 'croissant';
-      else if (c.emoji.includes('#9B59B6') && c.emoji.includes('M4 2l8')) c.emoji = 'bar';
+      else if (c.emoji.includes('#9B59B6') && c.emoji.includes('M4 2l8')) c.emoji = 'fork';
       else if (c.emoji.includes('M6 2L3 6v14')) c.emoji = 'bag';
-      else if (c.emoji.includes('M23 19a2')) c.emoji = 'cam';
+      else if (c.emoji.includes('M23 19a2')) c.emoji = 'star';
       else if (c.emoji.includes('#FF6B81') || c.emoji.includes('20.84 4.61')) c.emoji = 'heart';
-      else if (c.emoji.includes('M9 18V5l12')) c.emoji = 'play';
-      else if (c.emoji.includes('M6.5 6.5h11')) c.emoji = 'target';
+      else if (c.emoji.includes('M9 18V5l12')) c.emoji = 'star';
+      else if (c.emoji.includes('M6.5 6.5h11')) c.emoji = 'bike';
       else if (c.emoji.includes('M8 10 5.9 16')) c.emoji = 'leaf';
       else if (c.emoji.includes('M21 16v-2l-8-5')) c.emoji = 'pin';
-      else if (c.emoji.includes('palette') || c.emoji.includes('cx="8" cy="9"')) c.emoji = 'cam';
+      else if (c.emoji.includes('palette') || c.emoji.includes('cx="8" cy="9"')) c.emoji = 'star';
       else if (c.emoji.includes('E8A0BF') || c.emoji.includes('M12 2C8 6')) c.emoji = 'leaf';
       else if (c.emoji.includes('M4 16c0-2')) c.emoji = 'fork';
-      else if (c.emoji.includes('M5 8h12v10')) c.emoji = 'bar';
+      else if (c.emoji.includes('M5 8h12v10')) c.emoji = 'fork';
       else if (c.emoji.includes('M3 9l9-7')) c.emoji = 'home';
-      else if (c.emoji.includes('cx="5.5" cy="17.5"')) c.emoji = 'target';
+      else if (c.emoji.includes('cx="5.5" cy="17.5"')) c.emoji = 'bike';
       else c.emoji = 'pin'; // 알 수 없는 SVG → 기본 핀
       changed = true;
     }
@@ -769,30 +769,26 @@ function renderCatEditor() {
 
 // SVG 아이콘 시스템 (탑뷰 / 심플 라인)
 const SVG_ICONS = {
-  // 맛집 - 접시+수저 탑뷰
-  fork:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5" stroke-dasharray="2 2.5"/><path d="M7 12h2M15 12h2"/></svg>',
-  // 카페 - 커피잔 탑뷰 (원+손잡이)
-  coffee:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#6F4E37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="12" r="7"/><path d="M17 9a3 3 0 010 6"/><circle cx="10" cy="12" r="2.5" stroke-dasharray="1.5 2"/></svg>',
-  // 술/바 - 와인잔 탑뷰 (원+줄기)
-  bar:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8E44AD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="8"/><circle cx="12" cy="10" r="4"/><circle cx="12" cy="10" r="1" fill="#8E44AD"/></svg>',
-  // 놀거리 - 재생 버튼 (영화/게임 공통)
-  play:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#1A1A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="10,8 16,12 10,16" fill="#1A1A2E" stroke="none"/></svg>',
-  // 자연/산책 - 나뭇잎 탑뷰 (대칭)
-  leaf:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#27AE60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 6.5 4 11 4 15a8 8 0 0016 0c0-4-2.5-8.5-8-13z"/><path d="M12 2v20"/><path d="M8 10c2 1 3 2 4 4M16 10c-2 1-3 2-4 4"/></svg>',
-  // 쇼핑 - 쇼핑백 탑뷰 (사각+손잡이)
-  bag:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E67E22" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="14" rx="2"/><path d="M8 7V5a4 4 0 018 0v2"/></svg>',
-  // 기타 - 핀
-  pin:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  // 식사 - 포크+나이프 (대각선 X자)
+  fork:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2"/><path d="M7 2v20"/><path d="M21 15V2v0a5 5 0 00-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>',
+  // 카페 - 커피잔 측면 (머그+손잡이)
+  coffee:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#6F4E37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg>',
+  // 자연/산책 - 나뭇잎
+  leaf:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#27AE60" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 20A7 7 0 019.8 6.9C15.5 4.9 17 3.5 17 3.5s1 6.5-2 11c-1.5 2.2-3 4-4 5.5z"/><path d="M11 20c0 0-1-3 1-7.5"/></svg>',
+  // 쇼핑백 (하늘색)
+  bag:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#5DADE2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="7" width="16" height="14" rx="2"/><path d="M8 7V5a4 4 0 018 0v2"/></svg>',
   // 하트
   heart:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>',
   // 별
   star:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#F1C40F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>',
-  // 카메라
-  cam:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>',
-  // 운동
-  target:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>',
+  // 위치표시 - 핀
+  pin:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>',
+  // 빵
+  bread:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#D4A017" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12c0-4 2.5-7 7-7s7 3 7 7"/><rect x="4" y="12" width="16" height="6" rx="2"/><path d="M9 12v3M15 12v3"/></svg>',
   // 집
   home:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#8E6C4F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg>',
+  // 자전거
+  bike:'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6a1 1 0 100-2 1 1 0 000 2z" fill="#3498DB"/><path d="M12 17.5V14l-3-3 4-3 2 3h3"/></svg>',
 };
 const SVG_KEYS = Object.keys(SVG_ICONS);
 
@@ -811,9 +807,9 @@ function getIcon(key, size) {
   return key || '';
 }
 
-// select 옵션용 텍스트 (SVG는 ● 로 대체)
+// select 옵션용 텍스트 (SVG는 표시 불가 → 빈 문자열)
 function iconText(key) {
-  if (SVG_ICONS[key]) return '●';
+  if (SVG_ICONS[key]) return '';
   return key || '';
 }
 
@@ -1128,7 +1124,7 @@ function renderList() {
         <button class="bx${p.visited?' vis':''}" onclick="event.stopPropagation();toggleV(${p.id})">${p.visited?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg> 다녀옴':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> 미방문'}</button>
         <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FEE500" stroke="#8B6914" stroke-width="0.8" style="vertical-align:middle"><path d="M12 3C6.48 3 2 6.58 2 10.94c0 2.8 1.86 5.27 4.66 6.67-.15.53-.96 3.4-.99 3.62 0 0-.02.17.09.24.11.06.24.01.24.01.32-.04 3.7-2.44 4.28-2.86.55.08 1.13.12 1.72.12 5.52 0 10-3.58 10-7.8C22 6.58 17.52 3 12 3z"/></svg> 카카오</button>
         <button class="bx" onclick="event.stopPropagation();openNaverMap(${p.id})"><svg width="20" height="20" viewBox="0 0 24 24" fill="#03C75A" style="vertical-align:middle"><path d="M16.27 3H7.73A4.73 4.73 0 003 7.73v8.54A4.73 4.73 0 007.73 21h8.54A4.73 4.73 0 0021 16.27V7.73A4.73 4.73 0 0016.27 3zm-2.6 12.41h-2.1l-2.56-3.67v3.67H7.5V8.59h2.1l2.56 3.67V8.59h1.51v6.82z"/></svg> 네이버</button>
-        <button class="bx" onclick="event.stopPropagation();openNavi(${p.id})" style="background:#4A6CF7;color:white;border-color:#4A6CF7;padding:4px 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1" style="vertical-align:middle"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></button>
+        <button class="bx" onclick="event.stopPropagation();openNavi(${p.id})" style="background:#5B7DB8;color:white;border-color:#5B7DB8;padding:4px 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1" style="vertical-align:middle"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></button>
         <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
       </div>
     </div>`;
@@ -1153,13 +1149,13 @@ function renderMarkers() {
     const avg = getAvgRating(p);
     // 팝업도 CustomOverlay로 (InfoWindow 대신 — auto-pan 문제 해결)
     const iwEl = document.createElement('div');
-    iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:12px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
+    iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:13px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
     iwEl.innerHTML = `
       <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:#aaa;line-height:1" data-action="close">&times;</div>
-      <b style="font-size:13px">${p.name}</b>
-      <div style="font-size:11px;margin-top:2px"><span data-action="cat" style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:10px;display:inline-flex;align-items:center;gap:2px;max-width:80px;overflow:hidden;white-space:nowrap;cursor:pointer">${svgSized(getIcon(c.emoji),12)||c.emoji} ${c.name}</span></div>
-      ${avg?`<div style="font-size:11px;margin-top:3px;color:#F1C40F;display:flex;align-items:center;gap:2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> ${avg}</div>`:''}
-      ${p.addr?`<div style="font-size:10px;color:#8B6F5E;margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;display:inline-flex;align-items:center;padding:1px 4px;border:1px solid #ddd;border-radius:3px;background:#fafafa;margin-left:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B6F5E" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></span></div>`:''}
+      <b style="font-size:14px">${p.name}</b>
+      <div style="font-size:12px;margin-top:2px"><span data-action="cat" style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:11px;display:inline-flex;align-items:center;gap:2px;max-width:80px;overflow:hidden;white-space:nowrap;cursor:pointer">${svgSized(getIcon(c.emoji),12)||c.emoji} ${c.name}</span></div>
+      ${avg?`<div style="font-size:12px;margin-top:3px;color:#F1C40F;display:flex;align-items:center;gap:2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> ${avg}</div>`:''}
+      ${p.addr?`<div style="font-size:11px;color:#8B6F5E;margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;display:inline-flex;align-items:center;padding:1px 4px;border:1px solid #ddd;border-radius:3px;background:#fafafa;margin-left:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B6F5E" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></span></div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
         <button class="iw-btn" data-action="kakao">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="#FEE500" stroke="#8B6914" stroke-width="0.8"><path d="M12 3C6.48 3 2 6.58 2 10.94c0 2.8 1.86 5.27 4.66 6.67-.15.53-.96 3.4-.99 3.62 0 0-.02.17.09.24.11.06.24.01.24.01.32-.04 3.7-2.44 4.28-2.86.55.08 1.13.12 1.72.12 5.52 0 10-3.58 10-7.8C22 6.58 17.52 3 12 3z"/></svg>
@@ -1167,7 +1163,7 @@ function renderMarkers() {
         <button class="iw-btn" data-action="naver">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="#03C75A"><path d="M16.27 3H7.73A4.73 4.73 0 003 7.73v8.54A4.73 4.73 0 007.73 21h8.54A4.73 4.73 0 0021 16.27V7.73A4.73 4.73 0 0016.27 3zm-2.6 12.41h-2.1l-2.56-3.67v3.67H7.5V8.59h2.1l2.56 3.67V8.59h1.51v6.82z"/></svg>
         </button>
-        <button class="iw-btn" data-action="navi" style="background:#4A6CF7;border-color:#4A6CF7">
+        <button class="iw-btn" data-action="navi" style="background:#5B7DB8;border-color:#5B7DB8">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
         </button>
         <button class="iw-btn" data-action="visit" style="${p.visited?'background:#4A7C59;border-color:#4A7C59':''}">
@@ -1351,11 +1347,11 @@ async function searchNearby(categoryCode, label, btnEl, icon) {
 }
 const NEARBY_ICONS = {
   cafe: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6F4E37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg>',
-  starbucks: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#00704A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><path d="M6 2v3M10 2v3M14 2v3"/></svg>',
-  movie: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#1A1A2E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg>',
+  starbucks: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#00704A" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="12" r="7"/><path d="M17 9a3 3 0 010 6"/></svg>',
+  movie: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3B4C6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg>',
   conv: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg>',
   pharmacy: '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="9" y="3" width="6" height="18" rx="1" fill="#E74C3C"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#E74C3C"/></svg>',
-  toilet: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="7" cy="4" r="2.2" fill="#3498DB"/><rect x="4.5" y="8" width="5" height="3" rx=".5" fill="#3498DB"/><rect x="5.5" y="11" width="3" height="7" rx=".5" fill="#3498DB"/><circle cx="17" cy="4" r="2.2" fill="#E74C3C"/><path d="M14 8h6l-.5 2h-5L14 8z" fill="#E74C3C"/><path d="M14.5 10h5l-.3 1.5-1.7 6.5h-1l-1.7-6.5L14.5 10z" fill="#E74C3C"/></svg>',
+  toilet: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="7" cy="4" r="2" fill="#3498DB"/><rect x="5" y="7" width="4" height="3" rx=".8" fill="#3498DB"/><rect x="5" y="10" width="1.5" height="5" rx=".5" fill="#3498DB"/><rect x="8.5" y="10" width="1.5" height="5" rx=".5" fill="#3498DB"/><line x1="12" y1="2" x2="12" y2="16" stroke="#ccc" stroke-width=".5"/><circle cx="17" cy="4" r="2" fill="#E74C3C"/><rect x="15" y="7" width="4" height="3" rx=".8" fill="#E74C3C"/><rect x="15" y="10" width="1.5" height="5" rx=".5" fill="#E74C3C"/><rect x="18.5" y="10" width="1.5" height="5" rx=".5" fill="#E74C3C"/></svg>',
 };
 function renderNearbyResults(docs, iconKey) {
   const svgIcon = NEARBY_ICONS[iconKey] || '';
@@ -1366,14 +1362,14 @@ function renderNearbyResults(docs, iconKey) {
     el.innerHTML = `<div style="background:white;border:2px solid #ddd;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15);cursor:pointer">${svgIcon||'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'}</div>`;
     const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:2 });
     const iwEl = document.createElement('div');
-    iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:12px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;max-width:220px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
+    iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:13px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;max-width:220px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
     iwEl.innerHTML = `
       <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:#aaa;line-height:1" data-action="close">&times;</div>
-      <b style="font-size:12px">${d.place_name}</b>
-      <div style="font-size:10px;color:#8B6F5E;margin-top:2px">${d.road_address_name || d.address_name}${dist?' · '+dist:''}</div>
-      ${d.phone?`<div style="font-size:10px;color:var(--accent);margin-top:2px">${d.phone}</div>`:''}
+      <b style="font-size:13px">${d.place_name}</b>
+      <div style="font-size:11px;color:#8B6F5E;margin-top:2px">${d.road_address_name || d.address_name}${dist?' · '+dist:''}</div>
+      ${d.phone?`<div style="font-size:11px;color:var(--accent);margin-top:2px">${d.phone}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px">
-        <button class="iw-btn" data-action="kakao-nav" style="background:#4A6CF7;border-color:#4A6CF7"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></button>
+        <button class="iw-btn" data-action="kakao-nav" style="background:#5B7DB8;border-color:#5B7DB8"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></button>
       </div>
     `;
     ['click','mousedown','mouseup','touchstart','touchend','pointerdown','pointerup'].forEach(evt => {
@@ -1642,6 +1638,7 @@ function changeNick() {
   });
   saveData();
   const newNick = myNick;
+  toast('닉네임이 "' + newNick + '"(으)로 변경됐어요');
   renderAll();
   // renderAll 이후 DOM 재설정
   setTimeout(() => {
@@ -1649,14 +1646,7 @@ function changeNick() {
     if (ni) ni.value = newNick;
     const cn = document.getElementById('currentNick');
     if (cn) cn.textContent = newNick;
-    const btn = document.getElementById('nickBtn');
-    if (btn) {
-      btn.textContent = '저장됨';
-      btn.classList.add('save-success');
-      setTimeout(() => { const b = document.getElementById('nickBtn'); if(b){b.textContent='변경';b.classList.remove('save-success');} }, 1500);
-    }
-    toast('닉네임이 "' + newNick + '"(으)로 변경됐어요');
-  }, 100);
+  }, 50);
 }
 
 // ── 별점 ──
@@ -1724,7 +1714,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 49;
+const APP_VERSION = 51;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
