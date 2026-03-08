@@ -592,7 +592,7 @@ function openAddPanel() {
 }
 function closeAddPanel() {
   const panel = document.getElementById('addPanel');
-  if (panel) { panel.classList.remove('open'); panel.style.display = 'none'; }
+  if (panel) { panel.classList.remove('open'); panel.style.maxHeight = '0'; panel.style.display = 'none'; }
   const btn = document.getElementById('addToggleBtn');
   if (btn) btn.innerHTML = '<i data-lucide="plus" class="lc lc-sm"></i> 추가';
   addPanelOpen = false;
@@ -606,8 +606,8 @@ function closeAddPanel() {
   window._batchMode = false;
   // 필터바 복원 + 스크롤 상단으로
   document.getElementById('filterBar').style.display = '';
-  const tabList = document.getElementById('tab-list');
-  if (tabList) tabList.scrollTop = 0;
+  const pl = document.getElementById('placeList');
+  if (pl) pl.scrollTop = 0;
   try { lucide.createIcons(); } catch(e) {}
 }
 
@@ -1818,7 +1818,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 68;
+const APP_VERSION = 69;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
