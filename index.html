@@ -248,6 +248,11 @@ header .lc svg{width:18px;height:18px}
         </div>
 
         <hr class="div">
+        <div class="s-title"><i data-lucide="refresh-cw" class="lc lc-sm"></i> 앱 업데이트</div>
+        <div class="s-desc">현재 버전: <b id="appVer"></b></div>
+        <button class="btn btn-dark" style="width:100%;margin-bottom:12px" onclick="forceUpdate()"><i data-lucide="download" class="lc lc-sm"></i> 최신 버전 확인</button>
+
+        <hr class="div">
         <div class="s-title"><i data-lucide="trash-2" class="lc lc-sm"></i> 초기화</div>
         <div class="s-desc">모든 장소를 삭제합니다</div>
         <button class="btn btn-outline" style="width:100%" onclick="clearAll()">전체 초기화</button>
@@ -426,7 +431,7 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('.tab')[['list','add','cfg'].indexOf(name)].classList.add('active');
-  if (name==='cfg') { catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; document.getElementById('currentNick').textContent = myNick||'(미설정)'; try{lucide.createIcons();}catch(e){} }
+  if (name==='cfg') { catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; document.getElementById('currentNick').textContent = myNick||'(미설정)'; document.getElementById('appVer').textContent = 'v' + APP_VERSION; try{lucide.createIcons();}catch(e){} }
   if (name==='add') populateCatSelect();
 }
 
@@ -1335,8 +1340,49 @@ function toast(msg) {
   _toastTimer = setTimeout(()=>{ el.classList.remove('show'); _toastTimer=null; },2500);
 }
 
+// ── 버전 체크 ──
+const APP_VERSION = 19;
+function checkVersion() {
+  fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
+    if (d.v && d.v > APP_VERSION) {
+      doForceReload();
+    }
+  }).catch(() => {});
+}
+function forceUpdate() {
+  toast('🔄 업데이트 확인 중...');
+  fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
+    if (d.v && d.v > APP_VERSION) {
+      toast('🔄 새 버전 발견! 업데이트 중...');
+      doForceReload();
+    } else {
+      toast('✅ 최신 버전이에요 (v' + APP_VERSION + ')');
+    }
+  }).catch(() => {
+    // version.json 못 가져와도 강제 새로고침 시도
+    toast('🔄 강제 새로고침 중...');
+    doForceReload();
+  });
+}
+function doForceReload() {
+  if ('caches' in window) {
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(regs => {
+          Promise.all(regs.map(r => r.unregister())).then(() => window.location.reload(true));
+        });
+      } else {
+        window.location.reload(true);
+      }
+    });
+  } else {
+    window.location.reload(true);
+  }
+}
+
 // ── 시작 ──
 window.addEventListener('load', () => {
+  checkVersion();
   loadData();
   checkNick();
   startRealtimeSync();
@@ -1349,20 +1395,18 @@ window.addEventListener('load', () => {
   renderAll();
   lucide.createIcons();
 
-  // Service Worker 등록 + 자동 업데이트 (iOS PWA 대응)
+  // Service Worker 등록
   if ('serviceWorker' in navigator) {
     let refreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) { refreshing = true; window.location.reload(); }
     });
     navigator.serviceWorker.register('sw.js').then(reg => {
-      // 앱 열 때마다 즉시 업데이트 체크
       reg.update();
       reg.onupdatefound = () => {
         const sw = reg.installing;
         sw.onstatechange = () => {
           if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-            // 새 SW 설치 완료 → skipWaiting이 activate 시킴 → controllerchange → reload
             sw.postMessage({ type: 'SKIP_WAITING' });
           }
         };
