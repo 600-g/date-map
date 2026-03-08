@@ -480,19 +480,26 @@ function showTab(name) {
 }
 
 // ── 추가 패널 토글 ──
+let addPanelOpen = false;
 function toggleAddPanel() {
+  if (addPanelOpen) closeAddPanel();
+  else openAddPanel();
+}
+function openAddPanel() {
   const panel = document.getElementById('addPanel');
+  panel.style.display = 'block';
+  requestAnimationFrame(() => panel.classList.add('open'));
+  document.getElementById('addToggleBtn').innerHTML = '<i data-lucide="x" class="lc lc-sm"></i> 닫기';
+  addPanelOpen = true;
+  populateCatSelect();
+  try { lucide.createIcons(); } catch(e) {}
+}
+function closeAddPanel() {
+  const panel = document.getElementById('addPanel');
+  if (panel) { panel.classList.remove('open'); panel.style.display = 'none'; }
   const btn = document.getElementById('addToggleBtn');
-  if (panel.classList.contains('open')) {
-    panel.classList.remove('open');
-    panel.style.display = 'none';
-    btn.innerHTML = '<i data-lucide="plus" class="lc lc-sm"></i> 추가';
-  } else {
-    panel.style.display = 'block';
-    requestAnimationFrame(() => panel.classList.add('open'));
-    btn.innerHTML = '<i data-lucide="x" class="lc lc-sm"></i> 닫기';
-    populateCatSelect();
-  }
+  if (btn) btn.innerHTML = '<i data-lucide="plus" class="lc lc-sm"></i> 추가';
+  addPanelOpen = false;
   try { lucide.createIcons(); } catch(e) {}
 }
 
@@ -598,11 +605,7 @@ function confirmSearch() {
     document.getElementById('sq').value = '';
     document.getElementById('sr').innerHTML = '';
     window._selectedSearch = null;
-    // 추가 패널 닫기
-    const panel = document.getElementById('addPanel');
-    if (panel) { panel.classList.remove('open'); panel.style.display = 'none'; }
-    const btn = document.getElementById('addToggleBtn');
-    if (btn) { btn.innerHTML = '<i data-lucide="plus" class="lc lc-sm"></i> 추가'; try{lucide.createIcons();}catch(e){} }
+    closeAddPanel();
   }
 }
 
@@ -625,11 +628,7 @@ function addManual() {
       document.getElementById('mName').value='';
       document.getElementById('mAddr').value='';
       document.getElementById('mMemo').value='';
-      // 추가 패널 닫기
-      const panel = document.getElementById('addPanel');
-      if (panel) { panel.classList.remove('open'); panel.style.display = 'none'; }
-      const btn = document.getElementById('addToggleBtn');
-      if (btn) { btn.innerHTML = '<i data-lucide="plus" class="lc lc-sm"></i> 추가'; try{lucide.createIcons();}catch(e){} }
+      closeAddPanel();
     }
   };
 
@@ -1555,7 +1554,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 22;
+const APP_VERSION = 23;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
