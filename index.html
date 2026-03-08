@@ -1203,8 +1203,16 @@ function togglePalette(idx, btn) {
 
 function pickColor(idx, color) {
   cats[idx].color = color;
-  autosaveCats();
+  // 즉시 UI 반영
   renderCatEditor();
+  renderFilterBar();
+  renderList();
+  renderMarkers();
+  populateCatSelect();
+  // 저장
+  cats.forEach(c=>{ if(!c.id.startsWith('cat_')) c.id=c.name; });
+  saveCatsData();
+  saveData();
 }
 
 function autosaveCats() {
@@ -1885,7 +1893,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 80;
+const APP_VERSION = 81;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
