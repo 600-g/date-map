@@ -54,8 +54,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--brown)}
 .pi-cat{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500;flex-shrink:0;cursor:pointer}
 .pi-addr{font-size:11px;color:var(--brown);margin-top:3px}
 .pi-memo{font-size:11px;color:#999;margin-top:3px;font-style:italic}
-.addr-search{color:var(--brown);font-size:10px;font-weight:500;cursor:pointer;text-decoration:underline;margin-left:2px}
-.addr-search:hover{color:var(--dark)}
+.addr-search{color:var(--brown);font-size:9px;font-weight:500;cursor:pointer;margin-left:4px;background:var(--cream);border:1px solid var(--warm);border-radius:4px;padding:1px 6px;display:inline-block;vertical-align:middle}
+.addr-search:hover{background:var(--warm);color:var(--dark)}
 .pi-acts{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
 .bx{font-size:11px;padding:3px 9px;border-radius:4px;border:1px solid #ddd;background:white;cursor:pointer;color:#888;transition:all .15s;font-family:'Noto Sans KR',sans-serif}
 .bx:hover{border-color:var(--brown);color:var(--brown)}
@@ -84,6 +84,8 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .cat-color{width:28px;height:28px;border-radius:4px;border:1px solid var(--warm);cursor:pointer;flex-shrink:0;padding:0}
 .cat-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:14px;padding:2px 4px;flex-shrink:0}
 .cat-del:hover{color:var(--red)}
+.cat-summary-item{display:inline-block;font-size:11px;padding:3px 8px;border-radius:12px;margin:2px;border:1px solid var(--warm)}
+.save-success{background:var(--green) !important;border-color:var(--green) !important}
 /* 모달 - 카테고리 변경 */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center}
 .modal-overlay.open{display:flex}
@@ -191,11 +193,18 @@ header .lc svg{width:16px;height:16px}
       <div class="cfg-wrap">
 
         <!-- 카테고리 관리 -->
-        <div class="s-title"><i data-lucide="tags" class="lc lc-sm"></i> 카테고리 관리</div>
-        <div class="s-desc">이름/이모지/색상 편집, 드래그로 순서 변경</div>
-        <div class="cat-list" id="catList"></div>
-        <button class="btn btn-outline btn-sm" style="width:100%;margin-bottom:4px" onclick="addCat()">+ 카테고리 추가</button>
-        <button class="btn btn-dark btn-sm" style="width:100%;margin-bottom:0" onclick="saveCats()">카테고리 저장</button>
+        <div class="s-title" onclick="toggleCatEditor()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between">
+          <span><i data-lucide="tags" class="lc lc-sm"></i> 카테고리 관리</span>
+          <i data-lucide="chevron-down" class="lc lc-sm" id="catChevron" style="transition:transform .2s"></i>
+        </div>
+        <div class="s-desc">목록을 눌러 편집</div>
+        <div id="catEditorWrap" style="display:none">
+          <div class="cat-list" id="catList"></div>
+          <button class="btn btn-outline btn-sm" style="width:100%;margin-bottom:4px" onclick="addCat()">+ 카테고리 추가</button>
+          <button class="btn btn-dark btn-sm" style="width:100%;margin-bottom:0" id="saveCatBtn" onclick="saveCats()">카테고리 저장</button>
+        </div>
+        <!-- 카테고리 현재 목록 (닫혔을 때 표시) -->
+        <div id="catSummary" style="margin-top:6px"></div>
 
         <hr class="div">
         <div class="s-title"><i data-lucide="user" class="lc lc-sm"></i> 내 닉네임</div>
@@ -363,7 +372,7 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('.tab')[['list','add','cfg'].indexOf(name)].classList.add('active');
-  if (name==='cfg') { updateExport(); renderCatEditor(); document.getElementById('nickChange').value = myNick; }
+  if (name==='cfg') { updateExport(); renderCatSummary(); if(catEditorOpen) renderCatEditor(); document.getElementById('nickChange').value = myNick; }
   if (name==='add') populateCatSelect();
 }
 
@@ -515,15 +524,38 @@ function delCat(idx) {
   renderCatEditor();
 }
 
+let catEditorOpen = false;
+
+function toggleCatEditor() {
+  catEditorOpen = !catEditorOpen;
+  document.getElementById('catEditorWrap').style.display = catEditorOpen ? 'block' : 'none';
+  document.getElementById('catSummary').style.display = catEditorOpen ? 'none' : 'block';
+  const chevron = document.getElementById('catChevron');
+  if (chevron) chevron.style.transform = catEditorOpen ? 'rotate(180deg)' : '';
+  if (catEditorOpen) renderCatEditor();
+  renderCatSummary();
+  try { lucide.createIcons(); } catch(e) {}
+}
+
+function renderCatSummary() {
+  document.getElementById('catSummary').innerHTML = cats.map(c =>
+    `<span class="cat-summary-item" style="background:${c.bg};color:${c.color}">${c.emoji} ${c.name}</span>`
+  ).join('');
+}
+
 function saveCats() {
-  // 이름을 id에도 반영 (기존 카테고리 호환)
   cats.forEach(c=>{ if(!c.id.startsWith('cat_')) c.id=c.name; });
   saveCatsData();
   saveData();
   renderAll();
   renderCatEditor();
+  renderCatSummary();
   document.getElementById('nickChange').value = myNick;
-  toast('✅ 카테고리 저장됨');
+  // 저장 버튼 피드백
+  const btn = document.getElementById('saveCatBtn');
+  btn.textContent = '✅ 저장 완료!';
+  btn.classList.add('save-success');
+  setTimeout(() => { btn.textContent = '카테고리 저장'; btn.classList.remove('save-success'); }, 1500);
 }
 
 function getCat(id) {
@@ -584,7 +616,7 @@ function renderList() {
         <div class="pi-name">${p.name}</div>
         <div class="pi-cat" style="background:${c.bg};color:${c.color}" onclick="event.stopPropagation();openCatModal(${p.id})" title="클릭해서 카테고리 변경">${c.emoji} ${c.name}</div>
       </div>
-      ${p.addr?`<div class="pi-addr"><i data-lucide="map-pin" class="lc lc-sm" style="color:#E74C3C"></i> ${p.addr} <span class="addr-search" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')">[검색]</span></div>`:''}
+      ${p.addr?`<div class="pi-addr"><i data-lucide="map-pin" class="lc lc-sm" style="color:#E74C3C"></i> ${p.addr} <span class="addr-search" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')"><i data-lucide="external-link" class="lc" style="width:10px;height:10px"></i></span></div>`:''}
       ${myLat!==null&&p.lat?`<div class="pi-dist"><i data-lucide="ruler" class="lc lc-sm"></i> ${formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng))}</div>`:''}
       ${p.memo?`<div class="pi-memo">${p.memo}</div>`:''}
       ${renderRatingBlock(p)}
