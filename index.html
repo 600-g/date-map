@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>김춘식 데이트맵</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#2C1810">
@@ -233,10 +233,10 @@ header .lc svg{width:16px;height:16px}
 
         <hr class="div">
         <div class="s-title"><i data-lucide="user" class="lc lc-sm"></i> 내 닉네임</div>
-        <div class="s-desc">별점에 표시되는 이름</div>
+        <div class="s-desc">별점에 표시되는 이름 · 현재: <b id="currentNick"></b></div>
         <div class="row" style="margin-bottom:6px">
-          <input id="nickChange" type="text" style="margin-bottom:0">
-          <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" onclick="changeNick()">변경</button>
+          <input id="nickChange" type="text" style="margin-bottom:0" placeholder="새 닉네임">
+          <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" id="nickBtn" onclick="changeNick()">변경</button>
         </div>
 
         <hr class="div">
@@ -403,7 +403,7 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('.tab')[['list','add','cfg'].indexOf(name)].classList.add('active');
-  if (name==='cfg') { catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; try{lucide.createIcons();}catch(e){} }
+  if (name==='cfg') { catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; document.getElementById('currentNick').textContent = myNick||'(미설정)'; try{lucide.createIcons();}catch(e){} }
   if (name==='add') populateCatSelect();
 }
 
@@ -1070,7 +1070,13 @@ function changeNick() {
   });
   saveData(); renderAll();
   document.getElementById('nickChange').value = myNick;
-  toast('✅ 닉네임 변경됨');
+  document.getElementById('currentNick').textContent = myNick;
+  // 버튼 피드백
+  const btn = document.getElementById('nickBtn');
+  btn.textContent = '✅ 저장됨';
+  btn.classList.add('save-success');
+  setTimeout(() => { btn.textContent = '변경'; btn.classList.remove('save-success'); }, 1500);
+  toast('닉네임이 "' + myNick + '"(으)로 변경됨');
 }
 
 // ── 별점 ──
