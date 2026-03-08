@@ -283,11 +283,10 @@ header .lc svg{width:18px;height:18px}
     <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
     <!-- 주변 검색 퀵버튼 -->
     <div class="nearby-bar" id="nearbyBar">
-      <button class="nb-btn" onclick="searchNearby('CE7','카페',this)">☕ 카페</button>
-      <button class="nb-btn" onclick="searchNearbyKeyword('스타벅스','스타벅스',this)">🟢 스벅</button>
-      <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마','영화관',this)">🎬 영화관</button>
-      <button class="nb-btn" onclick="searchNearby('SW8','지하철',this)">🚇 지하철</button>
-      <button class="nb-btn" onclick="searchNearby('CS2','편의점',this)">🏪 편의점</button>
+      <button class="nb-btn" onclick="searchNearby('CE7','카페',this,'☕')">☕ 카페</button>
+      <button class="nb-btn" onclick="searchNearbyKeyword('스타벅스','스벅',this,'🟢')">🟢 스벅</button>
+      <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마','영화관',this,'🎬')">🎬 영화관</button>
+      <button class="nb-btn" onclick="searchNearby('CS2','편의점',this,'🏪')">🏪 편의점</button>
     </div>
   </div>
 </div>
@@ -434,7 +433,16 @@ function initMap() {
     center: new kakao.maps.LatLng(initLat, initLng), level: initLevel
   });
   kakao.maps.event.addListener(map, 'click', () => closeAllIw());
+  // 저장된 위치가 있으면 즉시 내 위치 마커 + 추적 모드 표시
+  if (savedLoc) {
+    try {
+      const loc = JSON.parse(savedLoc);
+      myLat = loc.lat; myLng = loc.lng;
+      document.getElementById('locBtn').classList.add('tracking');
+    } catch(e) {}
+  }
   renderAll();
+  if (myLat !== null) updateMyLocMarker();
   // 앱 시작 시 자동으로 위치 추적 모드 ON
   if (navigator.geolocation) {
     navigator.geolocation.getCurrentPosition(pos => {
@@ -1176,7 +1184,7 @@ function openNavi(id) {
 // ── 주변 카테고리 검색 ──
 let nearbyMarkers = [];
 let nearbyActiveCategory = null;
-async function searchNearbyKeyword(keyword, label, btnEl) {
+async function searchNearbyKeyword(keyword, label, btnEl, icon) {
   const key = 'kw_' + keyword;
   if (nearbyActiveCategory === key) { clearNearbyMarkers(); return; }
   let lat, lng;
@@ -1205,12 +1213,12 @@ async function searchNearbyKeyword(keyword, label, btnEl) {
     nearbyActiveCategory = key;
     document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
-    renderNearbyResults(allDocs);
+    renderNearbyResults(allDocs, icon);
     toast(`${label} ${allDocs.length}곳 발견`);
   } catch(e) { toast('검색 실패'); }
 }
 
-async function searchNearby(categoryCode, label, btnEl) {
+async function searchNearby(categoryCode, label, btnEl, icon) {
   // 토글: 같은 카테고리 다시 누르면 해제
   if (nearbyActiveCategory === categoryCode) {
     clearNearbyMarkers();
@@ -1233,18 +1241,19 @@ async function searchNearby(categoryCode, label, btnEl) {
     nearbyActiveCategory = categoryCode;
     document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
-    renderNearbyResults(data.documents);
+    renderNearbyResults(data.documents, icon);
     toast(`${label} ${data.documents.length}곳 발견`);
   } catch(e) {
     toast('검색 실패');
   }
 }
-function renderNearbyResults(docs) {
+function renderNearbyResults(docs, icon) {
+  const emoji = icon || '📍';
   docs.forEach(d => {
     const pos = new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
     const dist = d.distance ? (d.distance >= 1000 ? (d.distance/1000).toFixed(1)+'km' : d.distance+'m') : '';
     const el = document.createElement('div');
-    el.innerHTML = `<div style="background:white;border:2px solid var(--accent);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer">📍</div>`;
+    el.innerHTML = `<div style="background:white;border:2px solid #ddd;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.15);cursor:pointer">${emoji}</div>`;
     const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:2 });
     const iwEl = document.createElement('div');
     iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:12px;font-family:Noto Sans KR;min-width:160px;max-width:220px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
@@ -1604,7 +1613,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 28;
+const APP_VERSION = 29;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
