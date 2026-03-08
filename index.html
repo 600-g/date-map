@@ -520,18 +520,9 @@ function initMap() {
     center: new kakao.maps.LatLng(initLat, initLng), level: initLevel
   });
   kakao.maps.event.addListener(map, 'click', () => closeAllIw());
-  // 저장된 위치가 있으면 즉시 내 위치 마커 + 추적 모드 표시
-  if (savedLoc) {
-    try {
-      const loc = JSON.parse(savedLoc);
-      myLat = loc.lat; myLng = loc.lng;
-      document.getElementById('locBtn').classList.add('tracking');
-    } catch(e) {}
-  }
   renderAll();
-  if (myLat !== null) updateMyLocMarker();
   // 앱 시작 시 자동으로 위치 추적 ON (버튼 누른 것과 동일)
-  setTimeout(() => _doLocClick(), 300);
+  setTimeout(() => _doLocClick(), 500);
 }
 
 // ── 탭 ──
@@ -1540,12 +1531,11 @@ function updateMyLocMarker() {
   const pos = new kakao.maps.LatLng(myLat, myLng);
   if (!myLocOverlay) {
     const el = document.createElement('div');
-    el.innerHTML = '<div style="position:relative;width:48px;height:48px;display:flex;align-items:center;justify-content:center">' +
-      '<div style="position:absolute;width:48px;height:48px;background:rgba(66,133,244,.12);border-radius:50%;animation:locPulse 2s infinite"></div>' +
-      '<div style="position:absolute;width:32px;height:32px;background:rgba(66,133,244,.2);border-radius:50%"></div>' +
-      '<div style="width:18px;height:18px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 8px rgba(66,133,244,.7);position:relative;z-index:1"></div>' +
-      '</div>';
-    myLocOverlay = new kakao.maps.CustomOverlay({ position: pos, content: el, zIndex: 999 });
+    el.style.cssText = 'position:relative;width:56px;height:56px;pointer-events:none';
+    el.innerHTML = '<div style="position:absolute;inset:0;background:rgba(66,133,244,.1);border-radius:50%;animation:locPulse 2s infinite"></div>' +
+      '<div style="position:absolute;inset:8px;background:rgba(66,133,244,.15);border-radius:50%"></div>' +
+      '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(66,133,244,.8)"></div>';
+    myLocOverlay = new kakao.maps.CustomOverlay({ position: pos, content: el, yAnchor: 0.5, xAnchor: 0.5, zIndex: 999 });
     myLocOverlay.setMap(map);
   } else {
     myLocOverlay.setPosition(pos);
@@ -1686,7 +1676,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 54;
+const APP_VERSION = 55;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
