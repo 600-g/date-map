@@ -84,7 +84,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .cat-color{width:28px;height:28px;border-radius:4px;border:1px solid var(--warm);cursor:pointer;flex-shrink:0;padding:0}
 .cat-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:14px;padding:2px 4px;flex-shrink:0}
 .cat-del:hover{color:var(--red)}
-.cat-summary-item{display:inline-block;font-size:11px;padding:3px 8px;border-radius:12px;margin:2px;border:1px solid var(--warm)}
+.cat-summary-item{display:inline-block;font-size:11px;padding:3px 8px;border-radius:12px;margin:2px;border:1px solid var(--warm);background:white}
 .save-success{background:var(--green) !important;border-color:var(--green) !important}
 /* 지도 정보창 버튼 */
 .iw-btn{font-family:'Noto Sans KR',sans-serif;font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid #ddd;background:white;cursor:pointer;display:flex;align-items:center;gap:3px;white-space:nowrap}
@@ -375,7 +375,7 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('.tab')[['list','add','cfg'].indexOf(name)].classList.add('active');
-  if (name==='cfg') { updateExport(); renderCatSummary(); if(catEditorOpen) renderCatEditor(); document.getElementById('nickChange').value = myNick; }
+  if (name==='cfg') { catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; try{lucide.createIcons();}catch(e){} }
   if (name==='add') populateCatSelect();
 }
 
@@ -542,7 +542,7 @@ function toggleCatEditor() {
 
 function renderCatSummary() {
   document.getElementById('catSummary').innerHTML = cats.map(c =>
-    `<span class="cat-summary-item" style="background:${c.bg};color:${c.color}">${c.emoji} ${c.name}</span>`
+    `<span class="cat-summary-item" style="color:${c.color}">${c.emoji} ${c.name}</span>`
   ).join('');
 }
 
