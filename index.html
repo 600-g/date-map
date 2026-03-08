@@ -528,52 +528,18 @@ function initMap() {
   });
   kakao.maps.event.addListener(map, 'click', () => closeAllIw());
   renderAll();
-  // 앱 시작 시: savedLoc이 있으면 즉시 마커 표시 + 추적 시도
+  // 앱 시작 시: savedLoc이 있으면 즉시 마커+거리 표시
   if (savedLoc) {
     try {
       const loc = JSON.parse(savedLoc);
       myLat = loc.lat; myLng = loc.lng;
       updateMyLocMarker();
       document.getElementById('locBtn').classList.add('tracking');
-      renderList(); // 거리 표시
+      renderList();
     } catch(e) {}
   }
-  // GPS 추적 시작 (savedLoc 유무 관계없이)
-  setTimeout(() => {
-    if (navigator.geolocation) {
-      document.getElementById('locBtn').classList.add('tracking');
-      navigator.geolocation.getCurrentPosition(pos => {
-        myLat = pos.coords.latitude;
-        myLng = pos.coords.longitude;
-        localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
-        updateMyLocMarker();
-        map.setCenter(new kakao.maps.LatLng(myLat, myLng));
-        map.setLevel(4);
-        renderList();
-        if (!watchId) {
-          watchId = navigator.geolocation.watchPosition(wp => {
-            if (wp.coords.accuracy > 1000) return;
-            myLat = wp.coords.latitude;
-            myLng = wp.coords.longitude;
-            localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
-            updateMyLocMarker();
-            renderList();
-          }, () => {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
-        }
-      }, () => {
-        // 고정밀 실패 → 저정밀 재시도
-        navigator.geolocation.getCurrentPosition(pos => {
-          myLat = pos.coords.latitude;
-          myLng = pos.coords.longitude;
-          localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
-          updateMyLocMarker();
-          map.setCenter(new kakao.maps.LatLng(myLat, myLng));
-          map.setLevel(4);
-          renderList();
-        }, () => {}, { enableHighAccuracy: false, maximumAge: 120000, timeout: 15000 });
-      }, { enableHighAccuracy: true, maximumAge: 30000, timeout: 10000 });
-    }
-  }, 300);
+  // 위치 추적 완전 ON (_doLocClick과 동일하게 watchId까지 세팅)
+  setTimeout(() => _doLocClick(), 500);
 }
 
 // ── 탭 ──
@@ -1843,7 +1809,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 63;
+const APP_VERSION = 64;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
