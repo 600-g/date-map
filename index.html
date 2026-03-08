@@ -929,8 +929,10 @@ function renderMarkers() {
     iwEl.querySelector('[data-action="kakao"]').onclick = () => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`, '_blank');
     iwEl.querySelector('[data-action="naver"]').onclick = () => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(p.name)}?c=${p.lng},${p.lat},15,0,0,0,dh`, '_blank');
     iwEl.querySelector('[data-action="visit"]').onclick = () => { toggleV(p.id); };
-    // 팝업 클릭 시 지도 이벤트 전파 차단
-    iwEl.onclick = (e) => e.stopPropagation();
+    // 팝업 클릭 시 지도 이벤트 전파 완전 차단
+    ['click','mousedown','mouseup','touchstart','touchend','pointerdown','pointerup'].forEach(evt => {
+      iwEl.addEventListener(evt, e => e.stopPropagation());
+    });
 
     const iw = new kakao.maps.CustomOverlay({ position:pos, content:iwEl, yAnchor:1.15, zIndex:10 });
     iwMap[p.id] = iw;
