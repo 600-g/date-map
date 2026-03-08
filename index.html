@@ -218,12 +218,12 @@ header .lc svg{width:18px;height:18px}
             <input id="sq" type="text" placeholder="예: 안국 한옥카페" onkeydown="if(event.key==='Enter')doSearch()">
             <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" onclick="doSearch()">검색</button>
           </div>
-          <div id="srBatchBar" style="display:none;background:var(--accent);color:white;padding:8px 12px;border-radius:8px;margin-bottom:6px;display:none;align-items:center;justify-content:space-between;cursor:pointer" onclick="showBatchConfirm()">
+          <div id="srBatchBar" style="display:none;background:var(--accent);color:white;padding:8px 12px;border-radius:8px;margin-bottom:6px;display:none;align-items:center;justify-content:space-between;cursor:pointer;position:sticky;top:0;z-index:10" onclick="showBatchConfirm()">
             <span id="srBatchCount" style="font-size:13px;font-weight:550"></span>
             <span style="font-size:12px;background:rgba(255,255,255,.25);padding:4px 12px;border-radius:6px">추가하기</span>
           </div>
           <div id="sr"></div>
-          <div id="searchConfirm" style="display:none;background:var(--cream);border:1px solid var(--warm);border-radius:8px;padding:12px;margin-top:6px">
+          <div id="searchConfirm" style="display:none;background:var(--cream);border:1px solid var(--warm);border-radius:8px;padding:12px;margin-top:6px;position:sticky;top:0;z-index:10">
             <div style="font-size:13px;font-weight:500;margin-bottom:2px" id="scName"></div>
             <div style="font-size:11px;color:var(--brown);margin-bottom:8px" id="scAddr"></div>
             <div class="lbl" style="margin-top:0">카테고리</div>
@@ -1864,7 +1864,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 74;
+const APP_VERSION = 75;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
