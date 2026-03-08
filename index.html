@@ -550,6 +550,7 @@ function addCat() {
 }
 
 let dragFromIdx = null;
+let touchDragState = null; // 터치 드래그 전역 상태
 
 function setupCatDrag() {
   const list = document.getElementById('catList');
@@ -584,68 +585,71 @@ function setupCatDrag() {
     });
   });
 
-  // ── Mobile: Touch drag (DOM 재배치 방식) ──
+  // ── Mobile: Touch drag (연속 DOM 스왑) ──
   rows.forEach(row => {
     const handle = row.querySelector('.cat-handle');
     if (!handle) return;
-    let dragging = false, startY = 0, rowH = 0;
 
     handle.addEventListener('touchstart', e => {
       e.preventDefault();
-      dragging = true;
-      dragFromIdx = parseInt(row.dataset.idx);
-      startY = e.touches[0].clientY;
-      rowH = row.offsetHeight + 4; // row높이 + gap
+      const rect = row.getBoundingClientRect();
+      touchDragState = {
+        dragRow: row,
+        startY: e.touches[0].clientY,
+        offsetY: e.touches[0].clientY - rect.top,
+        rowH: row.offsetHeight + 4
+      };
       row.classList.add('touch-dragging');
     }, { passive: false });
+  });
 
-    handle.addEventListener('touchmove', e => {
-      if (!dragging) return;
+  // list 레벨 touchmove/end (한 번만 등록)
+  if (!list._touchDragBound) {
+    list._touchDragBound = true;
+
+    list.addEventListener('touchmove', e => {
+      if (!touchDragState) return;
       e.preventDefault();
+      const { dragRow, rowH } = touchDragState;
       const curY = e.touches[0].clientY;
-      const dy = curY - startY;
-      row.style.transform = `translateY(${dy}px) scale(1.04)`;
+      const dy = curY - touchDragState.startY;
+      dragRow.style.transform = `translateY(${dy}px) scale(1.04)`;
 
-      // dy가 row 높이 이상 이동하면 실제 DOM 순서 교체
-      const curIdx = parseInt(row.dataset.idx);
-      if (dy > rowH && curIdx < cats.length - 1) {
-        // 아래로 이동
-        const [moved] = cats.splice(curIdx, 1);
-        cats.splice(curIdx + 1, 0, moved);
-        startY += rowH;
-        rebuildCatRows();
-      } else if (dy < -rowH && curIdx > 0) {
-        // 위로 이동
-        const [moved] = cats.splice(curIdx, 1);
-        cats.splice(curIdx - 1, 0, moved);
-        startY -= rowH;
-        rebuildCatRows();
+      // 아래 row와 스왑
+      const allRows = [...list.querySelectorAll('.cat-row')];
+      const curDomIdx = allRows.indexOf(dragRow);
+      if (dy > rowH * 0.6 && curDomIdx < allRows.length - 1) {
+        const next = allRows[curDomIdx + 1];
+        list.insertBefore(next, dragRow);
+        touchDragState.startY += rowH;
+        next.style.transition = 'transform 0.15s';
+        next.style.transform = 'translateY(-' + rowH + 'px)';
+        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 150); });
+      }
+      // 위 row와 스왑
+      else if (dy < -rowH * 0.6 && curDomIdx > 0) {
+        const prev = allRows[curDomIdx - 1];
+        list.insertBefore(dragRow, prev);
+        touchDragState.startY -= rowH;
+        prev.style.transition = 'transform 0.15s';
+        prev.style.transform = 'translateY(' + rowH + 'px)';
+        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 150); });
       }
     }, { passive: false });
 
-    handle.addEventListener('touchend', e => {
-      if (!dragging) return;
-      dragging = false;
-      row.classList.remove('touch-dragging');
-      row.style.transform = '';
-      renderCatEditor(); // 최종 상태로 렌더
+    list.addEventListener('touchend', e => {
+      if (!touchDragState) return;
+      const { dragRow } = touchDragState;
+      dragRow.classList.remove('touch-dragging');
+      dragRow.style.transform = '';
+      // DOM 순서에서 cats 배열 재구성
+      const allRows = [...list.querySelectorAll('.cat-row')];
+      const newCats = allRows.map(r => cats[parseInt(r.dataset.idx)]);
+      cats.splice(0, cats.length, ...newCats);
+      touchDragState = null;
+      renderCatEditor(); // data-idx 갱신
     });
-  });
-}
-
-// 터치 드래그 중 DOM만 빠르게 갱신 (이벤트 재등록 포함)
-function rebuildCatRows() {
-  const list = document.getElementById('catList');
-  list.innerHTML = cats.map((c,i)=>`
-    <div class="cat-row" draggable="true" data-idx="${i}">
-      <span class="cat-handle" title="드래그로 순서 변경">☰</span>
-      <span class="cat-emoji" title="이모지 클릭해서 변경" onclick="editEmoji(${i})">${c.emoji}</span>
-      <input class="cat-name-input" value="${c.name}" onchange="cats[${i}].name=this.value" placeholder="카테고리 이름">
-      <input type="color" class="cat-color" value="${c.color}" title="배경색" onchange="cats[${i}].color=this.value">
-      <button class="cat-del" onclick="delCat(${i})" title="삭제">✕</button>
-    </div>
-  `).join('');
-  setupCatDrag();
+  }
 }
 
 function delCat(idx) {
