@@ -398,17 +398,8 @@ function initMap() {
   });
   kakao.maps.event.addListener(map, 'click', () => closeAllIw());
   renderAll();
-  // 앱 시작 시 자동으로 내 위치로 이동
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
-      myLat = pos.coords.latitude;
-      myLng = pos.coords.longitude;
-      map.setCenter(new kakao.maps.LatLng(myLat, myLng));
-      map.setLevel(4);
-      updateMyLocMarker();
-      renderList();
-    }, () => {}, { enableHighAccuracy: true, timeout: 10000 });
-  }
+  // 앱 시작 시 자동으로 위치 추적 모드 ON
+  setTimeout(() => _doLocClick(), 500);
 }
 
 // ── 탭 ──
