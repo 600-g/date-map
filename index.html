@@ -1629,6 +1629,7 @@ function focusPlace(id) {
   }, 50);
   focusedPlaceId = id;
   if (iwMap[id]) iwMap[id].setMap(map);
+  clearNearbyMarkers();
   const nb = document.getElementById('nearbyBar');
   if (nb) nb.classList.add('hidden');
 }
@@ -2124,7 +2125,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 94;
+const APP_VERSION = 95;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
