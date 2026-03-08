@@ -557,17 +557,8 @@ function initMap() {
       renderList();
     } catch(e) {}
   }
-  // 즉시 GPS 시도 (모든 플랫폼)
-  setTimeout(() => _silentGps(), 300);
-  // iOS PWA 백업: 첫 터치 시에도 GPS 시도
-  function _autoGps() {
-    document.removeEventListener('touchstart', _autoGps);
-    document.removeEventListener('click', _autoGps);
-    if (watchId !== null) return;
-    _doLocClick();
-  }
-  document.addEventListener('touchstart', _autoGps, {once:true});
-  document.addEventListener('click', _autoGps, {once:true});
+  // 앱 시작 시 위치 버튼 자동 활성화
+  handleLocClick();
 }
 
 function _silentGps() {
@@ -2027,7 +2018,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 89;
+const APP_VERSION = 90;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
