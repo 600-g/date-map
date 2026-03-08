@@ -1364,7 +1364,7 @@ function renderList() {
       </div>
       ${p.addr?`<div class="pi-addr"><i data-lucide="map-pin" class="lc lc-sm" style="color:#E74C3C"></i> ${p.addr} <span class="addr-search" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')"><i data-lucide="external-link" class="lc" style="width:10px;height:10px"></i></span></div>`:''}
       ${myLat!==null&&p.lat?`<div class="pi-dist"><i data-lucide="ruler" class="lc lc-sm"></i> ${formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng))} · ${formatWalkTime(getDistanceKm(myLat,myLng,p.lat,p.lng))} · ${formatCarTime(getDistanceKm(myLat,myLng,p.lat,p.lng))}</div>`:''}
-      <div class="pi-memo" onclick="event.stopPropagation();editMemo(${p.id})" style="cursor:pointer" title="클릭해서 메모 수정">${p.memo||'<span style="color:#bbb">메모 추가</span>'} <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:2px"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></div>
+      <div class="pi-memo">${p.memo||'<span style="color:#bbb">메모 없음</span>'} <span onclick="event.stopPropagation();editMemo(${p.id})" style="cursor:pointer;display:inline-flex;align-items:center;padding:4px;border-radius:4px;vertical-align:middle;margin-left:1px" title="메모 수정"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></span></div>
       ${renderRatingBlock(p)}
       <div class="pi-acts">
         <button class="bx${p.visited?' vis':''}" onclick="event.stopPropagation();toggleV(${p.id})">${p.visited?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg> 다녀옴':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> 미방문'}</button>
@@ -2000,7 +2000,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 84;
+const APP_VERSION = 85;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
