@@ -469,17 +469,20 @@ function confirmSearch() {
   if (!p) return;
   const cat = document.getElementById('scCat').value;
   const memo = document.getElementById('scMemo').value.trim();
-  addPlace({
+  const ok = addPlace({
     id: Date.now(),
     name: p.place_name,
     addr: p.road_address_name || p.address_name,
     lat: parseFloat(p.y), lng: parseFloat(p.x),
     cat, memo, visited: false
   });
-  document.getElementById('searchConfirm').style.display = 'none';
-  document.getElementById('sq').value = '';
-  window._selectedSearch = null;
-  showTab('list');
+  if (ok) {
+    document.getElementById('searchConfirm').style.display = 'none';
+    document.getElementById('sq').value = '';
+    document.getElementById('sr').innerHTML = '';
+    window._selectedSearch = null;
+    showTab('list');
+  }
 }
 
 function cancelSearch() {
@@ -496,11 +499,13 @@ function addManual() {
   const memo = document.getElementById('mMemo').value.trim();
 
   const finish = (lat, lng) => {
-    addPlace({ id:Date.now(), name, addr, lat, lng, cat, memo, visited:false });
-    document.getElementById('mName').value='';
-    document.getElementById('mAddr').value='';
-    document.getElementById('mMemo').value='';
-    showTab('list');
+    const ok = addPlace({ id:Date.now(), name, addr, lat, lng, cat, memo, visited:false });
+    if (ok) {
+      document.getElementById('mName').value='';
+      document.getElementById('mAddr').value='';
+      document.getElementById('mMemo').value='';
+      showTab('list');
+    }
   };
 
   if (addr) {
@@ -516,7 +521,7 @@ function addManual() {
 function addPlace(p) {
   // 중복 체크 (이름 + 주소 동일하면 중복)
   const dup = places.find(x => x.name === p.name && x.addr === p.addr);
-  if (dup) { toast('이미 등록된 장소예요'); return; }
+  if (dup) { toast('이미 등록된 장소예요'); return false; }
   places.push(p);
   saveData(); renderAll();
   // 추가된 장소로 지도 포커스
@@ -525,6 +530,7 @@ function addPlace(p) {
     map.setLevel(4);
   }
   toast(`📍 ${p.name} 추가 완료!`);
+  return true;
 }
 
 // ── 카테고리 편집 ──
