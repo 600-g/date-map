@@ -530,36 +530,8 @@ function initMap() {
   }
   renderAll();
   if (myLat !== null) updateMyLocMarker();
-  // 앱 시작 시 자동으로 위치 추적 모드 ON
-  if (navigator.geolocation) {
-    function onInitLocSuccess(pos) {
-      myLat = pos.coords.latitude;
-      myLng = pos.coords.longitude;
-      localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
-      updateMyLocMarker();
-      map.setCenter(new kakao.maps.LatLng(myLat, myLng));
-      map.setLevel(4);
-      document.getElementById('locBtn').classList.add('tracking');
-      renderList();
-      if (!watchId) {
-        watchId = navigator.geolocation.watchPosition(wp => {
-          if (wp.coords.accuracy > 1000) return;
-          myLat = wp.coords.latitude;
-          myLng = wp.coords.longitude;
-          localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
-          updateMyLocMarker();
-          renderList();
-        }, () => {}, { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 });
-      }
-    }
-    // 1차: 저정밀+캐시로 빠르게 (iOS PWA 호환)
-    navigator.geolocation.getCurrentPosition(onInitLocSuccess, () => {
-      // 2차: 고정밀 재시도
-      navigator.geolocation.getCurrentPosition(onInitLocSuccess, (err) => {
-        console.log('위치 최종 실패:', err.code, err.message);
-      }, { enableHighAccuracy: true, maximumAge: 60000, timeout: 30000 });
-    }, { enableHighAccuracy: false, maximumAge: 120000, timeout: 10000 });
-  }
+  // 앱 시작 시 자동으로 위치 추적 ON (버튼 누른 것과 동일)
+  setTimeout(() => _doLocClick(), 300);
 }
 
 // ── 탭 ──
@@ -1516,6 +1488,7 @@ function _doLocClick() {
     const acc = pos.coords.accuracy; // 정확도 (미터)
     myLat = pos.coords.latitude;
     myLng = pos.coords.longitude;
+    localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
     updateMyLocMarker();
     map.setCenter(new kakao.maps.LatLng(myLat, myLng));
     map.setLevel(4);
@@ -1713,7 +1686,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 52;
+const APP_VERSION = 53;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
