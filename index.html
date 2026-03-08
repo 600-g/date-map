@@ -110,6 +110,9 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
   #map{height:52vh}
 }
 </style>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <header>
@@ -253,6 +256,18 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 <div class="toast" id="toast"></div>
 
 <script>
+// ── Firebase 초기화 ──
+firebase.initializeApp({
+  apiKey: "AIzaSyAF6096bC-Q04qWXh5MjVsuJGhYBy76agM",
+  authDomain: "datemap-759bf.firebaseapp.com",
+  projectId: "datemap-759bf",
+  storageBucket: "datemap-759bf.firebasestorage.app",
+  messagingSenderId: "833273999923",
+  appId: "1:833273999923:web:2696d0363c223c6bbbe946"
+});
+const db = firebase.firestore();
+const docRef = db.collection('datemap').doc('shared');
+
 // ── 기본 카테고리 ──
 const DEFAULT_CATS = [
   { id:'식사', name:'식사', emoji:'🍽', bg:'#FDEBD0', color:'#C0392B' },
@@ -267,11 +282,13 @@ let markers = [], iws = [], map, curFilter = '전체';
 let editingPlaceId = null;
 let myNick = localStorage.getItem('datemap-nick') || '';
 let myLocMarker = null, myLocOverlay = null, watchId = null, myLat = null, myLng = null;
+let firestoreReady = false;
 
 const REST_KEY = 'f05925b16ad652c4bb02b5aac5e56b06';
 
-// ── 스토리지 (localStorage) ──
+// ── 스토리지 (Firestore + localStorage 백업) ──
 function loadData() {
+  // localStorage에서 먼저 로드 (오프라인/빠른 로딩용)
   try {
     const r1 = localStorage.getItem('datemap-v2');
     if (r1) places = JSON.parse(r1);
@@ -279,11 +296,45 @@ function loadData() {
     if (r2) cats = JSON.parse(r2);
   } catch(e) { places = []; cats = [...DEFAULT_CATS]; }
 }
+
 function saveData() {
+  // localStorage 백업
   try { localStorage.setItem('datemap-v2', JSON.stringify(places)); } catch(e) {}
+  // Firestore에 저장
+  syncToFirestore();
 }
 function saveCatsData() {
   try { localStorage.setItem('datemap-cats', JSON.stringify(cats)); } catch(e) {}
+  syncToFirestore();
+}
+
+function syncToFirestore() {
+  docRef.set({ places: JSON.stringify(places), cats: JSON.stringify(cats) })
+    .catch(e => console.log('Firestore 저장 실패:', e));
+}
+
+function startRealtimeSync() {
+  docRef.onSnapshot(snap => {
+    if (!snap.exists) return;
+    const data = snap.data();
+    try {
+      const newPlaces = JSON.parse(data.places || '[]');
+      const newCats = JSON.parse(data.cats || '[]');
+      // 변경이 있을 때만 업데이트
+      if (JSON.stringify(newPlaces) !== JSON.stringify(places) ||
+          JSON.stringify(newCats) !== JSON.stringify(cats)) {
+        places = newPlaces;
+        cats = newCats.length ? newCats : [...DEFAULT_CATS];
+        // localStorage 백업
+        try { localStorage.setItem('datemap-v2', JSON.stringify(places)); } catch(e) {}
+        try { localStorage.setItem('datemap-cats', JSON.stringify(cats)); } catch(e) {}
+        renderAll();
+      }
+    } catch(e) {}
+    firestoreReady = true;
+  }, err => {
+    console.log('Firestore 실시간 동기화 실패:', err);
+  });
 }
 
 // ── 지도 초기화 ──
@@ -610,7 +661,7 @@ function clearAll() {
   document.getElementById('clearModal').classList.add('open');
 }
 function confirmClear() {
-  places=[]; saveData(); renderAll();
+  places=[]; cats=[...DEFAULT_CATS]; saveData(); saveCatsData(); renderAll();
   document.getElementById('clearModal').classList.remove('open');
   toast('초기화됐어요');
 }
@@ -770,6 +821,7 @@ function toast(msg) {
 window.addEventListener('load', () => {
   loadData();
   checkNick();
+  startRealtimeSync();
   // 카카오 지도 SDK 동적 로드
   const script = document.createElement('script');
   script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=fc85da8522a1e81f1e19c6777c002a55&autoload=false';
