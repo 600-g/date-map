@@ -149,7 +149,8 @@ header .lc svg{width:18px;height:18px}
 .list-top-bar{padding:8px 10px 4px;flex-shrink:0;border-bottom:1px solid var(--warm);background:white}
 .list-search-row{display:flex;gap:6px;align-items:center}
 .list-search-box{display:flex;align-items:center;gap:6px;background:var(--cream);border:1px solid var(--warm);border-radius:10px;padding:6px 10px;transition:all .2s;overflow:hidden}
-.list-search-box.collapsed{width:36px;padding:6px 8px;cursor:pointer;flex:0 0 36px}
+.list-search-box.collapsed{width:34px;height:34px;padding:0;cursor:pointer;flex:0 0 34px;justify-content:center}
+.list-search-box.collapsed .lc svg{width:17px;height:17px}
 .list-search-box.expanded{flex:1}
 .list-search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,125,184,.15)}
 .list-search-box input{font-size:13px}
@@ -204,7 +205,7 @@ header .lc svg{width:18px;height:18px}
         <div class="list-search-row">
           <div class="list-search-box collapsed" id="listSearchBox" onclick="expandListSearch()">
             <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0"></i>
-            <input id="listSearchInput" type="text" placeholder="등록된 장소 검색" oninput="filterListSearch()" onblur="collapseListSearch()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
+            <input id="listSearchInput" type="text" placeholder="등록된 장소 검색 (예: ㅅㅂㅅ)" oninput="filterListSearch()" onblur="collapseListSearch()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
           </div>
           <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()"><i data-lucide="plus" class="lc lc-sm"></i> 추가</button>
         </div>
@@ -1828,7 +1829,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 65;
+const APP_VERSION = 66;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
