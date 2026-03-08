@@ -151,7 +151,7 @@ header .lc svg{width:18px;height:18px}
 .add-panel{border-bottom:1px solid var(--warm);background:#FAFAF7;max-height:0;overflow:hidden;transition:max-height .3s ease}
 .add-panel.open{max-height:600px;overflow-y:auto;display:block}
 /* 주변 검색 */
-.nearby-bar{position:absolute;top:12px;left:12px;z-index:10;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 70px)}
+.nearby-bar{position:absolute;top:12px;left:12px;z-index:10;display:flex;gap:4px;flex-wrap:wrap;max-width:calc(100% - 70px);transition:opacity .2s}
 .nb-btn{font-family:'Noto Sans KR',sans-serif;font-size:11px;padding:5px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.12);transition:all .15s;white-space:nowrap}
 .nb-btn:hover,.nb-btn.active{background:var(--dark);color:white;border-color:var(--dark)}
 /* 토스트 */
@@ -1117,6 +1117,8 @@ function renderMarkers() {
       const el=document.getElementById('pi-'+p.id);
       if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
       focusedPlaceId = p.id;
+      const nb = document.getElementById('nearbyBar');
+      if (nb) { nb.style.opacity = '0'; nb.style.pointerEvents = 'none'; }
     };
     marker.setMap(map);
     markers.push(marker); iws.push(iw);
@@ -1146,6 +1148,8 @@ function closeAllIw() {
   iws.forEach(w=>{ try{w.setMap(null);}catch(e){} });
   document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
   focusedPlaceId = null;
+  const nb = document.getElementById('nearbyBar');
+  if (nb) { nb.style.opacity = '1'; nb.style.pointerEvents = 'auto'; }
 }
 function focusPlace(id) {
   const p=places.find(x=>x.id===id); if(!p) return;
@@ -1157,6 +1161,8 @@ function focusPlace(id) {
   document.getElementById('pi-'+id)?.classList.add('sel');
   focusedPlaceId = id;
   if (iwMap[id]) iwMap[id].setMap(map);
+  const nb = document.getElementById('nearbyBar');
+  if (nb) { nb.style.opacity = '0'; nb.style.pointerEvents = 'none'; }
 }
 
 function toggleV(id) {
@@ -1630,7 +1636,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 36;
+const APP_VERSION = 37;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
