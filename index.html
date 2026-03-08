@@ -216,7 +216,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 
   <div style="position:relative;flex:1;display:flex">
     <div id="map" style="flex:1"></div>
-    <button class="my-loc-btn" id="locBtn" onclick="toggleTracking()" title="내 위치">📍</button>
+    <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료">📍</button>
   </div>
 </div>
 
@@ -705,15 +705,42 @@ function confirmClear() {
 }
 
 // ── 내 위치 ──
-function toggleTracking() {
-  if (watchId !== null) { stopTracking(); return; }
+let locLongPress = null;
+
+// 버튼 이벤트 (load 후 등록)
+function setupLocBtn() {
+  const btn = document.getElementById('locBtn');
+  btn.addEventListener('pointerdown', () => {
+    locLongPress = setTimeout(() => { locLongPress = 'long'; stopTracking(); }, 800);
+  });
+  btn.addEventListener('pointerup', () => {
+    if (locLongPress === 'long') { locLongPress = null; return; }
+    clearTimeout(locLongPress); locLongPress = null;
+    handleLocClick();
+  });
+  btn.addEventListener('pointerleave', () => { clearTimeout(locLongPress); locLongPress = null; });
+}
+
+function handleLocClick() {
   if (!navigator.geolocation) { toast('이 브라우저에서 위치를 지원하지 않아요'); return; }
+
+  // 이미 추적 중이면 → 내 위치로 센터링만
+  if (watchId !== null) {
+    if (myLat !== null) {
+      map.setCenter(new kakao.maps.LatLng(myLat, myLng));
+      map.setLevel(4);
+      toast('📍 내 위치로 이동');
+    }
+    return;
+  }
+
+  // 추적 시작
   document.getElementById('locBtn').classList.add('tracking');
   watchId = navigator.geolocation.watchPosition(pos => {
     myLat = pos.coords.latitude;
     myLng = pos.coords.longitude;
     updateMyLocMarker();
-    renderList(); // 거리 업데이트
+    renderList();
   }, err => {
     toast('위치 권한을 허용해주세요');
     stopTracking();
@@ -730,7 +757,7 @@ function toggleTracking() {
     toast('위치를 가져올 수 없어요. 위치 권한을 확인해주세요');
     stopTracking();
   }, { enableHighAccuracy: true, timeout: 10000 });
-  toast('📍 내 위치 추적 시작');
+  toast('📍 위치 추적 시작 (길게 누르면 종료)');
 }
 
 function stopTracking() {
@@ -863,6 +890,7 @@ window.addEventListener('load', () => {
   loadData();
   checkNick();
   startRealtimeSync();
+  setupLocBtn();
   // 카카오 지도 SDK 동적 로드
   const script = document.createElement('script');
   script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=fc85da8522a1e81f1e19c6777c002a55&autoload=false';
