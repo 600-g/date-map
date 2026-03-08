@@ -668,11 +668,11 @@ async function doSearch() {
     window._srChecked = new Set();
     box.innerHTML = data.documents.map((p,i)=>
       `<div class="sr-item" style="display:flex;align-items:center;gap:8px">
-        <input type="checkbox" class="sr-chk" data-idx="${i}" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--accent);cursor:pointer" onclick="event.stopPropagation();toggleSrChk(${i},this)">
         <div style="flex:1;cursor:pointer" onclick="pickSearch(${i})">
           <div class="sr-name">${p.place_name}</div>
           <div class="sr-addr">${p.road_address_name || p.address_name}</div>
         </div>
+        <input type="checkbox" class="sr-chk" data-idx="${i}" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--accent);cursor:pointer" onclick="event.stopPropagation();toggleSrChk(${i},this)">
       </div>`
     ).join('') + '<div id="srBatchBar" style="display:none;margin-top:6px"><button class="btn btn-dark" style="width:100%" onclick="batchAddSearch()">선택한 장소 일괄 추가</button></div>';
   } catch(e) {
@@ -1759,7 +1759,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 58;
+const APP_VERSION = 59;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
