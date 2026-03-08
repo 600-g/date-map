@@ -1905,7 +1905,7 @@ function renderNearbyResults(docs, iconKey) {
     const pos = new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
     const dist = d.distance ? (d.distance >= 1000 ? (d.distance/1000).toFixed(1)+'km' : d.distance+'m') : '';
     const el = document.createElement('div');
-    el.innerHTML = `<div style="background:white;border:2px solid #ddd;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15);cursor:pointer">${svgIcon||'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'}</div>`;
+    el.innerHTML = `<div style="background:white;border:1.5px solid #bbb;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.12);cursor:pointer;opacity:.85">${svgIcon?svgIcon.replace(/width="18"/g,'width="14"').replace(/height="18"/g,'height="14"'):'<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="#E74C3C" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'}</div>`;
     const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:2 });
     const iwEl = document.createElement('div');
     iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:13px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;max-width:220px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
@@ -1927,9 +1927,14 @@ function renderNearbyResults(docs, iconKey) {
       else window.open(`https://map.kakao.com/link/to/${encodeURIComponent(d.place_name)},${d.y},${d.x}`, '_blank');
     };
     const iw = new kakao.maps.CustomOverlay({ position:pos, content:iwEl, yAnchor:1.15, zIndex:11 });
-    el.onclick = () => { nearbyMarkers.forEach(m => { if(m.iw) try{m.iw.setMap(null);}catch(e){} }); iw.setMap(map); };
+    const entry = { marker, iw, open:false };
+    el.onclick = () => {
+      const wasOpen = entry.open;
+      nearbyMarkers.forEach(m => { if(m.iw) try{m.iw.setMap(null);m.open=false;}catch(e){} });
+      if (!wasOpen) { iw.setMap(map); entry.open = true; }
+    };
     marker.setMap(map);
-    nearbyMarkers.push({ marker, iw });
+    nearbyMarkers.push(entry);
   });
 }
 
@@ -2282,7 +2287,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 101;
+const APP_VERSION = 102;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
