@@ -549,9 +549,36 @@ function renderCatEditor() {
   setupCatDrag();
 }
 
+const EMOJI_PICKS = ['🍽️','☕','🍰','🍜','🍕','🍣','🍺','🍷','🎬','🎵','🎪','🎭','🏖️','⛰️','🌳','🌊','🛍️','💇','💪','🏊','⚽','🎳','🎯','🎨','📸','🏨','✈️','🚗','💑','💝','🎁','🎂','🐶','🐱','🏠','🏥','📚','🎓','⛪','🕌','🗼','🏰','🌸','🌺','🌙','⭐','❤️','🔥','✨','📌','🎈','🎊'];
+let emojiPickerIdx = null;
+
 function editEmoji(idx) {
-  const emoji = prompt('이모지를 입력하세요', cats[idx].emoji);
-  if (emoji) { cats[idx].emoji = emoji.trim(); autosaveCats(); renderCatEditor(); }
+  // 이미 열려있으면 닫기
+  if (emojiPickerIdx === idx) { closeEmojiPicker(); return; }
+  closeEmojiPicker();
+  emojiPickerIdx = idx;
+  const row = document.querySelectorAll('.cat-row')[idx];
+  if (!row) return;
+  const picker = document.createElement('div');
+  picker.id = 'emojiPicker';
+  picker.style.cssText = 'display:grid;grid-template-columns:repeat(8,1fr);gap:4px;padding:8px;background:white;border:1px solid var(--warm);border-radius:8px;margin-top:6px;box-shadow:0 2px 8px rgba(0,0,0,.1)';
+  picker.innerHTML = EMOJI_PICKS.map(e =>
+    `<span style="font-size:22px;text-align:center;cursor:pointer;padding:4px;border-radius:6px;transition:background .1s" onmouseover="this.style.background='#f0ebe3'" onmouseout="this.style.background=''" onclick="pickEmoji(${idx},'${e}')">${e}</span>`
+  ).join('');
+  row.after(picker);
+}
+
+function pickEmoji(idx, emoji) {
+  cats[idx].emoji = emoji;
+  autosaveCats();
+  closeEmojiPicker();
+  renderCatEditor();
+}
+
+function closeEmojiPicker() {
+  emojiPickerIdx = null;
+  const el = document.getElementById('emojiPicker');
+  if (el) el.remove();
 }
 
 function addCat() {
