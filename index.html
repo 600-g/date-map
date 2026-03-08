@@ -564,7 +564,7 @@ function initMap() {
     document.removeEventListener('touchstart', _autoGps);
     document.removeEventListener('click', _autoGps);
     if (watchId !== null) return;
-    _silentGps();
+    _doLocClick();
   }
   document.addEventListener('touchstart', _autoGps, {once:true});
   document.addEventListener('click', _autoGps, {once:true});
@@ -2027,7 +2027,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 88;
+const APP_VERSION = 89;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
