@@ -148,9 +148,12 @@ header .lc svg{width:18px;height:18px}
 /* 목록 상단 검색/추가 바 */
 .list-top-bar{padding:8px 10px 4px;flex-shrink:0;border-bottom:1px solid var(--warm);background:white}
 .list-search-row{display:flex;gap:6px;align-items:center}
-.list-search-box{display:flex;align-items:center;gap:6px;flex:1;background:var(--cream);border:1px solid var(--warm);border-radius:10px;padding:6px 10px;transition:border-color .2s}
+.list-search-box{display:flex;align-items:center;gap:6px;background:var(--cream);border:1px solid var(--warm);border-radius:10px;padding:6px 10px;transition:all .2s;overflow:hidden}
+.list-search-box.collapsed{width:36px;padding:6px 8px;cursor:pointer;flex:0 0 36px}
+.list-search-box.expanded{flex:1}
 .list-search-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px rgba(91,125,184,.15)}
 .list-search-box input{font-size:13px}
+.list-search-box.collapsed input{display:none}
 .add-toggle-btn{display:flex;align-items:center;gap:3px;border-radius:10px !important;padding:7px 14px !important}
 .add-panel{border-bottom:1px solid var(--warm);background:#FAFAF7;max-height:0;overflow:hidden;transition:max-height .3s ease}
 .add-panel.open{max-height:600px;overflow-y:auto;display:block}
@@ -199,9 +202,9 @@ header .lc svg{width:18px;height:18px}
       <!-- 검색/추가 토글 영역 -->
       <div class="list-top-bar">
         <div class="list-search-row">
-          <div class="list-search-box">
+          <div class="list-search-box collapsed" id="listSearchBox" onclick="expandListSearch()">
             <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0"></i>
-            <input id="listSearchInput" type="text" placeholder="등록된 장소 검색" oninput="filterListSearch()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
+            <input id="listSearchInput" type="text" placeholder="등록된 장소 검색" oninput="filterListSearch()" onblur="collapseListSearch()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
           </div>
           <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()"><i data-lucide="plus" class="lc lc-sm"></i> 추가</button>
         </div>
@@ -634,6 +637,28 @@ let listSearchQuery = '';
 function filterListSearch() {
   listSearchQuery = document.getElementById('listSearchInput').value.trim();
   renderList();
+}
+function expandListSearch() {
+  const box = document.getElementById('listSearchBox');
+  if (box.classList.contains('expanded')) return;
+  box.classList.remove('collapsed');
+  box.classList.add('expanded');
+  box.onclick = null;
+  document.getElementById('filterBar').style.display = 'none';
+  setTimeout(() => document.getElementById('listSearchInput').focus(), 50);
+}
+function collapseListSearch() {
+  const input = document.getElementById('listSearchInput');
+  if (input.value.trim()) return; // 검색어 있으면 유지
+  setTimeout(() => {
+    const box = document.getElementById('listSearchBox');
+    box.classList.remove('expanded');
+    box.classList.add('collapsed');
+    box.onclick = expandListSearch;
+    document.getElementById('filterBar').style.display = '';
+    listSearchQuery = '';
+    renderList();
+  }, 150);
 }
 
 // ── 카테고리 셀렉트 채우기 ──
@@ -1775,7 +1800,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 60;
+const APP_VERSION = 61;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
