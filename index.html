@@ -835,8 +835,8 @@ function openCatModal(placeId) {
 
 function changeCat(catId) {
   const p = places.find(x=>x.id===editingPlaceId);
-  if (p) { p.cat=catId; saveData(); renderAll(); }
   closeModal();
+  if (p) { p.cat=catId; saveData(); renderAll(); }
   toast('카테고리 변경됨');
 }
 
