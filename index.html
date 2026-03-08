@@ -1331,24 +1331,24 @@ window.addEventListener('load', () => {
   renderAll();
   lucide.createIcons();
 
-  // Service Worker 등록 + 자동 업데이트
+  // Service Worker 등록 + 자동 업데이트 (iOS PWA 대응)
   if ('serviceWorker' in navigator) {
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!refreshing) { refreshing = true; window.location.reload(); }
+    });
     navigator.serviceWorker.register('sw.js').then(reg => {
+      // 앱 열 때마다 즉시 업데이트 체크
+      reg.update();
       reg.onupdatefound = () => {
         const sw = reg.installing;
         sw.onstatechange = () => {
-          if (sw.state === 'activated' && navigator.serviceWorker.controller) {
-            // 기존 SW가 있었던 경우 = 업데이트 → 자동 새로고침
-            window.location.reload();
+          if (sw.state === 'installed' && navigator.serviceWorker.controller) {
+            // 새 SW 설치 완료 → skipWaiting이 activate 시킴 → controllerchange → reload
+            sw.postMessage({ type: 'SKIP_WAITING' });
           }
         };
       };
-      // 주기적으로 새 버전 체크 (30분마다)
-      setInterval(() => reg.update(), 30 * 60 * 1000);
-    });
-    // 다른 탭에서 SW가 교체되면 이 탭도 새로고침
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      window.location.reload();
     });
   }
 });
