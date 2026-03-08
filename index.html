@@ -88,9 +88,10 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .cat-emoji{font-size:16px;cursor:pointer;min-width:24px;text-align:center}
 .cat-name-input{flex:1;margin-bottom:0;font-size:12px;padding:4px 8px}
 .cat-color{width:28px;height:28px;border-radius:4px;border:1px solid var(--warm);cursor:pointer;flex-shrink:0;padding:0}
-.cat-move{background:none;border:1px solid var(--warm);border-radius:4px;cursor:pointer;color:var(--brown);font-size:10px;padding:2px 4px;flex-shrink:0}
-.cat-move:hover{background:var(--cream);border-color:var(--brown)}
-.cat-move:disabled{opacity:.3;cursor:default}
+.cat-handle{cursor:grab;color:var(--brown);font-size:14px;padding:2px 4px;flex-shrink:0;touch-action:none;user-select:none}
+.cat-handle:active{cursor:grabbing}
+.cat-row.dragging{opacity:.5;background:var(--warm)}
+.cat-row.drag-over{border-top:2px solid var(--dark)}
 .cat-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:14px;padding:2px 4px;flex-shrink:0}
 .cat-del:hover{color:var(--red)}
 .cat-summary-item{display:inline-block;font-size:11px;padding:3px 8px;border-radius:12px;margin:2px;border:1px solid var(--warm);background:white}
@@ -209,7 +210,7 @@ header .lc svg{width:16px;height:16px}
           <span><i data-lucide="tags" class="lc lc-sm"></i> 카테고리 관리</span>
           <i data-lucide="chevron-down" class="lc lc-sm" id="catChevron" style="transition:transform .2s"></i>
         </div>
-        <div class="s-desc">눌러서 편집 · ▲▼로 순서 변경</div>
+        <div class="s-desc">눌러서 편집 · ☰ 드래그로 순서 변경</div>
         <div id="catEditorWrap" style="display:none">
           <div class="cat-list" id="catList"></div>
           <button class="btn btn-outline btn-sm" style="width:100%;margin-bottom:4px" onclick="addCat()">+ 카테고리 추가</button>
@@ -508,15 +509,16 @@ function addPlace(p) {
 function renderCatEditor() {
   const list = document.getElementById('catList');
   list.innerHTML = cats.map((c,i)=>`
-    <div class="cat-row" data-idx="${i}">
-      <button class="cat-move" onclick="moveCat(${i},-1)" ${i===0?'disabled':''}  title="위로">▲</button>
-      <button class="cat-move" onclick="moveCat(${i},1)" ${i===cats.length-1?'disabled':''} title="아래로">▼</button>
+    <div class="cat-row" draggable="true" data-idx="${i}">
+      <span class="cat-handle" title="드래그로 순서 변경">☰</span>
       <span class="cat-emoji" title="이모지 클릭해서 변경" onclick="editEmoji(${i})">${c.emoji}</span>
       <input class="cat-name-input" value="${c.name}" onchange="cats[${i}].name=this.value" placeholder="카테고리 이름">
       <input type="color" class="cat-color" value="${c.color}" title="글자색" onchange="cats[${i}].color=this.value" style="background:${c.bg}">
       <button class="cat-del" onclick="delCat(${i})" title="삭제">✕</button>
     </div>
   `).join('');
+  // 드래그 이벤트 등록
+  setupCatDrag();
 }
 
 function editEmoji(idx) {
@@ -529,11 +531,37 @@ function addCat() {
   renderCatEditor();
 }
 
-function moveCat(idx, dir) {
-  const to = idx + dir;
-  if (to < 0 || to >= cats.length) return;
-  [cats[idx], cats[to]] = [cats[to], cats[idx]];
-  renderCatEditor();
+let dragFromIdx = null;
+
+function setupCatDrag() {
+  const rows = document.querySelectorAll('#catList .cat-row');
+  rows.forEach(row => {
+    row.addEventListener('dragstart', e => {
+      dragFromIdx = parseInt(row.dataset.idx);
+      row.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('dragging');
+      rows.forEach(r => r.classList.remove('drag-over'));
+    });
+    row.addEventListener('dragover', e => {
+      e.preventDefault();
+      rows.forEach(r => r.classList.remove('drag-over'));
+      row.classList.add('drag-over');
+    });
+    row.addEventListener('drop', e => {
+      e.preventDefault();
+      const toIdx = parseInt(row.dataset.idx);
+      if (dragFromIdx !== null && dragFromIdx !== toIdx) {
+        const [moved] = cats.splice(dragFromIdx, 1);
+        cats.splice(toIdx, 0, moved);
+        renderCatEditor();
+      }
+      rows.forEach(r => r.classList.remove('drag-over'));
+      dragFromIdx = null;
+    });
+  });
 }
 
 function delCat(idx) {
