@@ -1521,8 +1521,10 @@ function focusPlace(id) {
   const pos = new kakao.maps.LatLng(p.lat, p.lng);
   map.setCenter(pos); map.setLevel(3);
   showTab('list');
-  const card = document.getElementById('pi-'+id);
-  if (card) { card.classList.add('sel'); card.scrollIntoView({behavior:'smooth', block:'center'}); }
+  setTimeout(() => {
+    const card = document.getElementById('pi-'+id);
+    if (card) { card.classList.add('sel'); card.scrollIntoView({behavior:'instant', block:'center'}); }
+  }, 50);
   focusedPlaceId = id;
   if (iwMap[id]) iwMap[id].setMap(map);
   const nb = document.getElementById('nearbyBar');
@@ -2020,7 +2022,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 91;
+const APP_VERSION = 92;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
