@@ -594,9 +594,11 @@ function setupCatDrag() {
       const dy = curY - startY;
       row.style.transform = `translateY(${dy}px) scale(1.03)`;
 
-      // 어떤 row 위에 있는지 찾기
+      // 드래그 row를 잠시 숨겨서 아래 row 감지
       rows.forEach(r => r.classList.remove('drag-over'));
+      row.style.visibility = 'hidden';
       const target = document.elementFromPoint(e.touches[0].clientX, curY);
+      row.style.visibility = '';
       const targetRow = target?.closest?.('.cat-row');
       if (targetRow && targetRow !== row) targetRow.classList.add('drag-over');
     }, { passive: false });
@@ -604,14 +606,18 @@ function setupCatDrag() {
     handle.addEventListener('touchend', e => {
       if (!dragging) return;
       dragging = false;
-      row.classList.remove('touch-dragging');
       row.style.transform = '';
       rows.forEach(r => r.classList.remove('drag-over'));
 
+      // 드래그 row 숨기고 아래 row 감지
+      row.style.visibility = 'hidden';
       const target = document.elementFromPoint(
         e.changedTouches[0].clientX,
         e.changedTouches[0].clientY
       );
+      row.style.visibility = '';
+      row.classList.remove('touch-dragging');
+
       const targetRow = target?.closest?.('.cat-row');
       if (targetRow && targetRow !== row) {
         const toIdx = parseInt(targetRow.dataset.idx);
