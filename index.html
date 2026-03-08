@@ -242,6 +242,19 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
   </div>
 </div>
 
+<!-- 장소 삭제 확인 모달 -->
+<div class="modal-overlay" id="delModal">
+  <div class="modal" style="text-align:center">
+    <div style="font-size:32px;margin-bottom:10px">🗑</div>
+    <h3 style="margin-bottom:8px"><span id="delPlaceName"></span></h3>
+    <p style="font-size:12px;color:var(--brown);margin-bottom:16px;line-height:1.6">이 장소를 삭제할까요?</p>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('delModal').classList.remove('open')">취소</button>
+      <button class="btn btn-dark" style="flex:1;background:var(--red)" onclick="confirmDelPlace()">삭제</button>
+    </div>
+  </div>
+</div>
+
 <!-- 닉네임 설정 모달 -->
 <div class="modal-overlay" id="nickModal">
   <div class="modal" style="text-align:center">
@@ -632,8 +645,20 @@ function openNaverMap(id) {
   window.open(`https://map.naver.com/v5/search/${encodeURIComponent(p.name)}?c=${p.lng},${p.lat},15,0,0,0,dh`, '_blank');
 }
 
+let deletingPlaceId = null;
 function delPlace(id) {
-  places=places.filter(x=>x.id!==id); saveData(); renderAll(); toast('삭제됐어요');
+  deletingPlaceId = id;
+  const p = places.find(x=>x.id===id);
+  document.getElementById('delPlaceName').textContent = p ? p.name : '';
+  document.getElementById('delModal').classList.add('open');
+}
+function confirmDelPlace() {
+  if (deletingPlaceId !== null) {
+    places = places.filter(x=>x.id!==deletingPlaceId);
+    saveData(); renderAll(); toast('삭제됐어요');
+  }
+  document.getElementById('delModal').classList.remove('open');
+  deletingPlaceId = null;
 }
 
 // ── 공유 ──
