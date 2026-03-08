@@ -130,6 +130,20 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
         </div>
         <div id="sr"></div>
 
+        <!-- 검색 결과 선택 후 카테고리/메모 입력 -->
+        <div id="searchConfirm" style="display:none;background:var(--cream);border:1px solid var(--warm);border-radius:8px;padding:12px;margin-top:6px">
+          <div style="font-size:13px;font-weight:500;margin-bottom:2px" id="scName"></div>
+          <div style="font-size:11px;color:var(--brown);margin-bottom:8px" id="scAddr"></div>
+          <div class="lbl" style="margin-top:0">카테고리</div>
+          <select id="scCat" style="margin-bottom:6px"></select>
+          <div class="lbl" style="margin-top:0">메모</div>
+          <textarea id="scMemo" rows="2" placeholder="영업시간, 예약여부 등" style="resize:none"></textarea>
+          <div class="row" style="margin-top:6px">
+            <button class="btn btn-outline" style="flex:1" onclick="cancelSearch()">취소</button>
+            <button class="btn btn-dark" style="flex:1" onclick="confirmSearch()">추가하기</button>
+          </div>
+        </div>
+
         <hr class="div" style="margin:10px 0">
         <div class="lbl">✏️ 직접 입력</div>
         <input id="mName" type="text" placeholder="장소 이름 *">
@@ -299,9 +313,22 @@ async function doSearch() {
 }
 
 function pickSearch(i) {
-  const p = window._sd[i];
-  const cat = document.getElementById('mCat').value;
-  const memo = document.getElementById('mMemo').value.trim();
+  window._selectedSearch = window._sd[i];
+  const p = window._selectedSearch;
+  document.getElementById('scName').textContent = p.place_name;
+  document.getElementById('scAddr').textContent = p.road_address_name || p.address_name;
+  const sel = document.getElementById('scCat');
+  sel.innerHTML = cats.map(c=>`<option value="${c.id}">${c.emoji} ${c.name}</option>`).join('');
+  document.getElementById('scMemo').value = '';
+  document.getElementById('searchConfirm').style.display = 'block';
+  document.getElementById('sr').innerHTML = '';
+}
+
+function confirmSearch() {
+  const p = window._selectedSearch;
+  if (!p) return;
+  const cat = document.getElementById('scCat').value;
+  const memo = document.getElementById('scMemo').value.trim();
   addPlace({
     id: Date.now(),
     name: p.place_name,
@@ -309,10 +336,15 @@ function pickSearch(i) {
     lat: parseFloat(p.y), lng: parseFloat(p.x),
     cat, memo, visited: false
   });
-  document.getElementById('sr').innerHTML = '';
+  document.getElementById('searchConfirm').style.display = 'none';
   document.getElementById('sq').value = '';
-  document.getElementById('mMemo').value = '';
+  window._selectedSearch = null;
   showTab('list');
+}
+
+function cancelSearch() {
+  document.getElementById('searchConfirm').style.display = 'none';
+  window._selectedSearch = null;
 }
 
 // ── 직접 추가 ──
@@ -342,6 +374,9 @@ function addManual() {
 }
 
 function addPlace(p) {
+  // 중복 체크 (이름 + 주소 동일하면 중복)
+  const dup = places.find(x => x.name === p.name && x.addr === p.addr);
+  if (dup) { toast('이미 등록된 장소예요'); return; }
   places.push(p);
   saveData(); renderAll();
   toast(`📍 ${p.name} 추가됨`);
