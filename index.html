@@ -1296,18 +1296,13 @@ function renderNearbyResults(docs, iconKey) {
       <div style="font-size:10px;color:#8B6F5E;margin-top:2px">${d.road_address_name || d.address_name}${dist?' · '+dist:''}</div>
       ${d.phone?`<div style="font-size:10px;color:var(--accent);margin-top:2px">${d.phone}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px">
-        <button class="iw-btn" data-action="add" style="background:var(--dark);color:white;border-color:var(--dark)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg> 등록</button>
-        <button class="iw-btn" data-action="kakao-nav" style="background:#4A6CF7;border-color:#4A6CF7"><svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></button>
+        <button class="iw-btn" data-action="kakao-nav" style="background:#4A6CF7;border-color:#4A6CF7"><svg width="12" height="12" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg> 길찾기</button>
       </div>
     `;
     ['click','mousedown','mouseup','touchstart','touchend','pointerdown','pointerup'].forEach(evt => {
       iwEl.addEventListener(evt, e => e.stopPropagation());
     });
     iwEl.querySelector('[data-action="close"]').onclick = () => iw.setMap(null);
-    iwEl.querySelector('[data-action="add"]').onclick = () => {
-      const ok = addPlace({ id:Date.now(), name:d.place_name, addr:d.road_address_name||d.address_name, lat:parseFloat(d.y), lng:parseFloat(d.x), cat:cats[0]?.id||'기타', memo:'', visited:false });
-      if (ok) { setTimeout(()=>iw.setMap(null), 100); }
-    };
     iwEl.querySelector('[data-action="kakao-nav"]').onclick = () => {
       if (myLat !== null) window.open(`https://map.kakao.com/link/from/내위치,${myLat},${myLng}/to/${encodeURIComponent(d.place_name)},${d.y},${d.x}`, '_blank');
       else window.open(`https://map.kakao.com/link/to/${encodeURIComponent(d.place_name)},${d.y},${d.x}`, '_blank');
@@ -1646,7 +1641,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 40;
+const APP_VERSION = 41;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
