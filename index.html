@@ -216,7 +216,7 @@ let places = [], cats = [...DEFAULT_CATS];
 let markers = [], iws = [], map, curFilter = '전체';
 let editingPlaceId = null;
 
-const REST_KEY = '46f4b370cd2f23ac13b03a828d64fe70';
+const REST_KEY = 'f05925b16ad652c4bb02b5aac5e56b06';
 
 // ── 스토리지 (localStorage) ──
 function loadData() {
@@ -551,7 +551,7 @@ window.addEventListener('load', () => {
   loadData();
   // 카카오 지도 SDK 동적 로드
   const script = document.createElement('script');
-  script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=2728074a07df1b96af1eb7c8a37519f6&autoload=false';
+  script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=fc85da8522a1e81f1e19c6777c002a55&autoload=false';
   script.onload = () => kakao.maps.load(initMap);
   document.head.appendChild(script);
   renderAll();
