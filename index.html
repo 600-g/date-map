@@ -576,14 +576,14 @@ function renderList() {
         <div class="pi-name">${p.name}</div>
         <div class="pi-cat" style="background:${c.bg};color:${c.color}" onclick="event.stopPropagation();openCatModal(${p.id})" title="클릭해서 카테고리 변경">${c.emoji} ${c.name}</div>
       </div>
-      ${p.addr?`<div class="pi-addr" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')" style="cursor:pointer"><i data-lucide="map-pin" class="lc lc-sm"></i> ${p.addr}</div>`:''}
+      ${p.addr?`<div class="pi-addr" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')" style="cursor:pointer"><i data-lucide="map-pin" class="lc lc-sm" style="color:#E74C3C"></i> ${p.addr}</div>`:''}
       ${myLat!==null&&p.lat?`<div class="pi-dist"><i data-lucide="ruler" class="lc lc-sm"></i> ${formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng))}</div>`:''}
       ${p.memo?`<div class="pi-memo">${p.memo}</div>`:''}
       ${renderRatingBlock(p)}
       <div class="pi-acts">
         <button class="bx${p.visited?' vis':''}" onclick="event.stopPropagation();toggleV(${p.id})"><i data-lucide="${p.visited?'check-circle':'circle'}" class="lc lc-sm"></i> ${p.visited?'다녀옴':'미방문'}</button>
-        <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})"><i data-lucide="map" class="lc lc-sm"></i> 카카오</button>
-        <button class="bx" onclick="event.stopPropagation();openNaverMap(${p.id})"><i data-lucide="navigation" class="lc lc-sm"></i> 네이버</button>
+        <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})"><svg width="12" height="12" viewBox="0 0 24 24" fill="#FEE500" style="vertical-align:middle"><path d="M12 3C6.48 3 2 6.58 2 10.94c0 2.8 1.86 5.27 4.66 6.67-.15.53-.96 3.4-.99 3.62 0 0-.02.17.09.24.11.06.24.01.24.01.32-.04 3.7-2.44 4.28-2.86.55.08 1.13.12 1.72.12 5.52 0 10-3.58 10-7.8C22 6.58 17.52 3 12 3z"/></svg> 카카오</button>
+        <button class="bx" onclick="event.stopPropagation();openNaverMap(${p.id})"><svg width="12" height="12" viewBox="0 0 24 24" fill="#03C75A" style="vertical-align:middle"><path d="M16.27 3H7.73A4.73 4.73 0 003 7.73v8.54A4.73 4.73 0 007.73 21h8.54A4.73 4.73 0 0021 16.27V7.73A4.73 4.73 0 0016.27 3zm-2.6 12.41h-2.1l-2.56-3.67v3.67H7.5V8.59h2.1l2.56 3.67V8.59h1.51v6.82z"/></svg> 네이버</button>
         <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})"><i data-lucide="trash-2" class="lc lc-sm"></i></button>
       </div>
     </div>`;
