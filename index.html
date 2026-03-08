@@ -304,11 +304,11 @@ const docRef = db.collection('datemap').doc('shared');
 
 // ── 기본 카테고리 ──
 const DEFAULT_CATS = [
-  { id:'식사', name:'식사', emoji:'🍽', bg:'#FDEBD0', color:'#C0392B' },
-  { id:'카페', name:'카페', emoji:'☕', bg:'#D5E8D4', color:'#27AE60' },
-  { id:'산책', name:'산책', emoji:'🌿', bg:'#D6EAF8', color:'#2980B9' },
-  { id:'활동', name:'활동', emoji:'🎯', bg:'#E8DAEF', color:'#8E44AD' },
-  { id:'기타', name:'기타', emoji:'📌', bg:'#F2F3F4', color:'#7F8C8D' },
+  { id:'식사', name:'식사', emoji:'🍽', color:'#FFB3B3' },
+  { id:'카페', name:'카페', emoji:'☕', color:'#B5D8A8' },
+  { id:'산책', name:'산책', emoji:'🌿', color:'#A8D4E6' },
+  { id:'활동', name:'활동', emoji:'🎯', color:'#D4B3E8' },
+  { id:'기타', name:'기타', emoji:'📌', color:'#D5D5D5' },
 ];
 
 let places = [], cats = [...DEFAULT_CATS];
@@ -513,7 +513,7 @@ function renderCatEditor() {
       <span class="cat-handle" title="드래그로 순서 변경">☰</span>
       <span class="cat-emoji" title="이모지 클릭해서 변경" onclick="editEmoji(${i})">${c.emoji}</span>
       <input class="cat-name-input" value="${c.name}" onchange="cats[${i}].name=this.value" placeholder="카테고리 이름">
-      <input type="color" class="cat-color" value="${c.color}" title="글자색" onchange="cats[${i}].color=this.value" style="background:${c.bg}">
+      <input type="color" class="cat-color" value="${c.color}" title="배경색" onchange="cats[${i}].color=this.value">
       <button class="cat-del" onclick="delCat(${i})" title="삭제">✕</button>
     </div>
   `).join('');
@@ -588,7 +588,7 @@ function toggleCatEditor() {
 
 function renderCatSummary() {
   document.getElementById('catSummary').innerHTML = cats.map(c =>
-    `<span class="cat-summary-item" style="color:${c.color}">${c.emoji} ${c.name}</span>`
+    `<span class="cat-summary-item" style="background:${c.color};color:var(--dark)">${c.emoji} ${c.name}</span>`
   ).join('');
 }
 
@@ -663,7 +663,7 @@ function renderList() {
     <div class="pi" id="pi-${p.id}" onclick="focusPlace(${p.id})">
       <div class="pi-top">
         <div class="pi-name">${p.name}</div>
-        <div class="pi-cat" style="background:${c.bg};color:${c.color}" onclick="event.stopPropagation();openCatModal(${p.id})" title="클릭해서 카테고리 변경">${c.emoji} ${c.name}</div>
+        <div class="pi-cat" style="background:${c.color};color:var(--dark)" onclick="event.stopPropagation();openCatModal(${p.id})" title="클릭해서 카테고리 변경">${c.emoji} ${c.name}</div>
       </div>
       ${p.addr?`<div class="pi-addr"><i data-lucide="map-pin" class="lc lc-sm" style="color:#E74C3C"></i> ${p.addr} <span class="addr-search" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')"><i data-lucide="external-link" class="lc" style="width:10px;height:10px"></i></span></div>`:''}
       ${myLat!==null&&p.lat?`<div class="pi-dist"><i data-lucide="ruler" class="lc lc-sm"></i> ${formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng))}</div>`:''}
@@ -689,14 +689,14 @@ function renderMarkers() {
     const c = getCat(p.cat);
     // 이모지 커스텀 마커
     const markerEl = document.createElement('div');
-    markerEl.innerHTML = `<div style="width:32px;height:32px;background:${c.bg};border:2px solid ${c.color};border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer">${c.emoji}</div>`;
+    markerEl.innerHTML = `<div style="width:32px;height:32px;background:${c.color};border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer">${c.emoji}</div>`;
     const marker = new kakao.maps.CustomOverlay({ position:pos, content:markerEl, yAnchor:1, zIndex:1 });
     const avg = getAvgRating(p);
     const iwContent = document.createElement('div');
     iwContent.style.cssText = 'padding:10px 12px;font-size:12px;font-family:Noto Sans KR;min-width:160px';
     iwContent.innerHTML = `
       <b style="font-size:13px">${p.name}</b>
-      <div style="color:${c.color};font-size:11px;margin-top:2px">${c.emoji} ${c.name}${p.visited?' · ✅':''}</div>
+      <div style="font-size:11px;margin-top:2px"><span style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:10px">${c.emoji} ${c.name}</span>${p.visited?' · ✅':''}</div>
       ${avg?`<div style="font-size:11px;margin-top:3px;color:#F1C40F">★ ${avg}</div>`:''}
       ${p.addr?`<div style="font-size:10px;color:#8B6F5E;margin-top:3px">${p.addr}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px">
@@ -854,7 +854,7 @@ function handleLocClick() {
   toast('📍 위치 확인 중...');
   document.getElementById('locBtn').classList.add('tracking');
 
-  navigator.geolocation.getCurrentPosition(pos => {
+  function onLocSuccess(pos) {
     myLat = pos.coords.latitude;
     myLng = pos.coords.longitude;
     updateMyLocMarker();
@@ -863,17 +863,26 @@ function handleLocClick() {
     renderList();
     toast('📍 내 위치 표시 중 (길게 누르면 종료)');
 
-    // 실시간 추적 시작
     watchId = navigator.geolocation.watchPosition(pos => {
       myLat = pos.coords.latitude;
       myLng = pos.coords.longitude;
       updateMyLocMarker();
       renderList();
-    }, err => {}, { enableHighAccuracy: true, maximumAge: 5000 });
-  }, err => {
-    toast('위치를 가져올 수 없어요 (권한: ' + err.code + ')');
-    document.getElementById('locBtn').classList.remove('tracking');
-  }, { enableHighAccuracy: true, timeout: 15000 });
+    }, err => {}, { enableHighAccuracy: false, maximumAge: 10000 });
+  }
+  function onLocError(err) {
+    // 고정밀도 실패 시 저정밀도로 재시도
+    if (err.code === 2) {
+      navigator.geolocation.getCurrentPosition(onLocSuccess, err2 => {
+        toast('위치를 가져올 수 없어요. 기기 위치 서비스를 확인해주세요');
+        document.getElementById('locBtn').classList.remove('tracking');
+      }, { enableHighAccuracy: false, timeout: 15000 });
+    } else {
+      toast('위치를 가져올 수 없어요 (코드: ' + err.code + ')');
+      document.getElementById('locBtn').classList.remove('tracking');
+    }
+  }
+  navigator.geolocation.getCurrentPosition(onLocSuccess, onLocError, { enableHighAccuracy: true, timeout: 10000 });
 }
 
 function stopTracking() {
