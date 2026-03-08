@@ -243,6 +243,17 @@ header .lc svg{width:16px;height:16px}
         </div>
 
         <hr class="div">
+        <div class="s-title"><i data-lucide="share-2" class="lc lc-sm"></i> 공유 코드</div>
+        <div class="s-desc">코드를 복사해서 상대방에게 보내세요</div>
+        <div style="background:#f5f0e8;border:1px solid var(--warm);border-radius:8px;padding:10px;font-size:10px;word-break:break-all;max-height:80px;overflow-y:auto;margin-bottom:8px" id="exportCode">장소를 추가하면 코드가 생성돼요</div>
+        <button class="btn btn-dark" style="width:100%;margin-bottom:12px" onclick="copyCode()"><i data-lucide="copy" class="lc lc-sm"></i> 코드 복사</button>
+
+        <div class="s-title"><i data-lucide="download" class="lc lc-sm"></i> 불러오기</div>
+        <div class="s-desc">상대방의 코드를 붙여넣으면 장소가 합쳐져요</div>
+        <textarea id="importTxt" rows="3" placeholder="공유 코드 붙여넣기" style="width:100%;font-size:11px;border:1px solid var(--warm);border-radius:8px;padding:8px;resize:none;margin-bottom:8px"></textarea>
+        <button class="btn btn-outline" style="width:100%;margin-bottom:12px" onclick="importCode()"><i data-lucide="upload" class="lc lc-sm"></i> 불러오기</button>
+
+        <hr class="div">
         <div class="s-title"><i data-lucide="trash-2" class="lc lc-sm"></i> 초기화</div>
         <div class="s-desc">모든 장소를 삭제합니다</div>
         <button class="btn btn-outline" style="width:100%" onclick="clearAll()">전체 초기화</button>
@@ -803,9 +814,11 @@ function renderList() {
 
 function renderMarkers() {
   if (!map) return;
-  markers.forEach(m=>{ try{m.setMap(null);}catch(e){} }); iws.forEach(w=>w.close());
+  markers.forEach(m=>{ try{m.setMap(null);}catch(e){} });
+  iws.forEach(w=>{ try{w.setMap(null);}catch(e){} });
   markers=[]; iws=[]; iwMap={};
   places.forEach((p)=>{
+    if (!p.lat || !p.lng) return;
     const pos = new kakao.maps.LatLng(p.lat, p.lng);
     const c = getCat(p.cat);
     // 이모지 커스텀 마커
@@ -813,9 +826,11 @@ function renderMarkers() {
     markerEl.innerHTML = `<div style="width:32px;height:32px;background:${c.color};border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer">${c.emoji}</div>`;
     const marker = new kakao.maps.CustomOverlay({ position:pos, content:markerEl, yAnchor:1, zIndex:1 });
     const avg = getAvgRating(p);
-    const iwContent = document.createElement('div');
-    iwContent.style.cssText = 'padding:10px 12px;font-size:12px;font-family:Noto Sans KR;min-width:160px';
-    iwContent.innerHTML = `
+    // 팝업도 CustomOverlay로 (InfoWindow 대신 — auto-pan 문제 해결)
+    const iwEl = document.createElement('div');
+    iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:12px;font-family:Noto Sans KR;min-width:160px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
+    iwEl.innerHTML = `
+      <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:#aaa;line-height:1" data-action="close">&times;</div>
       <b style="font-size:13px">${p.name}</b>
       <div style="font-size:11px;margin-top:2px"><span style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:10px">${c.emoji} ${c.name}</span>${p.visited?' · ✅':''}</div>
       ${avg?`<div style="font-size:11px;margin-top:3px;color:#F1C40F;display:flex;align-items:center;gap:2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> ${avg}</div>`:''}
@@ -832,17 +847,20 @@ function renderMarkers() {
         </button>
       </div>
     `;
-    // 버튼 이벤트
-    iwContent.querySelector('[data-action="kakao"]').onclick = () => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`, '_blank');
-    iwContent.querySelector('[data-action="naver"]').onclick = () => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(p.name)}?c=${p.lng},${p.lat},15,0,0,0,dh`, '_blank');
-    iwContent.querySelector('[data-action="visit"]').onclick = () => { toggleV(p.id); };
+    iwEl.querySelector('[data-action="close"]').onclick = (e) => { e.stopPropagation(); closeAllIw(); };
+    iwEl.querySelector('[data-action="kakao"]').onclick = () => window.open(`https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`, '_blank');
+    iwEl.querySelector('[data-action="naver"]').onclick = () => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(p.name)}?c=${p.lng},${p.lat},15,0,0,0,dh`, '_blank');
+    iwEl.querySelector('[data-action="visit"]').onclick = () => { toggleV(p.id); };
+    // 팝업 클릭 시 지도 이벤트 전파 차단
+    iwEl.onclick = (e) => e.stopPropagation();
 
-    const iw = new kakao.maps.InfoWindow({ content: iwContent });
+    const iw = new kakao.maps.CustomOverlay({ position:pos, content:iwEl, yAnchor:1.15, zIndex:10 });
     iwMap[p.id] = iw;
     markerEl.onclick = () => {
       if (focusedPlaceId === p.id) { closeAllIw(); return; }
       closeAllIw();
-      iw.open(map);
+      map.setCenter(pos); map.setLevel(3);
+      iw.setMap(map);
       document.getElementById('pi-'+p.id)?.classList.add('sel');
       const el=document.getElementById('pi-'+p.id);
       if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
@@ -854,27 +872,29 @@ function renderMarkers() {
   // 위치 추적 중이 아닐 때만 전체 장소로 뷰 맞춤
   if (places.length && watchId === null) {
     const b = new kakao.maps.LatLngBounds();
-    places.forEach(p=>b.extend(new kakao.maps.LatLng(p.lat,p.lng)));
+    places.forEach(p=>{
+      if(p.lat&&p.lng) b.extend(new kakao.maps.LatLng(p.lat,p.lng));
+    });
     map.setBounds(b);
   }
 }
 
 let focusedPlaceId = null;
 function closeAllIw() {
-  iws.forEach(w=>w.close());
+  iws.forEach(w=>{ try{w.setMap(null);}catch(e){} });
   document.querySelectorAll('.pi').forEach(el=>el.classList.remove('sel'));
   focusedPlaceId = null;
 }
 function focusPlace(id) {
   const p=places.find(x=>x.id===id); if(!p) return;
-  // 같은 장소 다시 누르면 닫기
   if (focusedPlaceId === id) { closeAllIw(); return; }
-  // 이전 팝업 닫고 새 팝업 열기
   closeAllIw();
-  map.setCenter(new kakao.maps.LatLng(p.lat,p.lng)); map.setLevel(3);
+  if (!p.lat || !p.lng) { toast('⚠️ 좌표 없음: ' + p.name); return; }
+  const pos = new kakao.maps.LatLng(p.lat, p.lng);
+  map.setCenter(pos); map.setLevel(3);
   document.getElementById('pi-'+id)?.classList.add('sel');
-  if (iwMap[id]) iwMap[id].open(map);
   focusedPlaceId = id;
+  if (iwMap[id]) iwMap[id].setMap(map);
 }
 
 function toggleV(id) {
@@ -974,6 +994,28 @@ function setupLocBtn() {
 function handleLocClick() {
   if (!navigator.geolocation) { toast('이 브라우저에서 위치를 지원하지 않아요'); return; }
 
+  // Permissions API로 차단 상태 먼저 확인
+  if (navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' }).then(result => {
+      if (result.state === 'denied') {
+        const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+        if (/iPhone|iPad/i.test(navigator.userAgent)) {
+          toast('⚠️ 위치가 차단됨 → 설정 > Safari > 위치 서비스에서 허용해주세요');
+        } else if (/Android/i.test(navigator.userAgent)) {
+          toast('⚠️ 위치가 차단됨 → 브라우저 설정 > 사이트 설정 > 위치에서 허용해주세요');
+        } else {
+          toast('⚠️ 위치가 차단됨 → 주소창 왼쪽 자물쇠 아이콘 클릭 후 위치를 허용해주세요');
+        }
+        return;
+      }
+      _doLocClick();
+    }).catch(() => _doLocClick());
+  } else {
+    _doLocClick();
+  }
+}
+
+function _doLocClick() {
   // 이미 추적 중이면 → 내 위치로 센터링만
   if (watchId !== null) {
     if (myLat !== null) {
