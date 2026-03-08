@@ -557,7 +557,17 @@ function initMap() {
           updateMyLocMarker(); renderList();
         }, ()=>{}, {enableHighAccuracy:true, maximumAge:5000, timeout:15000});
       }
-    }, ()=>{/* 실패해도 버튼 ON 유지 */}, {enableHighAccuracy:true, timeout:10000});
+    }, () => {
+      // 높은 정확도 실패 → 낮은 정확도로 재시도
+      navigator.geolocation.getCurrentPosition(pos => {
+        myLat = pos.coords.latitude;
+        myLng = pos.coords.longitude;
+        localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
+        updateMyLocMarker();
+        if (!savedLoc) { map.setCenter(new kakao.maps.LatLng(myLat, myLng)); map.setLevel(4); }
+        renderList();
+      }, ()=>{/* 둘 다 실패해도 버튼 ON 유지 */}, {enableHighAccuracy:false, timeout:15000});
+    }, {enableHighAccuracy:true, timeout:10000});
   }, 500);
 }
 
@@ -1239,7 +1249,7 @@ function renderAll() {
 function renderList() {
   const list = document.getElementById('placeList');
   const locStatus = document.getElementById('myLocStatus');
-  if (myLat !== null && watchId !== null) {
+  if (myLat !== null) {
     locStatus.style.display = 'flex';
     locStatus.innerHTML = `<span style="width:8px;height:8px;background:#4285F4;border-radius:50%;display:inline-block;animation:pulse 2s infinite"></span> 내 위치 추적 중 · 가까운 순 정렬`;
   } else {
@@ -1864,7 +1874,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 75;
+const APP_VERSION = 76;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
