@@ -588,6 +588,11 @@ function openAddPanel() {
   // 스크롤 맨 위로
   const wrap = panel.querySelector('.add-wrap');
   if (wrap) wrap.scrollTop = 0;
+  // 목록 검색어가 있으면 자동으로 카카오 검색 실행
+  if (listSearchQuery) {
+    document.getElementById('sq').value = listSearchQuery;
+    doSearch();
+  }
   try { lucide.createIcons(); } catch(e) {}
 }
 function closeAddPanel() {
@@ -1859,7 +1864,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 73;
+const APP_VERSION = 74;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
