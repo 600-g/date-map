@@ -528,7 +528,7 @@ function initMap() {
   });
   kakao.maps.event.addListener(map, 'click', () => closeAllIw());
   renderAll();
-  // 앱 시작 시: savedLoc이 있으면 즉시 마커+거리 표시
+  // 앱 시작 시: savedLoc이 있으면 즉시 마커+거리 표시 + 조용히 GPS 시도
   if (savedLoc) {
     try {
       const loc = JSON.parse(savedLoc);
@@ -537,9 +537,28 @@ function initMap() {
       document.getElementById('locBtn').classList.add('tracking');
       renderList();
     } catch(e) {}
+    // 조용히 GPS 업그레이드 시도 (실패해도 UI 유지)
+    setTimeout(() => {
+      navigator.geolocation.getCurrentPosition(pos => {
+        myLat = pos.coords.latitude;
+        myLng = pos.coords.longitude;
+        localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
+        updateMyLocMarker();
+        renderList();
+        // watchPosition으로 실시간 추적 시작
+        if (watchId === null) {
+          watchId = navigator.geolocation.watchPosition(wp => {
+            if (wp.coords.accuracy > 1000) return;
+            myLat = wp.coords.latitude; myLng = wp.coords.longitude;
+            updateMyLocMarker(); renderList();
+          }, ()=>{}, {enableHighAccuracy:true, maximumAge:5000, timeout:15000});
+        }
+      }, ()=>{/* 실패해도 savedLoc 유지, UI 안건드림 */}, {enableHighAccuracy:true, timeout:10000});
+    }, 500);
+  } else {
+    // savedLoc 없으면 _doLocClick으로 첫 위치 요청
+    setTimeout(() => _doLocClick(), 500);
   }
-  // 위치 추적 완전 ON (_doLocClick과 동일하게 watchId까지 세팅)
-  setTimeout(() => _doLocClick(), 500);
 }
 
 // ── 탭 ──
@@ -1809,7 +1828,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 64;
+const APP_VERSION = 65;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
