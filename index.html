@@ -660,11 +660,12 @@ function delPlace(id) {
   document.getElementById('delModal').classList.add('open');
 }
 function confirmDelPlace() {
+  document.getElementById('delModal').classList.remove('open');
   if (deletingPlaceId !== null) {
     places = places.filter(x=>x.id!==deletingPlaceId);
+    deletingPlaceId = null;
     saveData(); renderAll(); toast('삭제됐어요');
   }
-  document.getElementById('delModal').classList.remove('open');
   deletingPlaceId = null;
 }
 
