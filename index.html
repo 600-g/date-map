@@ -82,11 +82,11 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .pi-rating-avg{font-weight:600;color:var(--dark);font-size:13px;margin-bottom:2px}
 .pi-rating-row{display:flex;align-items:center;gap:4px;margin-bottom:2px}
 .pi-rating-name{font-size:11px;color:var(--brown);min-width:36px}
-.star{cursor:pointer;transition:transform .1s;display:inline-flex;vertical-align:middle}
+.star{cursor:pointer;transition:transform .1s;display:inline-flex;vertical-align:middle;position:relative;width:16px;height:16px}
 .star:hover{transform:scale(1.3)}
-.star svg{width:16px;height:16px}
-.star.on svg{fill:#F1C40F;stroke:#E6B800}
-.star.off svg{fill:#e0e0e0;stroke:#ccc}
+.star svg{width:16px;height:16px;position:absolute;left:0;top:0}
+.star .s-bg{fill:#e0e0e0;stroke:#ccc}
+.star .s-fg{fill:#F1C40F;stroke:#E6B800}
 /* 설정/공유 */
 .cfg-wrap{padding:14px;overflow-y:auto;flex:1}
 .s-title{font-size:14px;font-weight:650;margin-bottom:4px}
@@ -955,13 +955,17 @@ function renderPlaceListModal() {
   else if (_plmSort === 'rating-desc') list.sort((a,b) => (getAvgRating(b)||0) - (getAvgRating(a)||0));
   else if (_plmSort === 'rating-asc') list.sort((a,b) => (getAvgRating(a)||0) - (getAvgRating(b)||0));
   document.getElementById('plmCnt').textContent = list.length;
-  const starSvg = '<svg width="12" height="12" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>';
-  const emptyStar = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ddd" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>';
   document.getElementById('plmList').innerHTML = list.map(p => {
     const c = getCat(p.cat);
     const avg = getAvgRating(p);
     const avgNum = avg ? parseFloat(avg) : 0;
-    const stars = Array.from({length:5}, (_,i) => i < Math.round(avgNum) ? starSvg : emptyStar).join('');
+    let stars = '';
+    for (let i = 1; i <= 5; i++) {
+      const full = avgNum >= i, half = !full && avgNum >= i - 0.5;
+      if (full) stars += `<svg width="12" height="12" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="${_starPath}"/></svg>`;
+      else if (half) stars += `<svg width="12" height="12" viewBox="0 0 24 24" fill="#e0e0e0" stroke="#ccc" stroke-width="1.5"><path d="${_starPath}"/></svg><svg width="12" height="12" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5" style="clip-path:inset(0 50% 0 0);margin-left:-12px"><path d="${_starPath}"/></svg>`;
+      else stars += `<svg width="12" height="12" viewBox="0 0 24 24" fill="#e0e0e0" stroke="#ccc" stroke-width="1.5"><path d="${_starPath}"/></svg>`;
+    }
     const dist = myLat !== null && p.lat ? formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng)) : '';
     return `<div style="display:flex;align-items:center;gap:8px;padding:8px 4px;border-bottom:1px solid #f0f0f0;cursor:pointer" onclick="document.getElementById('placeListModal').classList.remove('open');focusPlace(${p.id})">
       <div style="width:28px;height:28px;border-radius:50%;background:${c.color};display:flex;align-items:center;justify-content:center;flex-shrink:0">${svgSized(getIcon(c.emoji),14)||c.emoji}</div>
@@ -1926,14 +1930,37 @@ function changeNick() {
   }, 50);
 }
 
-// ── 별점 ──
-const starSvg = '<svg viewBox="0 0 24 24" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg>';
+// ── 별점 (0.5단위) ──
+const _starPath = 'M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z';
+function _starHtml(i, score) {
+  // i: 1~5, score: 0~5 (0.5단위)
+  const full = score >= i;
+  const half = !full && score >= i - 0.5;
+  if (full) return `<span class="star"><svg viewBox="0 0 24 24" stroke-width="1.5" class="s-fg"><path d="${_starPath}"/></svg></span>`;
+  if (half) return `<span class="star"><svg viewBox="0 0 24 24" stroke-width="1.5" class="s-bg"><path d="${_starPath}"/></svg><svg viewBox="0 0 24 24" stroke-width="1.5" style="clip-path:inset(0 50% 0 0)" class="s-fg"><path d="${_starPath}"/></svg></span>`;
+  return `<span class="star"><svg viewBox="0 0 24 24" stroke-width="1.5" class="s-bg"><path d="${_starPath}"/></svg></span>`;
+}
 function renderStars(placeId, nick, score) {
   let html = '';
   for (let i = 1; i <= 5; i++) {
-    html += `<span class="star ${i<=score?'on':'off'}" onclick="event.stopPropagation();setRating(${placeId},'${nick}',${i})">${starSvg}</span>`;
+    html += `<span class="star" onclick="event.stopPropagation();_starClick(event,${placeId},'${nick}',${i})">${_starInner(i, score)}</span>`;
   }
   return html;
+}
+function _starInner(i, score) {
+  const full = score >= i;
+  const half = !full && score >= i - 0.5;
+  if (full) return `<svg viewBox="0 0 24 24" stroke-width="1.5" class="s-fg"><path d="${_starPath}"/></svg>`;
+  if (half) return `<svg viewBox="0 0 24 24" stroke-width="1.5" class="s-bg"><path d="${_starPath}"/></svg><svg viewBox="0 0 24 24" stroke-width="1.5" style="clip-path:inset(0 50% 0 0)" class="s-fg"><path d="${_starPath}"/></svg>`;
+  return `<svg viewBox="0 0 24 24" stroke-width="1.5" class="s-bg"><path d="${_starPath}"/></svg>`;
+}
+function _starClick(e, placeId, nick, i) {
+  // 별의 왼쪽 반 클릭 → .5, 오른쪽 반 클릭 → 정수
+  const rect = e.currentTarget.getBoundingClientRect();
+  const x = e.clientX || (e.touches && e.touches[0].clientX) || rect.left;
+  const isLeft = (x - rect.left) < rect.width / 2;
+  const score = isLeft ? i - 0.5 : i;
+  setRating(placeId, nick, score);
 }
 
 function setRating(placeId, nick, score) {
@@ -1974,7 +2001,7 @@ function renderRatingBlock(p) {
 function renderStarsReadonly(score) {
   let html = '';
   for (let i = 1; i <= 5; i++) {
-    html += `<span class="star ${i<=score?'on':'off'}" style="cursor:default">${starSvg}</span>`;
+    html += `<span class="star" style="cursor:default">${_starInner(i, score)}</span>`;
   }
   return html;
 }
@@ -1991,7 +2018,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 86;
+const APP_VERSION = 87;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
