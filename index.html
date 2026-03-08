@@ -213,7 +213,7 @@ header .lc svg{width:18px;height:18px}
 </head>
 <body>
 <header>
-  <h1><img src="icon-192.png?v=3" width="22" height="22" style="vertical-align:middle;margin-right:4px;border-radius:4px;cursor:pointer" id="appIcon" ondblclick="startWorldCup()"> 김춘식 데이트 맵</h1>
+  <h1><img src="icon-192.png?v=3" width="22" height="22" style="vertical-align:middle;margin-right:4px;border-radius:4px;cursor:pointer;touch-action:manipulation" id="appIcon"> 김춘식 데이트 맵</h1>
   <div class="badge" onclick="openPlaceListModal()" style="cursor:pointer"><div class="dot"></div><span id="cnt">0</span>개 장소</div>
 </header>
 <div class="main">
@@ -583,7 +583,6 @@ function initMap() {
   kakao.maps.event.addListener(map, 'click', () => closeAllIw());
   renderAll();
   // 앱 시작 시: savedLoc으로 즉시 마커+거리 표시
-  document.getElementById('locBtn').classList.add('tracking');
   if (savedLoc) {
     try {
       const loc = JSON.parse(savedLoc);
@@ -592,7 +591,13 @@ function initMap() {
       renderList();
     } catch(e) {}
   }
-  // 앱 시작 시 위치 버튼 자동 활성화
+  // 위치 버튼 강제 활성화 (인라인 스타일로 확실하게)
+  const _lb = document.getElementById('locBtn');
+  _lb.classList.add('tracking');
+  _lb.style.background = '#4285F4';
+  _lb.style.color = 'white';
+  _lb.style.borderColor = '#4285F4';
+  // GPS 시도
   handleLocClick();
 }
 
@@ -2094,7 +2099,9 @@ function _doLocClick() {
 
 function stopTracking() {
   if (watchId !== null) { navigator.geolocation.clearWatch(watchId); watchId = null; }
-  document.getElementById('locBtn').classList.remove('tracking');
+  const _lb = document.getElementById('locBtn');
+  _lb.classList.remove('tracking');
+  _lb.style.background = ''; _lb.style.color = ''; _lb.style.borderColor = '';
   if (myLocMarker) { myLocMarker.setMap(null); myLocMarker = null; }
   if (myLocOverlay) { myLocOverlay.setMap(null); myLocOverlay = null; }
   myLat = null; myLng = null;
@@ -2275,7 +2282,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 100;
+const APP_VERSION = 101;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2321,6 +2328,13 @@ window.addEventListener('load', () => {
   checkNick();
   startRealtimeSync();
   setupLocBtn();
+  // 앱 아이콘 더블탭 → 월드컵
+  let _iconTapTime = 0;
+  document.getElementById('appIcon').addEventListener('click', e => {
+    const now = Date.now();
+    if (now - _iconTapTime < 400) { e.preventDefault(); startWorldCup(); _iconTapTime = 0; }
+    else _iconTapTime = now;
+  });
   // 카카오 지도 SDK 동적 로드
   const script = document.createElement('script');
   script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=fc85da8522a1e81f1e19c6777c002a55&autoload=false';
