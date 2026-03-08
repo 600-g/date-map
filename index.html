@@ -604,8 +604,10 @@ function closeAddPanel() {
   window._selectedSearch = null;
   window._srChecked = new Set();
   window._batchMode = false;
-  // 필터바 복원
+  // 필터바 복원 + 스크롤 상단으로
   document.getElementById('filterBar').style.display = '';
+  const tabList = document.getElementById('tab-list');
+  if (tabList) tabList.scrollTop = 0;
   try { lucide.createIcons(); } catch(e) {}
 }
 
@@ -760,14 +762,6 @@ function batchAddConfirm() {
     saveData(); renderAll();
     toast(`${added}개 장소 추가됨`);
   }
-  document.getElementById('sr').innerHTML = '';
-  document.getElementById('sr').style.display = '';
-  document.getElementById('sq').value = '';
-  document.getElementById('searchConfirm').style.display = 'none';
-  document.getElementById('srBatchBar').style.display = 'none';
-  window._srChecked = new Set();
-  window._selectedSearch = null;
-  window._batchMode = false;
   closeAddPanel();
   showTab('list');
 }
@@ -801,10 +795,6 @@ function confirmSearch() {
     cat, memo, visited: false
   });
   if (ok) {
-    document.getElementById('searchConfirm').style.display = 'none';
-    document.getElementById('sq').value = '';
-    document.getElementById('sr').innerHTML = '';
-    window._selectedSearch = null;
     closeAddPanel();
     showTab('list');
   }
@@ -1828,7 +1818,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 67;
+const APP_VERSION = 68;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
