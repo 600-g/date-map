@@ -571,6 +571,8 @@ function renderList() {
       ${renderRatingBlock(p)}
       <div class="pi-acts">
         <button class="bx${p.visited?' vis':''}" onclick="event.stopPropagation();toggleV(${p.id})">${p.visited?'✅ 다녀옴':'⬜ 미방문'}</button>
+        <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})">🗺 카카오</button>
+        <button class="bx" onclick="event.stopPropagation();openNaverMap(${p.id})">🟢 네이버</button>
         <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})">삭제</button>
       </div>
     </div>`;
@@ -619,6 +621,16 @@ function toggleV(id) {
   const p=places.find(x=>x.id===id);
   if(p){p.visited=!p.visited; saveData(); renderAll();}
 }
+function openKakaoMap(id) {
+  const p = places.find(x=>x.id===id); if(!p) return;
+  window.open(`https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`, '_blank');
+}
+
+function openNaverMap(id) {
+  const p = places.find(x=>x.id===id); if(!p) return;
+  window.open(`https://map.naver.com/v5/search/${encodeURIComponent(p.name)}?c=${p.lng},${p.lat},15,0,0,0,dh`, '_blank');
+}
+
 function delPlace(id) {
   places=places.filter(x=>x.id!==id); saveData(); renderAll(); toast('삭제됐어요');
 }
