@@ -52,12 +52,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .sr-addr{color:var(--brown);font-size:12px}
 .search-loading{font-size:13px;color:var(--brown);padding:6px;text-align:center}
 /* 목록 */
-.filter-bar{display:flex;gap:4px;padding:8px 8px 4px;flex-wrap:wrap;flex-shrink:0}
+.filter-bar{display:flex;gap:4px;padding:8px 8px 4px;flex-wrap:wrap;flex-shrink:0;border-bottom:1px solid var(--warm)}
 .fb{font-size:12px;padding:4px 9px;border-radius:20px;border:1px solid var(--warm);background:white;color:var(--brown);cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:3px}
 .fb svg{width:13px;height:13px;vertical-align:middle;flex-shrink:0;overflow:visible}
 .fb.active{background:var(--dark);color:white;border-color:var(--dark)}
 .place-list{flex:1;overflow-y:auto;padding:8px}
-.pi-wrap{position:relative;overflow:hidden;border-radius:12px;margin-bottom:8px}
+.pi-wrap{position:relative;overflow:hidden;border-radius:12px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #f0ece6}
+.pi-wrap:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
 .pi-del-bg{position:absolute;right:0;top:0;bottom:0;width:100%;background:#E74C3C;display:flex;align-items:center;justify-content:flex-end;padding-right:20px;color:white;font-size:13px;font-weight:550;border-radius:12px}
 .pi{background:white;border:1px solid transparent;border-radius:12px;padding:12px 14px;cursor:pointer;transition:transform .15s;box-shadow:var(--card-shadow);position:relative;z-index:1}
 .pi:hover{box-shadow:0 3px 12px rgba(0,0,0,.1);transform:translateY(-1px)}
@@ -67,7 +68,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .pi-cat{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500;flex-shrink:0;cursor:pointer;display:inline-flex;align-items:center;gap:2px;overflow:hidden;max-width:90px;max-height:22px;line-height:16px;white-space:nowrap;text-overflow:ellipsis}
 .pi-cat svg{width:12px;height:12px;vertical-align:middle;flex-shrink:0;overflow:visible}
 .pi-addr{font-size:12px;color:var(--brown);margin-top:3px;display:flex;align-items:center;gap:2px}
-.pi-addr .lc svg{width:9px;height:9px}
+.pi-addr .lc svg{width:7px;height:7px}
 .pi-dist .lc svg{width:11px;height:11px}
 .pi-memo{font-size:12px;color:#999;margin-top:3px;font-style:italic}
 .addr-search{color:var(--brown);font-size:9px;font-weight:500;cursor:pointer;margin-left:4px;background:var(--cream);border:1px solid var(--warm);border-radius:4px;padding:1px 6px;display:inline-block;vertical-align:middle}
@@ -76,7 +77,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .bx{font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid #eee;background:#fafafa;cursor:pointer;color:#666;transition:all .15s;font-family:'Pretendard Variable',Pretendard,sans-serif;display:inline-flex;align-items:center;gap:3px}
 .bx:hover{border-color:var(--brown);color:var(--brown);background:white}
 .bx.vis{background:var(--green);color:white;border-color:var(--green)}
-.bx.del:hover{border-color:var(--red);color:var(--red);background:#FFF5F5}
+.bx.del{border-color:#f0c8c8;color:var(--red);background:#FFF5F5}
+.bx.del:hover{border-color:var(--red)}
 /* 사진 */
 .pi-photo-btn{display:inline-flex;align-items:center;gap:3px;font-size:12px;color:var(--brown);cursor:pointer;padding:2px 0;margin-top:2px}
 .pi-photo-btn:hover{color:var(--dark)}
@@ -248,8 +250,8 @@ header .lc svg{width:18px;height:18px}
             <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" onclick="doSearch()">검색</button>
           </div>
           <div id="srBatchBar" style="display:none;background:var(--accent);color:white;padding:8px 12px;border-radius:8px;margin-bottom:6px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.15)">
-            <span style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:6px;cursor:pointer" onclick="event.stopPropagation();toggleSelectAll()">전체선택</span> <span id="srBatchCount" style="font-size:13px;font-weight:550"></span></span>
-            <span style="font-size:12px;background:rgba(255,255,255,.25);padding:4px 12px;border-radius:6px;cursor:pointer" onclick="showBatchConfirm()">추가하기</span>
+            <span id="srBatchCount" style="font-size:13px;font-weight:550"></span>
+            <span style="display:flex;align-items:center;gap:6px"><span style="font-size:12px;background:rgba(255,255,255,.2);padding:3px 10px;border-radius:6px;cursor:pointer" onclick="event.stopPropagation();toggleSelectAll()">전체선택</span><span style="font-size:12px;background:rgba(255,255,255,.25);padding:4px 12px;border-radius:6px;cursor:pointer" onclick="showBatchConfirm()">추가하기</span></span>
           </div>
           <div id="sr"></div>
           <div id="searchConfirm" style="display:none;background:var(--cream);border:1px solid var(--warm);border-radius:8px;padding:12px;margin-top:6px;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.1)">
@@ -303,21 +305,22 @@ header .lc svg{width:18px;height:18px}
 
         <hr class="div">
         <div class="s-title"><i data-lucide="user" class="lc lc-sm"></i> 내 닉네임</div>
-        <div class="s-desc">별점에 표시되는 이름 · 현재: <b id="currentNick"></b></div>
+        <div class="s-desc">별점에 표시되는 이름</div>
         <div class="row" style="margin-bottom:6px">
           <input id="nickChange" type="text" style="margin-bottom:0" placeholder="새 닉네임">
           <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" id="nickBtn" onclick="changeNick()">변경</button>
         </div>
 
         <hr class="div">
-        <div class="s-title"><i data-lucide="refresh-cw" class="lc lc-sm"></i> 앱 업데이트</div>
-        <div class="s-desc">현재 버전: <b id="appVer"></b></div>
+        <div class="s-title"><i data-lucide="refresh-cw" class="lc lc-sm"></i> 앱 업데이트 <span style="font-size:12px;font-weight:400;color:#aaa">v<span id="appVer"></span></span></div>
         <button class="btn btn-dark" style="width:100%;margin-bottom:12px" onclick="forceUpdate()"><i data-lucide="download" class="lc lc-sm"></i> 최신 버전 확인</button>
 
         <hr class="div">
         <div class="s-title"><i data-lucide="trash-2" class="lc lc-sm"></i> 초기화</div>
         <div class="s-desc">모든 장소를 삭제합니다</div>
         <button class="btn btn-outline" style="width:100%" onclick="clearAll()">전체 초기화</button>
+
+        <div style="text-align:center;margin-top:24px;padding:12px 0;color:#ccc;font-size:11px;letter-spacing:.5px">© 600g</div>
       </div>
     </div>
   </div>
@@ -611,7 +614,7 @@ function showTab(name) {
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('.tab')[['list','cfg'].indexOf(name)].classList.add('active');
-  if (name==='cfg') { catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; document.getElementById('currentNick').textContent = myNick||'(미설정)'; document.getElementById('appVer').textContent = 'v' + APP_VERSION; try{lucide.createIcons();}catch(e){} }
+  if (name==='cfg') { catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; document.getElementById('appVer').textContent = APP_VERSION; try{lucide.createIcons();}catch(e){} }
   if (name==='list') populateCatSelect();
 }
 
@@ -1652,17 +1655,17 @@ function renderList() {
         <div class="pi-name">${p.name}</div>
         <div class="pi-cat" style="background:${c.color};color:var(--dark)" onclick="event.stopPropagation();openCatModal(${p.id})" title="클릭해서 카테고리 변경">${svgSized(getIcon(c.emoji),12)||c.emoji} ${c.name}</div>
       </div>
-      ${p.addr?`<div class="pi-addr"><i data-lucide="map-pin" class="lc lc-sm" style="color:#E74C3C"></i> ${p.addr} <span class="addr-search" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')"><i data-lucide="external-link" class="lc" style="width:10px;height:10px"></i></span></div>`:''}
+      ${p.addr?`<div class="pi-addr">${p.addr} <span class="addr-search" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')"><i data-lucide="external-link" class="lc" style="width:10px;height:10px"></i></span></div>`:''}
       ${myLat!==null&&p.lat?`<div class="pi-dist"><i data-lucide="ruler" class="lc lc-sm"></i> ${formatDist(getDistanceKm(myLat,myLng,p.lat,p.lng))} · ${formatWalkTime(getDistanceKm(myLat,myLng,p.lat,p.lng))} · ${formatCarTime(getDistanceKm(myLat,myLng,p.lat,p.lng))}</div>`:''}
       <div class="pi-memo">${p.memo||'<span style="color:#bbb">메모 없음</span>'} <span onclick="event.stopPropagation();editMemo(${p.id})" style="cursor:pointer;display:inline-flex;align-items:center;padding:4px;border-radius:4px;vertical-align:middle;margin-left:1px" title="메모 수정"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></span></div>
       ${renderPhotos(p)}
       ${renderRatingBlock(p)}
       <div class="pi-acts">
         <button class="bx${p.visited?' vis':''}" onclick="event.stopPropagation();toggleV(${p.id})">${p.visited?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg> 다녀옴':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> 미방문'}</button>
-        <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})"><svg width="16" height="16" viewBox="0 0 24 24" fill="#FEE500" stroke="#8B6914" stroke-width="0.8" style="vertical-align:middle"><path d="M12 3C6.48 3 2 6.58 2 10.94c0 2.8 1.86 5.27 4.66 6.67-.15.53-.96 3.4-.99 3.62 0 0-.02.17.09.24.11.06.24.01.24.01.32-.04 3.7-2.44 4.28-2.86.55.08 1.13.12 1.72.12 5.52 0 10-3.58 10-7.8C22 6.58 17.52 3 12 3z"/></svg> 카카오</button>
-        <button class="bx" onclick="event.stopPropagation();openNaverMap(${p.id})"><svg width="20" height="20" viewBox="0 0 24 24" fill="#03C75A" style="vertical-align:middle"><path d="M16.27 3H7.73A4.73 4.73 0 003 7.73v8.54A4.73 4.73 0 007.73 21h8.54A4.73 4.73 0 0021 16.27V7.73A4.73 4.73 0 0016.27 3zm-2.6 12.41h-2.1l-2.56-3.67v3.67H7.5V8.59h2.1l2.56 3.67V8.59h1.51v6.82z"/></svg> 네이버</button>
+        <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:middle"><rect x="1" y="1" width="22" height="22" rx="5" fill="#FEE500"/><path d="M12 6C8.13 6 5 8.52 5 11.6c0 1.96 1.3 3.68 3.26 4.66l-.66 2.44c-.04.15.13.27.26.19l2.9-1.93c.4.05.82.08 1.24.08 3.87 0 7-2.52 7-5.44S15.87 6 12 6z" fill="#3C1E1E"/></svg> 카카오</button>
+        <button class="bx" onclick="event.stopPropagation();openNaverMap(${p.id})"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:middle"><rect x="1" y="1" width="22" height="22" rx="5" fill="#03C75A"/><path d="M13.5 12.5l-3.2-4.6H7.8v8.2h2.7v-4.6l3.2 4.6h2.5V7.9h-2.7v4.6z" fill="white"/></svg> 네이버</button>
         <button class="bx" onclick="event.stopPropagation();openNavi(${p.id})" style="background:#5B7DB8;color:white;border-color:#5B7DB8;padding:4px 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1" style="vertical-align:middle"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg> 길찾기</button>
-        <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
+        <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E05252" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
       </div>
     </div>
     </div>`;
@@ -1674,33 +1677,42 @@ function renderList() {
 function setupSwipeDelete() {
   document.querySelectorAll('.pi-wrap').forEach(wrap => {
     const pi = wrap.querySelector('.pi');
-    let startX = 0, currentX = 0, swiping = false;
-    const threshold = -120;
+    let startX = 0, startY = 0, currentX = 0, swiping = false, locked = false;
+    const deadZone = 30;
+    const threshold = -160;
+    const resistance = 0.45;
     wrap.addEventListener('touchstart', e => {
       startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
       currentX = 0;
       swiping = true;
+      locked = false;
       pi.style.transition = 'none';
     }, {passive:true});
     wrap.addEventListener('touchmove', e => {
       if (!swiping) return;
       const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      if (!locked && Math.abs(dy) > Math.abs(dx)) { swiping = false; pi.style.transform = ''; return; }
+      locked = true;
       if (dx > 0) { currentX = 0; pi.style.transform = ''; return; }
-      currentX = dx;
-      pi.style.transform = `translateX(${dx}px)`;
+      if (dx > -deadZone) { currentX = 0; pi.style.transform = ''; return; }
+      const effective = (dx + deadZone) * resistance;
+      currentX = effective;
+      pi.style.transform = `translateX(${effective}px)`;
     }, {passive:true});
     wrap.addEventListener('touchend', () => {
       if (!swiping) return;
       swiping = false;
-      pi.style.transition = 'transform .2s';
-      if (currentX < threshold) {
+      pi.style.transition = 'transform .25s ease';
+      if (currentX < threshold * resistance) {
         pi.style.transform = 'translateX(-100%)';
         const pid = parseInt(wrap.dataset.pid);
         setTimeout(() => {
           places = places.filter(x => x.id !== pid);
           saveData(); renderAll();
           toast('삭제됐어요');
-        }, 200);
+        }, 250);
       } else {
         pi.style.transform = '';
       }
@@ -1736,10 +1748,10 @@ function renderMarkers() {
       ${p.memo?`<div style="font-size:11px;color:#999;margin-top:3px;font-style:italic">${p.memo}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
         <button class="iw-btn" data-action="kakao">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="#FEE500" stroke="#8B6914" stroke-width="0.8"><path d="M12 3C6.48 3 2 6.58 2 10.94c0 2.8 1.86 5.27 4.66 6.67-.15.53-.96 3.4-.99 3.62 0 0-.02.17.09.24.11.06.24.01.24.01.32-.04 3.7-2.44 4.28-2.86.55.08 1.13.12 1.72.12 5.52 0 10-3.58 10-7.8C22 6.58 17.52 3 12 3z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="5" fill="#FEE500"/><path d="M12 6C8.13 6 5 8.52 5 11.6c0 1.96 1.3 3.68 3.26 4.66l-.66 2.44c-.04.15.13.27.26.19l2.9-1.93c.4.05.82.08 1.24.08 3.87 0 7-2.52 7-5.44S15.87 6 12 6z" fill="#3C1E1E"/></svg>
         </button>
         <button class="iw-btn" data-action="naver">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="#03C75A"><path d="M16.27 3H7.73A4.73 4.73 0 003 7.73v8.54A4.73 4.73 0 007.73 21h8.54A4.73 4.73 0 0021 16.27V7.73A4.73 4.73 0 0016.27 3zm-2.6 12.41h-2.1l-2.56-3.67v3.67H7.5V8.59h2.1l2.56 3.67V8.59h1.51v6.82z"/></svg>
+          <svg width="16" height="16" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="5" fill="#03C75A"/><path d="M13.5 12.5l-3.2-4.6H7.8v8.2h2.7v-4.6l3.2 4.6h2.5V7.9h-2.7v4.6z" fill="white"/></svg>
         </button>
         <button class="iw-btn" data-action="navi" style="background:#5B7DB8;border-color:#5B7DB8">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg>
@@ -2211,8 +2223,6 @@ function changeNick() {
   setTimeout(() => {
     const ni = document.getElementById('nickChange');
     if (ni) ni.value = newNick;
-    const cn = document.getElementById('currentNick');
-    if (cn) cn.textContent = newNick;
   }, 50);
 }
 
@@ -2304,7 +2314,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 107;
+const APP_VERSION = 108;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
