@@ -165,7 +165,7 @@ header .lc svg{width:18px;height:18px}
 .nb-btn svg{width:18px;height:18px;flex-shrink:0;vertical-align:middle}
 .nb-btn:hover,.nb-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
 /* 토스트 */
-.toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(120px);background:rgba(59,76,107,.92);backdrop-filter:blur(8px);color:white;padding:11px 22px;border-radius:14px;font-size:14px;transition:transform .3s,opacity .3s;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;pointer-events:none}
+.toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(120px);background:rgba(59,76,107,.92);backdrop-filter:blur(8px);color:white;padding:11px 22px;border-radius:14px;font-size:14px;transition:transform .3s,opacity .3s;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;pointer-events:none;white-space:nowrap;max-width:90vw;text-overflow:ellipsis;overflow:hidden}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
 @media(max-width:680px){
   .main{flex-direction:column}
@@ -1828,7 +1828,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 70;
+const APP_VERSION = 71;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
