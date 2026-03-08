@@ -211,7 +211,7 @@ header .lc svg{width:18px;height:18px}
         </div>
       </div>
       <!-- 장소 추가 패널 (접이식) -->
-      <div id="addPanel" class="add-panel" style="display:none">
+      <div id="addPanel" class="add-panel">
         <div class="add-wrap" style="padding:10px 12px">
           <div class="lbl" style="margin-top:0"><i data-lucide="search" class="lc lc-sm"></i> 카카오 장소 검색</div>
           <div class="row" style="margin-bottom:6px">
@@ -539,19 +539,17 @@ function initMap() {
       renderList();
     } catch(e) {}
   }
-  // iOS PWA는 사용자 제스처 없이 GPS 불가 → 첫 터치 시 자동 GPS 시작
+  // 즉시 GPS 시도 (모든 플랫폼)
+  setTimeout(() => _silentGps(), 300);
+  // iOS PWA 백업: 첫 터치 시에도 GPS 시도
   function _autoGps() {
     document.removeEventListener('touchstart', _autoGps);
     document.removeEventListener('click', _autoGps);
-    if (watchId !== null) return; // 이미 추적 중
+    if (watchId !== null) return;
     _silentGps();
   }
   document.addEventListener('touchstart', _autoGps, {once:true});
   document.addEventListener('click', _autoGps, {once:true});
-  // PC에서는 setTimeout도 시도
-  if (!/iPhone|iPad|Android/i.test(navigator.userAgent)) {
-    setTimeout(() => _silentGps(), 500);
-  }
 }
 
 function _silentGps() {
@@ -607,8 +605,10 @@ function openAddPanel() {
   const wrap = panel.querySelector('.add-wrap');
   if (wrap) wrap.scrollTop = 0;
   // 목록 검색어가 있으면 자동으로 카카오 검색 실행
-  if (listSearchQuery) {
-    document.getElementById('sq').value = listSearchQuery;
+  const listInput = document.getElementById('listSearchInput');
+  const pendingQuery = listSearchQuery || (listInput ? listInput.value.trim() : '');
+  if (pendingQuery) {
+    document.getElementById('sq').value = pendingQuery;
     doSearch();
   }
   try { lucide.createIcons(); } catch(e) {}
@@ -1893,7 +1893,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 81;
+const APP_VERSION = 82;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
