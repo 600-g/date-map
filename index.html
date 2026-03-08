@@ -592,6 +592,13 @@ function _silentGps() {
       myLat = pos.coords.latitude; myLng = pos.coords.longitude;
       localStorage.setItem('datemap-lastloc', JSON.stringify({lat:myLat,lng:myLng}));
       updateMyLocMarker(); map.setCenter(new kakao.maps.LatLng(myLat, myLng)); map.setLevel(4); renderList();
+      if (watchId === null) {
+        watchId = navigator.geolocation.watchPosition(wp => {
+          if (wp.coords.accuracy > 1000) return;
+          myLat = wp.coords.latitude; myLng = wp.coords.longitude;
+          updateMyLocMarker(); renderList();
+        }, ()=>{}, {enableHighAccuracy:false, maximumAge:5000, timeout:15000});
+      }
     }, ()=>{}, {enableHighAccuracy:false, timeout:15000});
   }, {enableHighAccuracy:true, timeout:10000});
 }
@@ -649,6 +656,8 @@ function closeAddPanel() {
   window._selectedSearch = null;
   window._srChecked = new Set();
   window._batchMode = false;
+  // 목록 검색 초기화
+  try { collapseListSearch(); } catch(e) {}
   // 필터바 복원 + 스크롤 상단
   document.getElementById('filterBar').style.display = '';
   const pl = document.getElementById('placeList');
@@ -2018,7 +2027,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 87;
+const APP_VERSION = 88;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
