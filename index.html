@@ -285,7 +285,7 @@ header .lc svg{width:18px;height:18px}
     <div class="nearby-bar" id="nearbyBar">
       <button class="nb-btn" onclick="searchNearby('CE7','카페',this,'cafe')">☕ 카페</button>
       <button class="nb-btn" onclick="searchNearbyKeyword('스타벅스','스벅',this,'starbucks')">🟢 스벅</button>
-      <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마','영화관',this,'movie')">🎬 영화관</button>
+      <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마','영화관',this,'movie','영화,극장')">🎬 영화관</button>
       <button class="nb-btn" onclick="searchNearby('CS2','편의점',this,'conv')">🏪 편의점</button>
     </div>
   </div>
@@ -1184,7 +1184,7 @@ function openNavi(id) {
 // ── 주변 카테고리 검색 ──
 let nearbyMarkers = [];
 let nearbyActiveCategory = null;
-async function searchNearbyKeyword(keyword, label, btnEl, icon) {
+async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
   const key = 'kw_' + keyword;
   if (nearbyActiveCategory === key) { clearNearbyMarkers(); return; }
   let lat, lng;
@@ -1205,6 +1205,11 @@ async function searchNearbyKeyword(keyword, label, btnEl, icon) {
     // 중복 제거 (id 기준)
     const seen = new Set();
     allDocs = allDocs.filter(d => { if (seen.has(d.id)) return false; seen.add(d.id); return true; });
+    // 카테고리 필터 (영화관 등 정확도 향상)
+    if (catFilter) {
+      const filters = catFilter.split(',');
+      allDocs = allDocs.filter(d => filters.some(f => (d.category_name||'').includes(f) || (d.category_group_name||'').includes(f)));
+    }
     // 거리순 정렬
     allDocs.sort((a, b) => (parseInt(a.distance)||0) - (parseInt(b.distance)||0));
     allDocs = allDocs.slice(0, 15);
@@ -1619,7 +1624,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 30;
+const APP_VERSION = 31;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
