@@ -817,10 +817,11 @@ function batchAddConfirm() {
     added++;
   });
   if (added) {
-    saveData(); renderAll();
+    saveData();
     toast(`${added}개 장소 추가됨`);
   }
   closeAddPanel();
+  renderAll();
   showTab('list');
 }
 
@@ -853,6 +854,7 @@ function confirmSearch() {
     cat, memo, visited: false
   });
   closeAddPanel();
+  renderAll();
   showTab('list');
 }
 
@@ -881,6 +883,7 @@ function addManual() {
     document.getElementById('mAddr').value='';
     document.getElementById('mMemo').value='';
     closeAddPanel();
+    renderAll();
     showTab('list');
   };
 
@@ -899,7 +902,7 @@ function addPlace(p) {
   const dup = places.find(x => x.name === p.name && x.addr === p.addr);
   if (dup) { toast('이미 등록된 장소예요'); return false; }
   places.push(p);
-  saveData(); renderAll();
+  saveData();
   // 추가된 장소로 지도 포커스
   if (map && p.lat && p.lng) {
     map.setCenter(new kakao.maps.LatLng(p.lat, p.lng));
@@ -1882,7 +1885,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 79;
+const APP_VERSION = 80;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
