@@ -284,10 +284,10 @@ header .lc svg{width:18px;height:18px}
     <!-- 주변 검색 퀵버튼 -->
     <div class="nearby-bar" id="nearbyBar">
       <button class="nb-btn" onclick="searchNearby('CE7','카페',this)">☕ 카페</button>
-      <button class="nb-btn" onclick="searchNearby('FD6','음식점',this)">🍽 음식점</button>
-      <button class="nb-btn" onclick="searchNearby('CT1','영화관',this)">🎬 영화관</button>
-      <button class="nb-btn" onclick="searchNearby('AT4','관광',this)">📸 관광</button>
+      <button class="nb-btn" onclick="searchNearbyKeyword('스타벅스','스타벅스',this)">🟢 스벅</button>
+      <button class="nb-btn" onclick="searchNearbyKeyword('CGV OR 메가박스 OR 롯데시네마','영화관',this)">🎬 영화관</button>
       <button class="nb-btn" onclick="searchNearby('SW8','지하철',this)">🚇 지하철</button>
+      <button class="nb-btn" onclick="searchNearby('CS2','편의점',this)">🏪 편의점</button>
     </div>
   </div>
 </div>
@@ -1134,11 +1134,15 @@ function toggleV(id) {
   const wasFocused = focusedPlaceId;
   saveData(); renderAll();
   // 팝업이 열려있었으면 다시 열기
-  if (wasFocused === id && iwMap[id]) {
-    iwMap[id].setMap(map);
-    focusedPlaceId = id;
-    const el = document.getElementById('pi-'+id);
-    if (el) el.classList.add('sel');
+  if (wasFocused === id) {
+    setTimeout(() => {
+      if (iwMap[id]) {
+        iwMap[id].setMap(map);
+        focusedPlaceId = id;
+        const el = document.getElementById('pi-'+id);
+        if (el) el.classList.add('sel');
+      }
+    }, 50);
   }
 }
 function openKakaoMap(id) {
@@ -1164,6 +1168,40 @@ function openNavi(id) {
 // ── 주변 카테고리 검색 ──
 let nearbyMarkers = [];
 let nearbyActiveCategory = null;
+async function searchNearbyKeyword(keyword, label, btnEl) {
+  const key = 'kw_' + keyword;
+  if (nearbyActiveCategory === key) { clearNearbyMarkers(); return; }
+  let lat, lng;
+  if (myLat !== null) { lat = myLat; lng = myLng; }
+  else { const c = map.getCenter(); lat = c.getLat(); lng = c.getLng(); }
+  toast(`🔍 주변 ${label} 검색 중...`);
+  try {
+    // 여러 키워드는 각각 검색 후 합침
+    const keywords = keyword.split(' OR ');
+    let allDocs = [];
+    for (const kw of keywords) {
+      const res = await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(kw)}&x=${lng}&y=${lat}&radius=3000&sort=distance&size=5`, {
+        headers: { 'Authorization': `KakaoAK ${REST_KEY}` }
+      });
+      const data = await res.json();
+      if (data.documents) allDocs = allDocs.concat(data.documents);
+    }
+    // 중복 제거 (id 기준)
+    const seen = new Set();
+    allDocs = allDocs.filter(d => { if (seen.has(d.id)) return false; seen.add(d.id); return true; });
+    // 거리순 정렬
+    allDocs.sort((a, b) => (parseInt(a.distance)||0) - (parseInt(b.distance)||0));
+    allDocs = allDocs.slice(0, 15);
+    if (!allDocs.length) { toast(`주변에 ${label}이(가) 없어요`); return; }
+    clearNearbyMarkers();
+    nearbyActiveCategory = key;
+    document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
+    if (btnEl) btnEl.classList.add('active');
+    renderNearbyResults(allDocs);
+    toast(`${label} ${allDocs.length}곳 발견`);
+  } catch(e) { toast('검색 실패'); }
+}
+
 async function searchNearby(categoryCode, label, btnEl) {
   // 토글: 같은 카테고리 다시 누르면 해제
   if (nearbyActiveCategory === categoryCode) {
@@ -1185,54 +1223,52 @@ async function searchNearby(categoryCode, label, btnEl) {
 
     clearNearbyMarkers();
     nearbyActiveCategory = categoryCode;
-    // 버튼 활성화 표시
     document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
     if (btnEl) btnEl.classList.add('active');
-
-    data.documents.forEach(d => {
-      const pos = new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
-      const dist = d.distance ? (d.distance >= 1000 ? (d.distance/1000).toFixed(1)+'km' : d.distance+'m') : '';
-      // 마커
-      const el = document.createElement('div');
-      el.innerHTML = `<div style="background:white;border:2px solid var(--accent);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer">📍</div>`;
-      const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:2 });
-      // 팝업
-      const iwEl = document.createElement('div');
-      iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:12px;font-family:Noto Sans KR;min-width:160px;max-width:220px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
-      iwEl.innerHTML = `
-        <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:#aaa;line-height:1" data-action="close">&times;</div>
-        <b style="font-size:12px">${d.place_name}</b>
-        <div style="font-size:10px;color:#8B6F5E;margin-top:2px">${d.road_address_name || d.address_name}${dist?' · '+dist:''}</div>
-        ${d.phone?`<div style="font-size:10px;color:var(--accent);margin-top:2px">${d.phone}</div>`:''}
-        <div style="display:flex;gap:4px;margin-top:6px">
-          <button class="iw-btn" data-action="add" style="background:var(--dark);color:white;border-color:var(--dark)">+ 등록</button>
-          <button class="iw-btn" data-action="kakao-nav">길찾기</button>
-        </div>
-      `;
-      ['click','mousedown','mouseup','touchstart','touchend','pointerdown','pointerup'].forEach(evt => {
-        iwEl.addEventListener(evt, e => e.stopPropagation());
-      });
-      iwEl.querySelector('[data-action="close"]').onclick = () => iw.setMap(null);
-      iwEl.querySelector('[data-action="add"]').onclick = () => {
-        const ok = addPlace({ id:Date.now(), name:d.place_name, addr:d.road_address_name||d.address_name, lat:parseFloat(d.y), lng:parseFloat(d.x), cat:cats[0]?.id||'기타', memo:'', visited:false });
-        if (ok) iw.setMap(null);
-      };
-      iwEl.querySelector('[data-action="kakao-nav"]').onclick = () => {
-        if (myLat !== null) window.open(`https://map.kakao.com/link/from/내위치,${myLat},${myLng}/to/${encodeURIComponent(d.place_name)},${d.y},${d.x}`, '_blank');
-        else window.open(`https://map.kakao.com/link/to/${encodeURIComponent(d.place_name)},${d.y},${d.x}`, '_blank');
-      };
-
-      const iw = new kakao.maps.CustomOverlay({ position:pos, content:iwEl, yAnchor:1.15, zIndex:11 });
-      el.onclick = () => { nearbyMarkers.forEach(m => { if(m.iw) try{m.iw.setMap(null);}catch(e){} }); iw.setMap(map); };
-
-      marker.setMap(map);
-      nearbyMarkers.push({ marker, iw });
-    });
+    renderNearbyResults(data.documents);
     toast(`${label} ${data.documents.length}곳 발견`);
   } catch(e) {
     toast('검색 실패');
   }
 }
+function renderNearbyResults(docs) {
+  docs.forEach(d => {
+    const pos = new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
+    const dist = d.distance ? (d.distance >= 1000 ? (d.distance/1000).toFixed(1)+'km' : d.distance+'m') : '';
+    const el = document.createElement('div');
+    el.innerHTML = `<div style="background:white;border:2px solid var(--accent);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer">📍</div>`;
+    const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:2 });
+    const iwEl = document.createElement('div');
+    iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:12px;font-family:Noto Sans KR;min-width:160px;max-width:220px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
+    iwEl.innerHTML = `
+      <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:#aaa;line-height:1" data-action="close">&times;</div>
+      <b style="font-size:12px">${d.place_name}</b>
+      <div style="font-size:10px;color:#8B6F5E;margin-top:2px">${d.road_address_name || d.address_name}${dist?' · '+dist:''}</div>
+      ${d.phone?`<div style="font-size:10px;color:var(--accent);margin-top:2px">${d.phone}</div>`:''}
+      <div style="display:flex;gap:4px;margin-top:6px">
+        <button class="iw-btn" data-action="add" style="background:var(--dark);color:white;border-color:var(--dark)">+ 등록</button>
+        <button class="iw-btn" data-action="kakao-nav">길찾기</button>
+      </div>
+    `;
+    ['click','mousedown','mouseup','touchstart','touchend','pointerdown','pointerup'].forEach(evt => {
+      iwEl.addEventListener(evt, e => e.stopPropagation());
+    });
+    iwEl.querySelector('[data-action="close"]').onclick = () => iw.setMap(null);
+    iwEl.querySelector('[data-action="add"]').onclick = () => {
+      const ok = addPlace({ id:Date.now(), name:d.place_name, addr:d.road_address_name||d.address_name, lat:parseFloat(d.y), lng:parseFloat(d.x), cat:cats[0]?.id||'기타', memo:'', visited:false });
+      if (ok) iw.setMap(null);
+    };
+    iwEl.querySelector('[data-action="kakao-nav"]').onclick = () => {
+      if (myLat !== null) window.open(`https://map.kakao.com/link/from/내위치,${myLat},${myLng}/to/${encodeURIComponent(d.place_name)},${d.y},${d.x}`, '_blank');
+      else window.open(`https://map.kakao.com/link/to/${encodeURIComponent(d.place_name)},${d.y},${d.x}`, '_blank');
+    };
+    const iw = new kakao.maps.CustomOverlay({ position:pos, content:iwEl, yAnchor:1.15, zIndex:11 });
+    el.onclick = () => { nearbyMarkers.forEach(m => { if(m.iw) try{m.iw.setMap(null);}catch(e){} }); iw.setMap(map); };
+    marker.setMap(map);
+    nearbyMarkers.push({ marker, iw });
+  });
+}
+
 function clearNearbyMarkers() {
   nearbyMarkers.forEach(m => { try{m.marker.setMap(null);}catch(e){} try{m.iw.setMap(null);}catch(e){} });
   nearbyMarkers = [];
@@ -1560,7 +1596,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 26;
+const APP_VERSION = 27;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
