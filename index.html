@@ -2532,7 +2532,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 149;
+const APP_VERSION = 150;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2692,13 +2692,16 @@ function courseShowMap() {
     arrow.setMap(map);
     _courseMarkers.push(arrow);
   }
-  // 범위 맞추기
-  if (positions.length > 0) {
-    const bounds = new kakao.maps.LatLngBounds();
-    positions.forEach(pos => bounds.extend(pos));
-    map.setBounds(bounds);
-  }
+  // 목록탭 전환 후 지도 relayout 완료된 뒤 범위 맞추기
   showTab('list');
+  setTimeout(() => {
+    if (map) map.relayout();
+    if (positions.length > 0) {
+      const bounds = new kakao.maps.LatLngBounds();
+      positions.forEach(pos => bounds.extend(pos));
+      map.setBounds(bounds, 80, 80, 80, 80); // 여백 80px
+    }
+  }, 400);
   toast(`코스 ${_courseSel.length}곳 표시 · 지도를 확인하세요`);
 }
 function clearCourseOverlays() {
