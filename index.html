@@ -47,8 +47,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .btn-sm{font-size:12px;padding:5px 12px}
 /* 검색 */
 .add-wrap{padding:12px;overflow-y:auto;flex:1}
-.cr-item{padding:8px 10px;background:white;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:8px;transition:transform .1s,box-shadow .1s}
-.cr-handle{font-size:16px;color:#bbb;cursor:grab;flex-shrink:0;line-height:1;padding:0 2px;-webkit-touch-callout:none}
+.cr-item{padding:8px 10px;background:white;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:8px;transition:transform .15s,box-shadow .15s}
+.cr-item.touch-dragging{z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.3);transform:scale(1.04);background:white;opacity:.95;border:1px solid var(--accent)}
+.cr-item.drag-over{box-shadow:0 -3px 0 0 var(--accent);background:#EEF0FF;border:1px dashed var(--accent)}
+.cr-handle{font-size:16px;color:#bbb;cursor:grab;flex-shrink:0;line-height:1;padding:0 2px;-webkit-touch-callout:none;touch-action:none;user-select:none;-webkit-user-select:none}
 .cr-dist{display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0;cursor:pointer}
 .sr-item{padding:8px 10px;border:1px solid var(--warm);border-radius:6px;margin-bottom:5px;cursor:pointer;font-size:13px;transition:all .15s}
 .sr-item:hover{border-color:var(--brown);background:var(--cream)}
@@ -2571,7 +2573,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 201;
+const APP_VERSION = 202;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2669,58 +2671,86 @@ function renderCourseRoute() {
       </div>`;
     }
     return `${distHtml}<div class="cr-item" data-idx="${i}">
-      <span class="cr-handle">☰</span>
       <div style="width:22px;height:22px;background:var(--dark);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${i+1}</div>
       <span style="font-size:15px;flex-shrink:0">${c.emoji}</span>
       <div style="flex:1;min-width:0;font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
+      <span class="cr-handle">☰</span>
     </div>`;
   }).join('');
   const mins = Math.round(totalKm / 4 * 60);
   document.getElementById('courseSummary').innerHTML = `총 거리 <b>${totalKm >= 1 ? totalKm.toFixed(1)+'km' : Math.round(totalKm*1000)+'m'}</b> · 도보 약 <b>${mins}분</b>`;
   _initCourseDrag();
 }
-// 코스 드래그 정렬
+// 코스 드래그 정렬 (카테고리와 동일한 연속 DOM 스왑 방식)
 let _crDrag = null;
 function _initCourseDrag() {
   const list = document.getElementById('courseRouteList');
-  list.querySelectorAll('.cr-item').forEach(item => {
-    const handle = item.querySelector('.cr-handle');
+  list.querySelectorAll('.cr-item').forEach(row => {
+    const handle = row.querySelector('.cr-handle');
+    if (!handle) return;
     handle.addEventListener('touchstart', e => {
       e.preventDefault();
-      const idx = parseInt(item.dataset.idx);
-      const rect = item.getBoundingClientRect();
-      _crDrag = { idx, el: item, startY: e.touches[0].clientY, offsetY: 0 };
-      item.style.zIndex = '10';
-      item.style.boxShadow = '0 4px 16px rgba(0,0,0,.2)';
-      item.style.opacity = '0.9';
+      const rect = row.getBoundingClientRect();
+      _crDrag = {
+        dragRow: row,
+        startY: e.touches[0].clientY,
+        offsetY: e.touches[0].clientY - rect.top,
+        rowH: row.offsetHeight + 4
+      };
+      row.classList.add('touch-dragging');
     }, { passive: false });
   });
-  list.addEventListener('touchmove', e => {
-    if (!_crDrag) return;
-    e.preventDefault();
-    const dy = e.touches[0].clientY - _crDrag.startY;
-    _crDrag.el.style.transform = `translateY(${dy}px)`;
-    _crDrag.offsetY = dy;
-  }, { passive: false });
-  list.addEventListener('touchend', e => {
-    if (!_crDrag) return;
-    const items = list.querySelectorAll('.cr-item');
-    const fromIdx = _crDrag.idx;
-    // 이동량으로 목표 인덱스 계산
-    const itemH = _crDrag.el.offsetHeight + 30; // 아이템 높이 + 거리표시 + gap
-    let move = Math.round(_crDrag.offsetY / itemH);
-    let toIdx = Math.max(0, Math.min(_courseSel.length - 1, fromIdx + move));
-    _crDrag.el.style.transform = '';
-    _crDrag.el.style.zIndex = '';
-    _crDrag.el.style.boxShadow = '';
-    _crDrag.el.style.opacity = '';
-    _crDrag = null;
-    if (fromIdx !== toIdx) {
-      const [moved] = _courseSel.splice(fromIdx, 1);
-      _courseSel.splice(toIdx, 0, moved);
+  if (!list._crTouchBound) {
+    list._crTouchBound = true;
+    list.addEventListener('touchmove', e => {
+      if (!_crDrag) return;
+      e.preventDefault();
+      const { dragRow, rowH } = _crDrag;
+      const curY = e.touches[0].clientY;
+      const dy = curY - _crDrag.startY;
+      dragRow.style.transform = `translateY(${dy}px) scale(1.04)`;
+      // 아래 row와 스왑
+      const allRows = [...list.querySelectorAll('.cr-item')];
+      const curDomIdx = allRows.indexOf(dragRow);
+      if (dy > rowH * 0.6 && curDomIdx < allRows.length - 1) {
+        const next = allRows[curDomIdx + 1];
+        // 사이에 cr-dist가 있을 수 있으므로 next의 다음 형제 앞에 삽입
+        const nextSib = next.nextElementSibling;
+        if (nextSib) list.insertBefore(dragRow, nextSib);
+        else list.appendChild(dragRow);
+        // dist 요소도 함께 이동
+        const prevDist = dragRow.previousElementSibling;
+        if (prevDist && prevDist.classList.contains('cr-dist')) {
+          list.insertBefore(prevDist, dragRow);
+        }
+        _crDrag.startY += rowH;
+        next.style.transition = 'transform 0.15s';
+        next.style.transform = 'translateY(-' + rowH + 'px)';
+        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 150); });
+      }
+      // 위 row와 스왑
+      else if (dy < -rowH * 0.6 && curDomIdx > 0) {
+        const prev = allRows[curDomIdx - 1];
+        list.insertBefore(dragRow, prev);
+        _crDrag.startY -= rowH;
+        prev.style.transition = 'transform 0.15s';
+        prev.style.transform = 'translateY(' + rowH + 'px)';
+        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 150); });
+      }
+    }, { passive: false });
+    list.addEventListener('touchend', e => {
+      if (!_crDrag) return;
+      const { dragRow } = _crDrag;
+      dragRow.classList.remove('touch-dragging');
+      dragRow.style.transform = '';
+      // DOM 순서에서 _courseSel 배열 재구성
+      const allRows = [...list.querySelectorAll('.cr-item')];
+      const newSel = allRows.map(r => _courseSel[parseInt(r.dataset.idx)]);
+      _courseSel.splice(0, _courseSel.length, ...newSel);
+      _crDrag = null;
       renderCourseRoute();
-    }
-  });
+    });
+  }
 }
 function openKakaoRoute(fromIdx, toIdx) {
   const sp = _courseSel[fromIdx], ep = _courseSel[toIdx];
