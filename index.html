@@ -1813,7 +1813,7 @@ function renderList() {
       ${renderPhotos(p)}
       <div class="pi-acts">
         <button class="bx${p.visited?' vis':''}" style="min-width:62px;justify-content:center" onclick="event.stopPropagation();toggleV(${p.id})">${p.visited?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg> 방문':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> 미방문'}</button>
-        <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})" style="padding:4px 6px"><svg width="18" height="18" viewBox="0 0 24 24" style="vertical-align:middle"><rect x="1" y="1" width="22" height="22" rx="5" fill="#FEE500"/><path d="M12 6C8.13 6 5 8.52 5 11.6c0 1.96 1.3 3.68 3.26 4.66l-.66 2.44c-.04.15.13.27.26.19l2.9-1.93c.4.05.82.08 1.24.08 3.87 0 7-2.52 7-5.44S15.87 6 12 6z" fill="#3C1E1E"/></svg></button>
+        <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})" style="padding:4px 6px"><img src="https://t1.daumcdn.net/mapjsapi/images/favicon/kakaomap.ico" width="18" height="18" style="vertical-align:middle;border-radius:3px"></button>
         <button class="bx" onclick="event.stopPropagation();openNaverMap(${p.id})" style="padding:4px 6px"><svg width="18" height="18" viewBox="0 0 24 24" style="vertical-align:middle"><rect x="1" y="1" width="22" height="22" rx="5" fill="#03C75A"/><path d="M13.5 12.5l-3.2-4.6H7.8v8.2h2.7v-4.6l3.2 4.6h2.5V7.9h-2.7v4.6z" fill="white"/></svg></button>
         <button class="bx" onclick="event.stopPropagation();openNavi(${p.id})" style="background:#5B7DB8;color:white;border-color:#5B7DB8;padding:4px 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1" style="vertical-align:middle"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg> 길찾기</button>
         <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E05252" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
@@ -1912,7 +1912,7 @@ function renderMarkers() {
           }
         </button>
         <button class="iw-btn" data-action="kakao">
-          <svg width="16" height="16" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="5" fill="#FEE500"/><path d="M12 6C8.13 6 5 8.52 5 11.6c0 1.96 1.3 3.68 3.26 4.66l-.66 2.44c-.04.15.13.27.26.19l2.9-1.93c.4.05.82.08 1.24.08 3.87 0 7-2.52 7-5.44S15.87 6 12 6z" fill="#3C1E1E"/></svg>
+          <img src="https://t1.daumcdn.net/mapjsapi/images/favicon/kakaomap.ico" width="16" height="16" style="border-radius:3px">
         </button>
         <button class="iw-btn" data-action="naver">
           <svg width="16" height="16" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="5" fill="#03C75A"/><path d="M13.5 12.5l-3.2-4.6H7.8v8.2h2.7v-4.6l3.2 4.6h2.5V7.9h-2.7v4.6z" fill="white"/></svg>
@@ -2005,7 +2005,7 @@ function openKakaoMap(id) {
 
 function openNaverMap(id) {
   const p = places.find(x=>x.id===id); if(!p) return;
-  location.href = `nmap://search?query=${encodeURIComponent(p.name)}&appname=com.datemap`;
+  location.href = `nmap://place?lat=${p.lat}&lng=${p.lng}&name=${encodeURIComponent(p.name)}&appname=com.datemap`;
 }
 
 function openNavi(id) {
@@ -2121,7 +2121,7 @@ function renderNearbyResults(docs, iconKey, groupKey) {
       <div style="font-size:11px;color:#8B6F5E;margin-top:2px">${d.road_address_name || d.address_name}${dist?' · '+dist:''}</div>
       ${d.phone?`<div style="font-size:11px;color:var(--accent);margin-top:2px">${d.phone}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px">
-        <button class="iw-btn" data-action="nb-kakao"><svg width="16" height="16" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="5" fill="#FEE500"/><path d="M12 6C8.13 6 5 8.52 5 11.6c0 1.96 1.3 3.68 3.26 4.66l-.66 2.44c-.04.15.13.27.26.19l2.9-1.93c.4.05.82.08 1.24.08 3.87 0 7-2.52 7-5.44S15.87 6 12 6z" fill="#3C1E1E"/></svg></button>
+        <button class="iw-btn" data-action="nb-kakao"><img src="https://t1.daumcdn.net/mapjsapi/images/favicon/kakaomap.ico" width="16" height="16" style="border-radius:3px"></button>
         <button class="iw-btn" data-action="nb-naver"><svg width="16" height="16" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="5" fill="#03C75A"/><path d="M13.5 12.5l-3.2-4.6H7.8v8.2h2.7v-4.6l3.2 4.6h2.5V7.9h-2.7v4.6z" fill="white"/></svg></button>
         <button class="iw-btn" data-action="kakao-nav" style="background:#5B7DB8;border-color:#5B7DB8"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg></button>
       </div>
@@ -2566,7 +2566,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 189;
+const APP_VERSION = 190;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2660,7 +2660,7 @@ function renderCourseRoute() {
       const walkMin = Math.round(km / 4 * 60);
       distHtml = `<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0;cursor:pointer" onclick="openKakaoRoute(${i-1},${i})">
         <span style="font-size:11px;color:var(--accent)">↓ ${distTxt} · 🚶${walkMin}분</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" style="flex-shrink:0"><rect x="1" y="1" width="22" height="22" rx="5" fill="#FEE500"/><path d="M12 6C8.13 6 5 8.52 5 11.6c0 1.96 1.3 3.68 3.26 4.66l-.66 2.44c-.04.15.13.27.26.19l2.9-1.93c.4.05.82.08 1.24.08 3.87 0 7-2.52 7-5.44S15.87 6 12 6z" fill="#3C1E1E"/></svg>
+        <img src="https://t1.daumcdn.net/mapjsapi/images/favicon/kakaomap.ico" width="14" height="14" style="flex-shrink:0;border-radius:3px">
       </div>`;
     }
     return `${distHtml}<div style="padding:8px 10px;background:white;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:8px">
@@ -2747,7 +2747,7 @@ function courseShowMap() {
               <div style="transform:rotate(${angle-90}deg);color:${color};font-size:22px;text-shadow:0 0 4px white,0 0 4px white;line-height:1">➤</div>
               <div style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid ${color};border-radius:12px;padding:2px 8px;font-size:10px;color:#333;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);font-weight:600;cursor:pointer" id="navInfo${i}">
                 ${distTxt} · 🚶${walkMin}분
-                <svg width="16" height="16" viewBox="0 0 24 24" style="flex-shrink:0"><rect x="1" y="1" width="22" height="22" rx="5" fill="#FEE500"/><path d="M12 6C8.13 6 5 8.52 5 11.6c0 1.96 1.3 3.68 3.26 4.66l-.66 2.44c-.04.15.13.27.26.19l2.9-1.93c.4.05.82.08 1.24.08 3.87 0 7-2.52 7-5.44S15.87 6 12 6z" fill="#3C1E1E"/></svg>
+                <img src="https://t1.daumcdn.net/mapjsapi/images/favicon/kakaomap.ico" width="16" height="16" style="flex-shrink:0;border-radius:3px">
               </div>
             </div>`;
             infoEl.querySelector(`#navInfo${i}`).onclick = () => openKakaoRoute(segIdx, segIdx+1);
@@ -2848,7 +2848,7 @@ async function _loadSeoulGeo() {
 
 let _districtPage = null;
 let _districtDistMap = {};
-function openLabDistrict() {
+async function openLabDistrict() {
   document.getElementById('labModal').classList.remove('open');
   _districtDistMap = {};
   places.forEach(p => {
@@ -2856,7 +2856,8 @@ function openLabDistrict() {
     const m = p.addr.match(/서울[^\s]*\s+(\S+구)/);
     if (m) { const d = m[1]; if (!_districtDistMap[d]) _districtDistMap[d]=[]; _districtDistMap[d].push(p); }
   });
-  _showDistrictPage('map');
+  const geo = await _loadSeoulGeo();
+  _showDistrictPage('map', geo);
 }
 // 서울 25구 대략적 버블 배치 (row, col 기반 - 지하철 노선도 느낌)
 const GU_LAYOUT = [
@@ -2881,7 +2882,7 @@ function _showDistrictPage(view, geo, guName) {
     </div>
     <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:16px" id="distMapBody"></div>`;
     document.body.appendChild(_districtPage);
-    _renderBubbleMap(document.getElementById('distMapBody'));
+    _renderIllustMap(document.getElementById('distMapBody'), geo);
   } else if (view === 'list') {
     const guPlaces = _districtDistMap[guName] || [];
     _districtPage.innerHTML = `<div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #eee;flex-shrink:0;background:white">
@@ -2898,7 +2899,7 @@ function _showDistrictPage(view, geo, guName) {
       listBody.innerHTML = guPlaces.map(p => {
         const c = getCat(p.cat);
         const stars = p.rating ? '⭐'.repeat(Math.round(p.rating)) : '';
-        return `<div style="padding:12px 14px;margin:6px 0;background:white;border-radius:12px;cursor:pointer;border:1px solid #f0ede8;box-shadow:0 1px 3px rgba(0,0,0,.06)" onclick="_closeDistrictPage();setTimeout(()=>{if(map){map.setCenter(new kakao.maps.LatLng(${p.lat},${p.lng}));map.setLevel(3);}const cd=document.querySelector('[data-pid=\\'${p.id}\\']');if(cd)cd.scrollIntoView({behavior:'smooth',block:'nearest'});},300)">
+        return `<div style="padding:12px 14px;margin:6px 0;background:white;border-radius:12px;cursor:pointer;border:1px solid #f0ede8;box-shadow:0 1px 3px rgba(0,0,0,.06)" onclick="_closeDistrictPage();setTimeout(()=>{focusPlace(${p.id});},300)">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span style="font-size:15px;font-weight:600;color:var(--dark)">${p.name}</span>
             <span style="background:${c.color}20;color:${c.color};font-size:11px;padding:2px 7px;border-radius:6px;font-weight:600">${c.emoji||''} ${c.name}</span>
@@ -2913,33 +2914,65 @@ function _showDistrictPage(view, geo, guName) {
 function _closeDistrictPage() {
   if (_districtPage) { _districtPage.remove(); _districtPage = null; }
 }
-function _renderBubbleMap(body) {
-  const cols = 6, rows = 7;
-  const cellW = 58, cellH = 58, padX = 8, padY = 8;
-  const w = cols * cellW + padX * 2, h = rows * cellH + padY * 2;
+function _renderIllustMap(body, geo) {
+  if (!geo || !geo.features) {
+    // GeoJSON 실패 시 그리드 폴백
+    let btns = '';
+    Object.entries(SEOUL_GU).forEach(([name]) => {
+      const cnt = _districtDistMap[name] ? _districtDistMap[name].length : 0;
+      btns += `<button onclick="_showDistrictPage('list',null,'${name}')" style="background:${cnt?'var(--cream)':'#f5f5f5'};border:1px solid ${cnt?'var(--accent)':'#ddd'};border-radius:10px;padding:10px 4px;font-size:12px;font-weight:600;color:${cnt?'var(--dark)':'#999'};cursor:pointer;text-align:center">${name}<br>${cnt?`<span style="color:var(--accent);font-size:11px">${cnt}곳</span>`:''}</button>`;
+    });
+    body.innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px;width:100%">${btns}</div>`;
+    return;
+  }
+  // GeoJSON → 일러스트 SVG
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  geo.features.forEach(f => {
+    f.geometry.coordinates[0].forEach(c => {
+      if(c[0]<minX) minX=c[0]; if(c[0]>maxX) maxX=c[0];
+      if(c[1]<minY) minY=c[1]; if(c[1]>maxY) maxY=c[1];
+    });
+  });
+  const pad=0.003; minX-=pad; maxX+=pad; minY-=pad; maxY+=pad;
+  const w=500, h=Math.round(w*(maxY-minY)/(maxX-minX));
+  const toX=lng=>(lng-minX)/(maxX-minX)*w;
+  const toY=lat=>h-(lat-minY)/(maxY-minY)*h;
+  // 좌표를 단순화 (포인트 수 줄여서 뭉뚱그린 느낌)
+  function simplify(coords, step) {
+    if (coords.length <= step * 2) return coords;
+    const result = [];
+    for (let i = 0; i < coords.length; i += step) result.push(coords[i]);
+    if (result[result.length-1] !== coords[coords.length-1]) result.push(coords[coords.length-1]);
+    return result;
+  }
   let svgInner = '';
-  GU_LAYOUT.forEach(([name, row, col], idx) => {
-    const cnt = _districtDistMap[name] ? _districtDistMap[name].length : 0;
+  geo.features.forEach((f, idx) => {
+    const guName = f.properties.name;
+    const cnt = _districtDistMap[guName] ? _districtDistMap[guName].length : 0;
     const hasPlaces = cnt > 0;
     const color = GU_COLORS[idx % GU_COLORS.length];
-    const cx = padX + col * cellW + cellW / 2;
-    const cy = padY + row * cellH + cellH / 2;
-    const r = 26;
-    svgInner += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${hasPlaces?color:'#EDEDED'}" stroke="white" stroke-width="2.5" style="cursor:pointer" data-gu="${name}"/>`;
-    svgInner += `<text x="${cx}" y="${cy - (cnt?4:0)}" text-anchor="middle" dominant-baseline="central" font-size="${name.length>3?'9':'10'}" font-weight="700" fill="${hasPlaces?'#333':'#aaa'}" style="pointer-events:none">${name}</text>`;
-    if (cnt) svgInner += `<text x="${cx}" y="${cy + 10}" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="800" fill="var(--accent)" style="pointer-events:none">${cnt}곳</text>`;
+    // 좌표 단순화 → 뭉뚱그린 느낌
+    const raw = f.geometry.coordinates[0];
+    const simple = simplify(raw, 3);
+    const pts = simple.map(c => `${toX(c[0]).toFixed(0)},${toY(c[1]).toFixed(0)}`).join(' ');
+    const cx = SEOUL_GU[guName] ? toX(SEOUL_GU[guName].lng) : simple.reduce((s,c)=>s+toX(c[0]),0)/simple.length;
+    const cy = SEOUL_GU[guName] ? toY(SEOUL_GU[guName].lat) : simple.reduce((s,c)=>s+toY(c[1]),0)/simple.length;
+    svgInner += `<polygon points="${pts}" fill="${hasPlaces?color:'#EDEDED'}" stroke="white" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" style="cursor:pointer" data-gu="${guName}"/>`;
+    const fs = guName.length > 3 ? 12 : 14;
+    svgInner += `<text x="${cx.toFixed(0)}" y="${(cy-(cnt?5:0)).toFixed(0)}" text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="800" fill="${hasPlaces?'#333':'#aaa'}" style="pointer-events:none;text-shadow:0 0 3px white,0 0 3px white">${guName}</text>`;
+    if (cnt) svgInner += `<text x="${cx.toFixed(0)}" y="${(cy+13).toFixed(0)}" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="800" fill="var(--accent)" style="pointer-events:none;text-shadow:0 0 3px white">${cnt}곳</text>`;
   });
-  body.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;max-width:500px;height:auto;display:block">${svgInner}</svg>`;
+  body.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block">${svgInner}</svg>`;
   body.querySelector('svg').addEventListener('click', e => {
-    const c = e.target.closest('circle[data-gu]');
-    if (!c) return;
-    _showDistrictPage('list', null, c.dataset.gu);
+    const poly = e.target.closest('polygon[data-gu]');
+    if (!poly) return;
+    _showDistrictPage('list', null, poly.dataset.gu);
   });
-  body.querySelectorAll('circle[data-gu]').forEach(c => {
-    c.addEventListener('touchstart', () => { c.setAttribute('r','30'); }, {passive:true});
-    c.addEventListener('touchend', () => { c.setAttribute('r','26'); }, {passive:true});
-    c.addEventListener('mouseenter', () => { c.setAttribute('r','30'); });
-    c.addEventListener('mouseleave', () => { c.setAttribute('r','26'); });
+  body.querySelectorAll('polygon[data-gu]').forEach(poly => {
+    poly.addEventListener('touchstart', () => { poly.style.filter='brightness(0.9)'; }, {passive:true});
+    poly.addEventListener('touchend', () => { poly.style.filter=''; }, {passive:true});
+    poly.addEventListener('mouseenter', () => { poly.style.filter='brightness(0.9)'; });
+    poly.addEventListener('mouseleave', () => { poly.style.filter=''; });
   });
 }
 function _showDistrictList(guName, guPlaces) {
