@@ -78,6 +78,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .pi-acts{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
 .bx{font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid #eee;background:#fafafa;cursor:pointer;color:#666;transition:all .15s;font-family:'Pretendard Variable',Pretendard,sans-serif;display:inline-flex;align-items:center;gap:3px}
 .bx:hover{border-color:var(--brown);color:var(--brown);background:white}
+.bx:focus,.bx:active{outline:none;box-shadow:none}
 .bx.vis{background:var(--green);color:white;border-color:var(--green);min-width:62px;justify-content:center}
 .bx.del{border-color:#f0c8c8;color:var(--red);background:#FFF5F5}
 .bx.del:hover{border-color:var(--red)}
@@ -2000,8 +2001,7 @@ function toggleV(id) {
 let _reopenAfterRender = null;
 function openKakaoMap(id) {
   const p = places.find(x=>x.id===id); if(!p) return;
-  const q = p.addr ? `${p.name} ${p.addr}` : p.name;
-  location.href = `kakaomap://search?q=${encodeURIComponent(q)}&p=${p.lat},${p.lng}`;
+  location.href = `kakaomap://search?q=${encodeURIComponent(p.name)}&p=${p.lat},${p.lng}`;
 }
 
 function openNaverMap(id) {
@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 195;
+const APP_VERSION = 196;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
