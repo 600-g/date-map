@@ -230,9 +230,7 @@ header .lc svg{width:18px;height:18px}
   /* 지도 확대 모드 */
   .map-expanded .place-list{max-height:0;overflow:hidden;padding:0}
   .map-expanded #myLocStatus{display:none!important}
-  .map-expanded #listViewBtn{display:flex!important}
-  /* 리스트보기 버튼 */
-  #listViewBtn{display:none;order:99;position:fixed;bottom:calc(44px + env(safe-area-inset-bottom,0px));left:0;right:0;z-index:999;justify-content:center;align-items:center;padding:10px 0;background:white;border-top:1px solid var(--warm);cursor:pointer;text-align:center}
+  #listViewBtn{display:flex!important;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:100;justify-content:center;align-items:center;padding:8px 18px;background:white;border-radius:20px;cursor:pointer;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.08)}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
@@ -275,7 +273,7 @@ header .lc svg{width:18px;height:18px}
         <div class="list-search-row">
           <div class="list-search-box collapsed" id="listSearchBox" onclick="expandListSearch()">
             <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();toggleListSearch()"></i>
-            <input id="listSearchInput" type="text" placeholder="Ex) 매장명, 초성 (ㅅㅂㅅ)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
+            <input id="listSearchInput" type="search" placeholder="Ex) 매장명, 초성 (ㅅㅂㅅ)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0;-webkit-appearance:none">
           </div>
           <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()"><i data-lucide="plus" class="lc lc-sm"></i> 추가</button>
         </div>
@@ -285,7 +283,7 @@ header .lc svg{width:18px;height:18px}
         <div class="add-wrap" style="padding:10px 12px">
           <div class="lbl" style="margin-top:0"><i data-lucide="search" class="lc lc-sm"></i> 카카오 장소 검색</div>
           <div class="row" style="margin-bottom:6px">
-            <input id="sq" type="text" placeholder="Ex) 매장명, 판매 상품, 지역명" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')doSearch()">
+            <input id="sq" type="search" placeholder="Ex) 매장명, 판매 상품, 지역명" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')doSearch()" style="-webkit-appearance:none">
             <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" onclick="doSearch()">검색</button>
           </div>
           <div id="srBatchBar" style="display:none;background:var(--accent);color:white;padding:8px 12px;border-radius:8px;margin-bottom:6px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.15)">
@@ -324,9 +322,6 @@ header .lc svg{width:18px;height:18px}
       <div id="myLocStatus" style="display:none;padding:6px 12px;font-size:11px;color:var(--green);background:#e8f5e9;border-bottom:1px solid var(--warm);align-items:center;gap:6px"></div>
       <div class="place-list" id="placeList">
         <div class="empty"><div class="ico"><i data-lucide="map-pin" class="lc"></i></div><p>아직 장소가 없어요<br>위의 추가 버튼을 눌러보세요</p></div>
-      </div>
-      <div id="listViewBtn" onclick="collapseMap()" style="display:none">
-        <span style="font-size:13px;font-weight:550;color:var(--dark);display:flex;align-items:center;gap:4px"><i data-lucide="list" class="lc lc-sm"></i> 리스트 보기</span>
       </div>
     </div>
 
@@ -377,6 +372,9 @@ header .lc svg{width:18px;height:18px}
 
   <div id="mapWrap" style="position:relative;flex:1;display:flex;min-height:0">
     <div id="map" style="flex:1"></div>
+    <div id="listViewBtn" onclick="toggleMapExpand()" style="display:none">
+      <span id="listViewLabel" style="font-size:12px;font-weight:600;color:var(--dark);display:flex;align-items:center;gap:4px"><i data-lucide="list" class="lc lc-sm"></i> 리스트 보기</span>
+    </div>
     <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
     <!-- 주변 검색 퀵버튼 -->
     <div class="nearby-bar" id="nearbyBar">
@@ -716,10 +714,25 @@ function expandMap() {
   if (window.innerWidth > 680) return;
   document.querySelector('.main').classList.add('map-expanded');
   setTimeout(() => { if(map) map.relayout(); }, 350);
+  _updateListViewBtn();
 }
 function collapseMap() {
   document.querySelector('.main').classList.remove('map-expanded');
   setTimeout(() => { if(map) map.relayout(); }, 350);
+  try{lucide.createIcons();}catch(e){}
+  _updateListViewBtn();
+}
+function toggleMapExpand() {
+  if (document.querySelector('.main').classList.contains('map-expanded')) collapseMap();
+  else expandMap();
+}
+function _updateListViewBtn() {
+  const label = document.getElementById('listViewLabel');
+  if (!label) return;
+  const expanded = document.querySelector('.main').classList.contains('map-expanded');
+  label.innerHTML = expanded
+    ? '<i data-lucide="list" class="lc lc-sm"></i> 리스트 보기'
+    : '<i data-lucide="maximize-2" class="lc lc-sm"></i> 지도 확대';
   try{lucide.createIcons();}catch(e){}
 }
 
@@ -2532,7 +2545,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 158;
+const APP_VERSION = 159;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
