@@ -204,7 +204,7 @@ header .lc svg{width:18px;height:18px}
   .panel{display:contents;width:100%;border-right:none}
   #tab-list.active{display:contents}
   /* 탭 → 하단 네비바 (노치 직전) */
-  .tabs{order:7;width:100%;flex-shrink:0;border-bottom:none;border-top:none;background:var(--dark);padding-bottom:calc(env(safe-area-inset-bottom,0px));margin-top:auto}
+  .tabs{order:7;width:100%;flex-shrink:0;border-bottom:none;border-top:none;background:var(--dark);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 4px);margin-top:auto}
   .tab{border-bottom:none;border-top:2.5px solid transparent;padding:6px 2px 4px;font-size:12px;color:rgba(255,255,255,.6)}
   .tab.active{border-bottom:none;border-top-color:var(--accent);color:white}
   /* 검색바 상단 */
@@ -348,8 +348,9 @@ header .lc svg{width:18px;height:18px}
         </div>
 
         <hr class="div">
-        <div class="s-title"><i data-lucide="refresh-cw" class="lc lc-sm"></i> 앱 업데이트 <span style="font-size:12px;font-weight:400;color:#aaa">현재 버전: v<span id="appVer"></span></span></div>
-        <button class="btn btn-outline" id="updateBtn" style="width:100%;margin-bottom:12px;opacity:.5;pointer-events:none" onclick="forceUpdate()"><i data-lucide="download" class="lc lc-sm"></i> 최신 버전입니다</button>
+        <div class="s-title"><i data-lucide="refresh-cw" class="lc lc-sm"></i> 앱 업데이트</div>
+        <div class="s-desc">현재 버전: v<span id="appVer"></span></div>
+        <button class="btn btn-outline" id="updateBtn" style="width:100%;margin-bottom:12px;opacity:.5" onclick="forceUpdate()"> 최신 버전입니다</button>
 
         <hr class="div">
         <div class="s-title"><i data-lucide="trash-2" class="lc lc-sm"></i> 초기화</div>
@@ -2374,7 +2375,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 115;
+const APP_VERSION = 116;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2409,16 +2410,17 @@ function checkUpdateBtn() {
       btn.style.opacity = '1';
       btn.style.pointerEvents = 'auto';
     } else {
-      btn.innerHTML = '<i data-lucide="check" class="lc lc-sm"></i> 최신 버전입니다';
+      btn.textContent = '✓ 최신 버전입니다';
       btn.className = 'btn btn-outline';
       btn.style.opacity = '.5';
-      btn.style.pointerEvents = 'none';
-      try{lucide.createIcons();}catch(e){}
+      btn.dataset.uptodate = 'true';
     }
   }).catch(()=>{});
 }
 
 function forceUpdate() {
+  const btn = document.getElementById('updateBtn');
+  if (btn.dataset.uptodate === 'true') { toast('✓ 최신 버전이에요 (v' + APP_VERSION + ')'); return; }
   toast('🔄 업데이트 확인 중...');
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
