@@ -207,7 +207,7 @@ header .lc svg{width:18px;height:18px}
   #tab-list.active{display:contents}
   /* 탭 → 하단 네비바 (노치 직전) */
   .tabs{position:fixed;bottom:0;left:0;right:0;z-index:9999;border-bottom:none;border-top:none;background:var(--dark);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);-webkit-backface-visibility:hidden;backface-visibility:hidden}
-  .main{padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
+  .main{padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
   .tab{border-bottom:none;border-top:2px solid transparent;padding:3px 2px 1px;font-size:11px;color:rgba(255,255,255,.6)}
   .tab.active{border-bottom:none;border-top-color:var(--accent);color:white}
   /* 검색바 상단 */
@@ -218,7 +218,7 @@ header .lc svg{width:18px;height:18px}
   #map{height:100%}
   .my-loc-btn{top:10px;right:10px;width:38px;height:38px}
   /* 필터바 - 1줄 가로스크롤 */
-  .filter-bar{order:4;width:100%;padding:8px 8px 6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;min-height:34px}
+  .filter-bar{order:4;width:100%;padding:8px 8px 6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;min-height:36px;flex-shrink:0}
   .filter-bar::-webkit-scrollbar{display:none}
   .fb{flex-shrink:0}
   #myLocStatus{order:5;width:100%}
@@ -230,7 +230,7 @@ header .lc svg{width:18px;height:18px}
   /* 지도 확대 모드 */
   .map-expanded .place-list{max-height:0;overflow:hidden;padding:0}
   .map-expanded #myLocStatus{display:none!important}
-  #listViewBtn{display:flex!important;position:fixed;bottom:calc(80px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:9998;justify-content:center;align-items:center;padding:8px 18px;background:white;border-radius:20px;cursor:pointer;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.08)}
+  #listViewBtn{display:flex!important;position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:100;justify-content:center;align-items:center;padding:7px 16px;background:white;border-radius:20px;cursor:pointer;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.08)}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 167;
+const APP_VERSION = 168;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
