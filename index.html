@@ -195,7 +195,8 @@ header .lc svg{width:18px;height:18px}
 .nearby-bar.hidden{opacity:0;pointer-events:none;visibility:hidden}
 .nb-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:12px;padding:5px 10px;border-radius:20px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 6px rgba(0,0,0,.12);transition:all .15s;white-space:nowrap}
 .nb-btn svg{width:18px;height:18px;flex-shrink:0;vertical-align:middle}
-.nb-btn:hover,.nb-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
+.nb-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
+@media(hover:hover){.nb-btn:hover{background:var(--accent);color:white;border-color:var(--accent)}}
 /* 토스트 */
 .toast{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom, 0px));left:50%;transform:translateX(-50%) translateY(120px);background:rgba(59,76,107,.92);backdrop-filter:blur(8px);color:white;padding:11px 22px;border-radius:14px;font-size:14px;transition:transform .3s,opacity .3s;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2);opacity:0;pointer-events:none;white-space:nowrap;max-width:90vw;text-overflow:ellipsis;overflow:hidden}
 .toast.show{transform:translateX(-50%) translateY(0);opacity:1;pointer-events:auto}
@@ -227,7 +228,7 @@ header .lc svg{width:18px;height:18px}
   .map-expanded #myLocStatus{display:none!important}
   .map-expanded #listViewBtn{display:flex!important}
   /* 리스트보기 버튼 */
-  #listViewBtn{display:none;order:5;width:100%;justify-content:center;align-items:center;padding:14px 0;background:white;border-top:1px solid var(--warm);border-bottom:1px solid var(--warm);cursor:pointer;text-align:center}
+  #listViewBtn{display:none;order:5;width:100%;justify-content:center;align-items:center;padding:10px 0 12px;background:white;border-top:1px solid var(--warm);border-bottom:1px solid var(--warm);cursor:pointer;text-align:center;margin-top:-2px}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
@@ -2503,7 +2504,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 138;
+const APP_VERSION = 139;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
