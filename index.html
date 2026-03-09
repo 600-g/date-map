@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 193;
+const APP_VERSION = 194;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2698,6 +2698,7 @@ function courseShowMap() {
   const selCopy = _courseSel.slice();
   closeCourseModal();
   clearCourseOverlays();
+  clearNearbyMarkers();
   _courseSel = selCopy;
   showTab('list');
   expandMap();
