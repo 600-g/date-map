@@ -2000,12 +2000,14 @@ function toggleV(id) {
 let _reopenAfterRender = null;
 function openKakaoMap(id) {
   const p = places.find(x=>x.id===id); if(!p) return;
-  location.href = `kakaomap://search?q=${encodeURIComponent(p.name)}&p=${p.lat},${p.lng}`;
+  const q = p.addr ? `${p.name} ${p.addr}` : p.name;
+  location.href = `kakaomap://search?q=${encodeURIComponent(q)}&p=${p.lat},${p.lng}`;
 }
 
 function openNaverMap(id) {
   const p = places.find(x=>x.id===id); if(!p) return;
-  location.href = `nmap://search?query=${encodeURIComponent(p.name)}&lat=${p.lat}&lng=${p.lng}&appname=com.datemap`;
+  const q = p.addr ? `${p.name} ${p.addr}` : p.name;
+  location.href = `nmap://search?query=${encodeURIComponent(q)}&lat=${p.lat}&lng=${p.lng}&appname=com.datemap`;
 }
 
 function openNavi(id) {
@@ -2566,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 191;
+const APP_VERSION = 192;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
