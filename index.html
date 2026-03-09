@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 169;
+const APP_VERSION = 170;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2659,9 +2659,10 @@ function renderCourseRoute() {
       const km = getDistanceKm(prev.lat, prev.lng, p.lat, p.lng);
       totalKm += km;
       const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
-      distHtml = `<div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:3px 0">
-        <span style="font-size:11px;color:var(--accent)">↓ ${distTxt}</span>
-        <button style="background:#1EC800;color:white;border:none;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap" onclick="openNaverRoute(${i-1},${i})">🗺 경로</button>
+      const walkMin = Math.round(km / 4 * 60);
+      distHtml = `<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0;cursor:pointer" onclick="openNaverRoute(${i-1},${i})">
+        <span style="font-size:11px;color:var(--accent)">↓ ${distTxt} · 🚶${walkMin}분</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" style="flex-shrink:0"><rect x="1" y="1" width="22" height="22" rx="5" fill="#03C75A"/><path d="M13.5 12.5l-3.2-4.6H7.8v8.2h2.7v-4.6l3.2 4.6h2.5V7.9h-2.7v4.6z" fill="white"/></svg>
       </div>`;
     }
     return `${distHtml}<div style="padding:8px 10px;background:white;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:8px">
