@@ -2571,7 +2571,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 199;
+const APP_VERSION = 200;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2671,7 +2671,7 @@ function renderCourseRoute() {
     return `${distHtml}<div class="cr-item" data-idx="${i}">
       <span class="cr-handle">☰</span>
       <div style="width:22px;height:22px;background:var(--dark);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${i+1}</div>
-      <div style="width:16px;height:16px;background:${c.color};border-radius:50%;flex-shrink:0"></div>
+      <span style="font-size:15px;flex-shrink:0">${c.emoji}</span>
       <div style="flex:1;min-width:0;font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
     </div>`;
   }).join('');
