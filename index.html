@@ -68,13 +68,13 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .pi-name{font-size:14.5px;font-weight:600;flex:1}
 .pi-cat{font-size:12px;padding:4px 10px;border-radius:20px;font-weight:500;flex-shrink:0;cursor:pointer;display:inline-flex;align-items:center;gap:3px;overflow:hidden;max-width:100px;white-space:nowrap;text-overflow:ellipsis}
 .pi-cat svg{width:14px;height:14px;vertical-align:middle;flex-shrink:0;overflow:visible}
-.pi-addr{font-size:12.5px;color:var(--brown);margin-top:5px;display:flex;align-items:center;gap:2px}
+.pi-addr{font-size:12.5px;color:var(--brown);margin-top:6px;display:flex;align-items:center;gap:2px}
 .pi-addr .lc svg{width:7px;height:7px}
 .pi-dist .lc svg{width:11px;height:11px}
-.pi-memo{font-size:12.5px;color:#999;margin-top:5px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pi-memo{font-size:12.5px;color:#999;margin-top:6px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .addr-search{color:var(--brown);font-size:9px;font-weight:500;cursor:pointer;margin-left:4px;background:var(--cream);border:1px solid var(--warm);border-radius:4px;padding:1px 6px;display:inline-block;vertical-align:middle}
 .addr-search:hover{background:var(--warm);color:var(--dark)}
-.pi-acts{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
+.pi-acts{display:flex;gap:4px;margin-top:8px;flex-wrap:wrap}
 .bx{font-size:12px;padding:4px 10px;border-radius:8px;border:1px solid #eee;background:#fafafa;cursor:pointer;color:#666;transition:all .15s;font-family:'Pretendard Variable',Pretendard,sans-serif;display:inline-flex;align-items:center;gap:3px}
 .bx:hover{border-color:var(--brown);color:var(--brown);background:white}
 .bx.vis{background:var(--green);color:white;border-color:var(--green)}
@@ -219,7 +219,7 @@ header .lc svg{width:18px;height:18px}
   .filter-bar{order:4;width:100%;padding:4px 8px 2px}
   #myLocStatus{order:5;width:100%}
   /* 카드 리스트 */
-  .place-list{order:6;overflow-y:auto;width:100%;max-height:22vh;flex-shrink:0;transition:max-height .3s,opacity .3s}
+  .place-list{order:6;overflow-y:auto;width:100%;max-height:25vh;flex-shrink:0;transition:max-height .3s,opacity .3s}
   /* 설정탭 */
   #tab-cfg{order:6;width:100%;flex:1;overflow-y:auto}
   /* 지도 확대 모드 */
@@ -232,15 +232,15 @@ header .lc svg{width:18px;height:18px}
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
   .pi-name{font-size:13.5px}
-  .pi-addr{font-size:11.5px;margin-top:4px}
-  .pi-memo{font-size:11.5px;margin-top:4px}
+  .pi-addr{font-size:11.5px;margin-top:5px}
+  .pi-memo{font-size:11.5px;margin-top:5px}
   .pi-dist{font-size:11px}
   .pi-acts{margin-top:4px;gap:3px}
   .bx{padding:3px 7px;font-size:11px}
 }
 @supports(height:100dvh){
   @media(max-width:680px){
-    .place-list{max-height:22dvh}
+    .place-list{max-height:25dvh}
     .map-expanded .place-list{max-height:0}
   }
 }
@@ -1933,13 +1933,19 @@ function openNavi(id) {
   }
 }
 
-// ── 주변 카테고리 검색 ──
-let nearbyMarkers = [];
-let nearbyActiveCategory = null;
+// ── 주변 카테고리 검색 (중복 토글) ──
+let nearbyMarkers = []; // {key, marker, iw}
+let nearbyActiveKeys = new Set();
+function removeNearbyByKey(key) {
+  nearbyMarkers = nearbyMarkers.filter(m => {
+    if (m.key === key) { try{m.marker.setMap(null);}catch(e){} try{m.iw.setMap(null);}catch(e){} return false; }
+    return true;
+  });
+  nearbyActiveKeys.delete(key);
+}
 async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
   const key = 'kw_' + keyword;
-  if (nearbyActiveCategory === key) { clearNearbyMarkers(); return; }
-  document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
+  if (nearbyActiveKeys.has(key)) { removeNearbyByKey(key); if(btnEl) btnEl.classList.remove('active'); return; }
   if (btnEl) btnEl.classList.add('active');
   let lat, lng;
   if (myLat !== null) { lat = myLat; lng = myLng; }
@@ -1963,19 +1969,15 @@ async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
     }
     allDocs.sort((a, b) => (parseInt(a.distance)||0) - (parseInt(b.distance)||0));
     allDocs = allDocs.slice(0, 15);
-    if (!allDocs.length) { clearNearbyMarkers(); toast(`주변에 ${label}이(가) 없어요`); return; }
-    clearNearbyMarkers();
-    nearbyActiveCategory = key;
-    if (btnEl) btnEl.classList.add('active');
-    renderNearbyResults(allDocs, icon);
+    if (!allDocs.length) { if(btnEl) btnEl.classList.remove('active'); toast(`주변에 ${label}이(가) 없어요`); return; }
+    nearbyActiveKeys.add(key);
+    renderNearbyResults(allDocs, icon, key);
     toast(`${label} ${allDocs.length}곳 발견`);
-  } catch(e) { clearNearbyMarkers(); toast('검색 실패'); }
+  } catch(e) { if(btnEl) btnEl.classList.remove('active'); toast('검색 실패'); }
 }
 
 async function searchNearby(categoryCode, label, btnEl, icon) {
-  if (nearbyActiveCategory === categoryCode) { clearNearbyMarkers(); return; }
-  // 즉시 버튼 상태 변경
-  document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
+  if (nearbyActiveKeys.has(categoryCode)) { removeNearbyByKey(categoryCode); if(btnEl) btnEl.classList.remove('active'); return; }
   if (btnEl) btnEl.classList.add('active');
   let lat, lng;
   if (myLat !== null) { lat = myLat; lng = myLng; }
@@ -1986,13 +1988,11 @@ async function searchNearby(categoryCode, label, btnEl, icon) {
       headers: { 'Authorization': `KakaoAK ${REST_KEY}` }
     });
     const data = await res.json();
-    if (!data.documents || !data.documents.length) { clearNearbyMarkers(); toast(`주변에 ${label}이(가) 없어요`); return; }
-    clearNearbyMarkers();
-    nearbyActiveCategory = categoryCode;
-    if (btnEl) btnEl.classList.add('active');
-    renderNearbyResults(data.documents, icon);
+    if (!data.documents || !data.documents.length) { if(btnEl) btnEl.classList.remove('active'); toast(`주변에 ${label}이(가) 없어요`); return; }
+    nearbyActiveKeys.add(categoryCode);
+    renderNearbyResults(data.documents, icon, categoryCode);
     toast(`${label} ${data.documents.length}곳 발견`);
-  } catch(e) { clearNearbyMarkers(); toast('검색 실패'); }
+  } catch(e) { if(btnEl) btnEl.classList.remove('active'); toast('검색 실패'); }
 }
 const NEARBY_ICONS = {
   cafe: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6F4E37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg>',
@@ -2022,7 +2022,7 @@ function getMovieIcon(name) {
   if (/롯데시네마|LOTTE CINEMA/i.test(name)) return NEARBY_ICONS.lottecinema;
   return NEARBY_ICONS.movie;
 }
-function renderNearbyResults(docs, iconKey) {
+function renderNearbyResults(docs, iconKey, groupKey) {
   docs.forEach(d => {
     const svgIcon = iconKey === 'conv' ? getConvIcon(d.place_name) : iconKey === 'movie' ? getMovieIcon(d.place_name) : (NEARBY_ICONS[iconKey] || '');
     const pos = new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
@@ -2058,7 +2058,7 @@ function renderNearbyResults(docs, iconKey) {
       else window.open(`https://map.kakao.com/link/to/${encodeURIComponent(d.place_name)},${d.y},${d.x}`, '_blank');
     };
     const iw = new kakao.maps.CustomOverlay({ position:pos, content:iwEl, yAnchor:1.15, zIndex:11 });
-    const entry = { marker, iw, open:false };
+    const entry = { key: groupKey, marker, iw, open:false };
     el.onclick = () => {
       const wasOpen = entry.open;
       nearbyMarkers.forEach(m => { if(m.iw) try{m.iw.setMap(null);m.open=false;}catch(e){} });
@@ -2072,7 +2072,7 @@ function renderNearbyResults(docs, iconKey) {
 function clearNearbyMarkers() {
   nearbyMarkers.forEach(m => { try{m.marker.setMap(null);}catch(e){} try{m.iw.setMap(null);}catch(e){} });
   nearbyMarkers = [];
-  nearbyActiveCategory = null;
+  nearbyActiveKeys.clear();
   document.querySelectorAll('.nb-btn').forEach(b => b.classList.remove('active'));
 }
 
@@ -2430,7 +2430,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 130;
+const APP_VERSION = 131;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
