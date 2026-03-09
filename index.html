@@ -2571,7 +2571,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 198;
+const APP_VERSION = 199;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2832,9 +2832,16 @@ function _showCourseControls() {
   const lb = document.getElementById('locBtn');
   const fb = document.getElementById('filterBar');
   if (nb) nb.style.display = 'none';
-  if (lvb) lvb.style.display = 'none';
   if (lb) lb.style.display = 'none';
   if (fb) fb.style.display = 'none';
+  // listViewBtn을 "경로보기"로 변경
+  if (lvb) {
+    lvb.style.display = 'flex';
+    lvb.onclick = () => _showCourseList();
+    const label = document.getElementById('listViewLabel');
+    if (label) label.innerHTML = '<i data-lucide="route" class="lc lc-sm"></i> 경로보기';
+    try{lucide.createIcons();}catch(e){}
+  }
   ctrl = document.createElement('div');
   ctrl.id = 'courseCtrl';
   ctrl.style.cssText = 'position:absolute;top:10px;right:10px;z-index:100;display:flex;flex-direction:column;gap:6px';
@@ -2843,12 +2850,6 @@ function _showCourseControls() {
   clearBtn.style.cssText = 'background:white;border:1.5px solid #e0ddd8;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#333;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
   clearBtn.onclick = () => { clearCourseOverlays(); collapseMap(); toast('코스 표시를 지웠어요'); };
   ctrl.appendChild(clearBtn);
-  // 경로보기 버튼
-  const routeBtn = document.createElement('button');
-  routeBtn.textContent = '경로보기';
-  routeBtn.style.cssText = 'background:var(--accent);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:white;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
-  routeBtn.onclick = () => _showCourseList();
-  ctrl.appendChild(routeBtn);
   document.getElementById('mapWrap').appendChild(ctrl);
 }
 function _showCourseList() {
@@ -2899,7 +2900,7 @@ function clearCourseOverlays() {
   const lb = document.getElementById('locBtn');
   const fb = document.getElementById('filterBar');
   if (nb) nb.style.display = '';
-  if (lvb) lvb.style.display = '';
+  if (lvb) { lvb.style.display = ''; lvb.onclick = toggleMapExpand; _updateListViewBtn(); }
   if (lb) lb.style.display = '';
   if (fb) fb.style.display = '';
 }
