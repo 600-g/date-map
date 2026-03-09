@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 160;
+const APP_VERSION = 161;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2781,21 +2781,27 @@ function _showCourseControls() {
   clearBtn.style.cssText = 'background:white;border:1.5px solid #e0ddd8;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#333;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
   clearBtn.onclick = () => { clearCourseOverlays(); ctrl.remove(); collapseMap(); toast('코스 표시를 지웠어요'); };
   ctrl.appendChild(clearBtn);
-  // 카카오맵 경로보기 버튼
+  // 네이버 지도 경로보기 버튼
   if (_courseSel.length >= 2) {
-    const kakaoBtn = document.createElement('button');
-    kakaoBtn.textContent = '🗺 카카오맵 경로';
-    kakaoBtn.style.cssText = 'background:#FEE500;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#3C1E1E;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
-    kakaoBtn.onclick = () => {
+    const naverBtn = document.createElement('button');
+    naverBtn.textContent = '🗺 네이버 경로';
+    naverBtn.style.cssText = 'background:#1EC800;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:white;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
+    naverBtn.onclick = () => {
       const sp = _courseSel[0], ep = _courseSel[_courseSel.length-1];
-      let url = `https://map.kakao.com/?sName=${encodeURIComponent(sp.name)}&sX=${sp.lng}&sY=${sp.lat}`;
-      url += `&eName=${encodeURIComponent(ep.name)}&eX=${ep.lng}&eY=${ep.lat}`;
-      // 경유지 (최대 3개)
-      const vias = _courseSel.slice(1, -1).slice(0, 3);
-      vias.forEach((v, i) => { url += `&via${i+1}Name=${encodeURIComponent(v.name)}&via${i+1}X=${v.lng}&via${i+1}Y=${v.lat}`; });
-      window.open(url, '_blank');
+      // nmap:// URL 스킴으로 네이버 지도 앱 직접 실행
+      let appUrl = `nmap://route/public?slat=${sp.lat}&slng=${sp.lng}&sname=${encodeURIComponent(sp.name)}`;
+      appUrl += `&dlat=${ep.lat}&dlng=${ep.lng}&dname=${encodeURIComponent(ep.name)}`;
+      appUrl += `&appname=com.datemap`;
+      // 웹 폴백 URL
+      let webUrl = `https://map.naver.com/v5/directions/${sp.lng},${sp.lat},${encodeURIComponent(sp.name)}/${ep.lng},${ep.lat},${encodeURIComponent(ep.name)}/-/transit`;
+      // 앱 열기 시도 → 실패 시 웹
+      const start = Date.now();
+      window.location.href = appUrl;
+      setTimeout(() => {
+        if (Date.now() - start < 2000) window.open(webUrl, '_blank');
+      }, 1500);
     };
-    ctrl.appendChild(kakaoBtn);
+    ctrl.appendChild(naverBtn);
   }
   document.getElementById('mapWrap').appendChild(ctrl);
 }
