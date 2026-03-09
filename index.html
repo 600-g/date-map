@@ -273,7 +273,7 @@ header .lc svg{width:18px;height:18px}
         <div class="list-search-row">
           <div class="list-search-box collapsed" id="listSearchBox" onclick="expandListSearch()">
             <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();toggleListSearch()"></i>
-            <input id="listSearchInput" type="search" placeholder="Ex) 매장명, 초성 (ㅅㅂㅅ)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0;-webkit-appearance:none">
+            <input id="listSearchInput" type="search" placeholder="Ex) 매장명, 초성 (ㅅㅂㅅ)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0;-webkit-appearance:none">
           </div>
           <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()"><i data-lucide="plus" class="lc lc-sm"></i> 추가</button>
         </div>
@@ -283,7 +283,7 @@ header .lc svg{width:18px;height:18px}
         <div class="add-wrap" style="padding:10px 12px">
           <div class="lbl" style="margin-top:0"><i data-lucide="search" class="lc lc-sm"></i> 카카오 장소 검색</div>
           <div class="row" style="margin-bottom:6px">
-            <input id="sq" type="search" placeholder="Ex) 매장명, 판매 상품, 지역명" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" onkeydown="if(event.key==='Enter')doSearch()" style="-webkit-appearance:none">
+            <input id="sq" type="search" placeholder="Ex) 매장명, 판매 상품, 지역명" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" onkeydown="if(event.key==='Enter')doSearch()" style="-webkit-appearance:none">
             <button class="btn btn-dark btn-sm" style="flex-shrink:0;margin-bottom:0" onclick="doSearch()">검색</button>
           </div>
           <div id="srBatchBar" style="display:none;background:var(--accent);color:white;padding:8px 12px;border-radius:8px;margin-bottom:6px;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;box-shadow:0 2px 6px rgba(0,0,0,.15)">
@@ -2176,19 +2176,42 @@ document.addEventListener('DOMContentLoaded', () => {
   const bar = document.getElementById('nearbyBar');
   if (bar) bar.addEventListener('click', e => e.stopPropagation());
 });
-// iOS 하단바 고정 - 입력 포커스 시 하단바 숨겨서 키보드/자동완성에 의한 밀림 방지
+// iOS 하단바 고정 - 키보드/accessory bar에 의한 밀림 완전 방지
 (function(){
   if (window.innerWidth > 680) return;
   const tabs = document.querySelector('.tabs');
   if (!tabs) return;
+  let _focused = false;
+  const hide = () => { tabs.style.display = 'none'; };
+  const show = () => { tabs.style.display = ''; tabs.style.bottom = '0px'; };
   document.addEventListener('focusin', e => {
-    if (e.target.matches('input,textarea,select')) tabs.style.display = 'none';
+    if (e.target.matches('input,textarea,select')) { _focused = true; hide(); }
   });
   document.addEventListener('focusout', e => {
     if (e.target.matches('input,textarea,select')) {
-      setTimeout(() => { tabs.style.display = ''; tabs.style.bottom = '0px'; }, 150);
+      _focused = false;
+      // 키보드 애니메이션 완전히 끝날 때까지 대기 후 viewport 확인
+      setTimeout(() => {
+        if (_focused) return; // 다른 input으로 이동한 경우
+        // visualViewport로 키보드 완전히 닫혔는지 확인
+        if (window.visualViewport) {
+          const vvh = window.visualViewport.height;
+          const wh = window.innerHeight;
+          if (vvh < wh * 0.85) { hide(); return; } // 아직 키보드 열림
+        }
+        show();
+      }, 500);
     }
   });
+  // visualViewport resize로 키보드 상태 추적
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      const vvh = window.visualViewport.height;
+      const wh = window.innerHeight;
+      if (vvh < wh * 0.85) hide(); // 키보드 열림
+      else if (!_focused) show(); // 키보드 닫힘
+    });
+  }
 })();
 
 let deletingPlaceId = null;
@@ -2545,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 159;
+const APP_VERSION = 160;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
