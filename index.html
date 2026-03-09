@@ -2031,9 +2031,8 @@ async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
   const key = 'kw_' + keyword;
   if (nearbyActiveKeys.has(key)) { removeNearbyByKey(key); if(btnEl) btnEl.classList.remove('active'); return; }
   if (btnEl) btnEl.classList.add('active');
-  let lat, lng;
-  if (myLat !== null) { lat = myLat; lng = myLng; }
-  else { const c = map.getCenter(); lat = c.getLat(); lng = c.getLng(); }
+  const c = map.getCenter();
+  const lat = c.getLat(), lng = c.getLng();
   toast(`🔍 주변 ${label} 검색 중...`);
   try {
     const keywords = keyword.split(' OR ');
@@ -2063,9 +2062,8 @@ async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
 async function searchNearby(categoryCode, label, btnEl, icon) {
   if (nearbyActiveKeys.has(categoryCode)) { removeNearbyByKey(categoryCode); if(btnEl) btnEl.classList.remove('active'); return; }
   if (btnEl) btnEl.classList.add('active');
-  let lat, lng;
-  if (myLat !== null) { lat = myLat; lng = myLng; }
-  else { const c = map.getCenter(); lat = c.getLat(); lng = c.getLng(); }
+  const c = map.getCenter();
+  const lat = c.getLat(), lng = c.getLng();
   toast(`🔍 주변 ${label} 검색 중...`);
   try {
     const res = await fetch(`https://dapi.kakao.com/v2/local/search/category.json?category_group_code=${categoryCode}&x=${lng}&y=${lat}&radius=2000&sort=distance&size=15`, {
@@ -2568,7 +2566,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 185;
+const APP_VERSION = 186;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
