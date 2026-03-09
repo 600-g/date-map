@@ -2569,7 +2569,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 183;
+const APP_VERSION = 184;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2683,8 +2683,7 @@ function openKakaoRoute(fromIdx, toIdx) {
   const sp = _courseSel[fromIdx], ep = _courseSel[toIdx];
   if (!sp || !ep) return;
   // 카카오맵 웹 경로 (웹에서 열면 앱 설치 시 자동 앱 전환 유도)
-  const webUrl = `https://map.kakao.com/link/from/${encodeURIComponent(sp.name)},${sp.lat},${sp.lng}/to/${encodeURIComponent(ep.name)},${ep.lat},${ep.lng}`;
-  location.href = webUrl;
+  location.href = `kakaomap://route?sp=${sp.lat},${sp.lng}&ep=${ep.lat},${ep.lng}&by=PUBLICTRANSIT`;
 }
 function courseMove(i, dir) {
   const j = i + dir;
