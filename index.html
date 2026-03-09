@@ -2571,7 +2571,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 200;
+const APP_VERSION = 201;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2875,7 +2875,7 @@ function _showCourseList() {
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
       </div>`;
     }
-    html += `<div style="padding:6px 8px;background:#fafaf7;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:6px;cursor:pointer" onclick="focusPlace(${p.id});document.getElementById('courseListPanel').remove()">
+    html += `<div style="padding:6px 8px;background:#fafaf7;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:6px;cursor:pointer" onclick="_courseFocus(${p.id})">
       <div style="width:20px;height:20px;background:${color};color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${label}</div>
       <span style="font-size:12px">${c.emoji}</span>
       <div style="flex:1;min-width:0;font-size:12px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
@@ -2883,6 +2883,17 @@ function _showCourseList() {
   });
   panel.innerHTML = html;
   document.getElementById('mapWrap').appendChild(panel);
+}
+function _courseFocus(id) {
+  const p = places.find(x => x.id === id); if (!p) return;
+  if (!p.lat || !p.lng) return;
+  const panel = document.getElementById('courseListPanel');
+  if (panel) panel.remove();
+  closeAllIw();
+  map.setCenter(new kakao.maps.LatLng(p.lat, p.lng));
+  map.setLevel(3);
+  focusedPlaceId = id;
+  if (iwMap[id]) iwMap[id].setMap(map);
 }
 function clearCourseOverlays() {
   _courseMarkers.forEach(m => { try{m.setMap(null);}catch(e){} });
