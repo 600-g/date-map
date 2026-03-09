@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 196;
+const APP_VERSION = 197;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2662,7 +2662,7 @@ function renderCourseRoute() {
       const walkMin = Math.round(km / 4 * 60);
       distHtml = `<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0;cursor:pointer" onclick="openKakaoRoute(${i-1},${i})">
         <span style="font-size:11px;color:var(--accent)">↓ ${distTxt} · 🚶${walkMin}분</span>
-        <svg width="14" height="14" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="12" cy="10" r="8" fill="#3B89FF"/><path d="M12 18l-3-5h6z" fill="#3B89FF"/><circle cx="12" cy="10" r="3.5" fill="white"/></svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
       </div>`;
     }
     return `${distHtml}<div style="padding:8px 10px;background:white;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:8px">
@@ -2699,6 +2699,7 @@ function courseShowMap() {
   closeCourseModal();
   clearCourseOverlays();
   clearNearbyMarkers();
+  closeAllIw();
   _courseSel = selCopy;
   showTab('list');
   expandMap();
@@ -2750,7 +2751,7 @@ function courseShowMap() {
               <div style="transform:rotate(${angle-90}deg);color:${color};font-size:22px;text-shadow:0 0 4px white,0 0 4px white;line-height:1">➤</div>
               <div style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid ${color};border-radius:12px;padding:2px 8px;font-size:10px;color:#333;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);font-weight:600;cursor:pointer" id="navInfo${i}">
                 ${distTxt} · 🚶${walkMin}분
-                <svg width="16" height="16" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="12" cy="10" r="8" fill="#3B89FF"/><path d="M12 18l-3-5h6z" fill="#3B89FF"/><circle cx="12" cy="10" r="3.5" fill="white"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
               </div>
             </div>`;
             infoEl.querySelector(`#navInfo${i}`).onclick = () => openKakaoRoute(segIdx, segIdx+1);
@@ -2785,9 +2786,11 @@ function _showCourseControls() {
   const nb = document.getElementById('nearbyBar');
   const lvb = document.getElementById('listViewBtn');
   const lb = document.getElementById('locBtn');
+  const fb = document.getElementById('filterBar');
   if (nb) nb.style.display = 'none';
   if (lvb) lvb.style.display = 'none';
   if (lb) lb.style.display = 'none';
+  if (fb) fb.style.display = 'none';
   ctrl = document.createElement('div');
   ctrl.id = 'courseCtrl';
   ctrl.style.cssText = 'position:absolute;top:10px;right:10px;z-index:100;display:flex;flex-direction:column;gap:6px';
@@ -2796,7 +2799,45 @@ function _showCourseControls() {
   clearBtn.style.cssText = 'background:white;border:1.5px solid #e0ddd8;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#333;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
   clearBtn.onclick = () => { clearCourseOverlays(); collapseMap(); toast('코스 표시를 지웠어요'); };
   ctrl.appendChild(clearBtn);
+  // 경로보기 버튼
+  const routeBtn = document.createElement('button');
+  routeBtn.textContent = '경로보기';
+  routeBtn.style.cssText = 'background:var(--accent);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:white;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
+  routeBtn.onclick = () => _showCourseList();
+  ctrl.appendChild(routeBtn);
   document.getElementById('mapWrap').appendChild(ctrl);
+}
+function _showCourseList() {
+  let panel = document.getElementById('courseListPanel');
+  if (panel) { panel.remove(); return; }
+  panel = document.createElement('div');
+  panel.id = 'courseListPanel';
+  panel.style.cssText = 'position:absolute;bottom:10px;left:10px;right:10px;z-index:100;background:white;border-radius:12px;padding:12px;max-height:50%;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.2)';
+  const colors = ['#FF6B6B','#5B7DB8','#2D8659','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB'];
+  let html = '<div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px">코스 경로</div>';
+  _courseSel.forEach((p, i) => {
+    const c = getCat(p.cat);
+    const color = colors[i % colors.length];
+    const isFirst = i === 0, isLast = i === _courseSel.length - 1;
+    const label = isFirst ? '출발' : isLast ? '도착' : (i+1);
+    if (i > 0) {
+      const prev = _courseSel[i-1];
+      const km = getDistanceKm(prev.lat, prev.lng, p.lat, p.lng);
+      const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
+      const walkMin = Math.round(km / 4 * 60);
+      html += `<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:2px 0;cursor:pointer" onclick="openKakaoRoute(${i-1},${i})">
+        <span style="font-size:10px;color:var(--accent)">↓ ${distTxt} · 🚶${walkMin}분</span>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
+      </div>`;
+    }
+    html += `<div style="padding:6px 8px;background:#fafaf7;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:6px;cursor:pointer" onclick="focusPlace(${p.id});document.getElementById('courseListPanel').remove()">
+      <div style="width:20px;height:20px;background:${color};color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${label}</div>
+      <span style="font-size:12px">${c.emoji}</span>
+      <div style="flex:1;min-width:0;font-size:12px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
+    </div>`;
+  });
+  panel.innerHTML = html;
+  document.getElementById('mapWrap').appendChild(panel);
 }
 function clearCourseOverlays() {
   _courseMarkers.forEach(m => { try{m.setMap(null);}catch(e){} });
@@ -2806,13 +2847,17 @@ function clearCourseOverlays() {
   if (_coursePolyline) { try{_coursePolyline.setMap(null);}catch(e){} _coursePolyline = null; }
   const ctrl = document.getElementById('courseCtrl');
   if (ctrl) ctrl.remove();
+  const clp = document.getElementById('courseListPanel');
+  if (clp) clp.remove();
   // 숨겼던 지도 컨트롤 복원
   const nb = document.getElementById('nearbyBar');
   const lvb = document.getElementById('listViewBtn');
   const lb = document.getElementById('locBtn');
+  const fb = document.getElementById('filterBar');
   if (nb) nb.style.display = '';
   if (lvb) lvb.style.display = '';
   if (lb) lb.style.display = '';
+  if (fb) fb.style.display = '';
 }
 
 // 서울 25개 구 중심 좌표
