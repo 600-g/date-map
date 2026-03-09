@@ -2108,6 +2108,7 @@ function getMovieIcon(name) {
   return NEARBY_ICONS.movie;
 }
 function renderNearbyResults(docs, iconKey, groupKey) {
+  expandMap();
   docs.forEach(d => {
     const svgIcon = iconKey === 'conv' ? getConvIcon(d.place_name) : iconKey === 'movie' ? getMovieIcon(d.place_name) : (NEARBY_ICONS[iconKey] || '');
     const pos = new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
@@ -2568,7 +2569,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 177;
+const APP_VERSION = 178;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
