@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 170;
+const APP_VERSION = 175;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2681,13 +2681,9 @@ function renderCourseRoute() {
 function openNaverRoute(fromIdx, toIdx) {
   const sp = _courseSel[fromIdx], ep = _courseSel[toIdx];
   if (!sp || !ep) return;
-  // nmap:// 앱 URL (매장명으로 검색)
-  const appUrl = `nmap://route/public?slat=${sp.lat}&slng=${sp.lng}&sname=${encodeURIComponent(sp.name)}&dlat=${ep.lat}&dlng=${ep.lng}&dname=${encodeURIComponent(ep.name)}&appname=com.datemap`;
-  // 웹 폴백 (매장명 검색 쿼리)
-  const webUrl = `https://map.naver.com/v5/search/${encodeURIComponent(sp.name)}%20→%20${encodeURIComponent(ep.name)}`;
-  const start = Date.now();
-  window.location.href = appUrl;
-  setTimeout(() => { if (Date.now() - start < 2000) window.open(webUrl, '_blank'); }, 1500);
+  // 네이버 지도 웹 경로 (매장명 기반 검색으로 열림)
+  const webUrl = `https://map.naver.com/v5/directions/${encodeURIComponent(sp.name)},,${sp.lat},${sp.lng}/${encodeURIComponent(ep.name)},,${ep.lat},${ep.lng}/-/transit?c=${ep.lat},${ep.lng},15,0,0,0,dh`;
+  window.open(webUrl, '_blank');
 }
 function courseMove(i, dir) {
   const j = i + dir;
@@ -2785,14 +2781,20 @@ function courseShowMap() {
 function _showCourseControls() {
   let ctrl = document.getElementById('courseCtrl');
   if (ctrl) ctrl.remove();
+  // 지도 내 다른 컨트롤 숨기기
+  const nb = document.getElementById('nearbyBar');
+  const lvb = document.getElementById('listViewBtn');
+  const lb = document.getElementById('locBtn');
+  if (nb) nb.style.display = 'none';
+  if (lvb) lvb.style.display = 'none';
+  if (lb) lb.style.display = 'none';
   ctrl = document.createElement('div');
   ctrl.id = 'courseCtrl';
   ctrl.style.cssText = 'position:absolute;top:10px;right:10px;z-index:100;display:flex;flex-direction:column;gap:6px';
-  // 코스 지우기 버튼
   const clearBtn = document.createElement('button');
   clearBtn.textContent = '✕ 코스 지우기';
   clearBtn.style.cssText = 'background:white;border:1.5px solid #e0ddd8;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#333;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
-  clearBtn.onclick = () => { clearCourseOverlays(); ctrl.remove(); collapseMap(); toast('코스 표시를 지웠어요'); };
+  clearBtn.onclick = () => { clearCourseOverlays(); collapseMap(); toast('코스 표시를 지웠어요'); };
   ctrl.appendChild(clearBtn);
   document.getElementById('mapWrap').appendChild(ctrl);
 }
@@ -2804,6 +2806,13 @@ function clearCourseOverlays() {
   if (_coursePolyline) { try{_coursePolyline.setMap(null);}catch(e){} _coursePolyline = null; }
   const ctrl = document.getElementById('courseCtrl');
   if (ctrl) ctrl.remove();
+  // 숨겼던 지도 컨트롤 복원
+  const nb = document.getElementById('nearbyBar');
+  const lvb = document.getElementById('listViewBtn');
+  const lb = document.getElementById('locBtn');
+  if (nb) nb.style.display = '';
+  if (lvb) lvb.style.display = '';
+  if (lb) lb.style.display = '';
 }
 
 // 서울 25개 구 중심 좌표
@@ -2842,135 +2851,85 @@ async function _loadSeoulGeo() {
 
 async function openLabDistrict() {
   document.getElementById('labModal').classList.remove('open');
-  showTab('list');
-  expandMap();
-  clearDistrictOverlays();
-  toast('서울 지도 불러오는 중...');
+  // 구별 장소 집계
+  const distMap = {};
+  places.forEach(p => {
+    if (!p.addr) return;
+    const m = p.addr.match(/서울[^\s]*\s+(\S+구)/);
+    if (m) { const d = m[1]; if (!distMap[d]) distMap[d]=[]; distMap[d].push(p); }
+  });
   const geo = await _loadSeoulGeo();
-  setTimeout(() => {
-    if (map) map.relayout();
-    setTimeout(() => {
-      map.setCenter(new kakao.maps.LatLng(37.5665, 126.9780));
-      map.setLevel(8);
-      // 구별 장소 집계
-      const distMap = {};
-      places.forEach(p => {
-        if (!p.addr) return;
-        const m = p.addr.match(/서울[^\s]*\s+(\S+구)/);
-        if (m) { const d = m[1]; if (!distMap[d]) distMap[d]=[]; distMap[d].push(p); }
+  // SVG 버튼맵 모달 생성
+  let modal = document.getElementById('districtMapModal');
+  if (modal) modal.remove();
+  modal = document.createElement('div');
+  modal.id = 'districtMapModal';
+  modal.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px';
+  modal.onclick = e => { if (e.target === modal) modal.remove(); };
+  const box = document.createElement('div');
+  box.style.cssText = 'background:white;border-radius:16px;width:100%;max-width:420px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.2)';
+  // 헤더
+  box.innerHTML = `<div style="padding:14px 16px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between">
+    <span style="font-size:15px;font-weight:700;color:var(--dark)">📍 서울 지역별 탐색</span>
+    <button onclick="document.getElementById('districtMapModal').remove()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#999;padding:0 4px">✕</button>
+  </div>`;
+  const body = document.createElement('div');
+  body.style.cssText = 'flex:1;overflow:auto;padding:8px';
+  if (geo && geo.features) {
+    // GeoJSON → SVG 변환
+    let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+    geo.features.forEach(f => {
+      f.geometry.coordinates[0].forEach(c => {
+        if(c[0]<minX) minX=c[0]; if(c[0]>maxX) maxX=c[0];
+        if(c[1]<minY) minY=c[1]; if(c[1]>maxY) maxY=c[1];
       });
-      if (geo && geo.features) {
-        // GeoJSON 폴리곤으로 구역 색칠
-        geo.features.forEach((f, idx) => {
-          const guName = f.properties.name;
-          const cnt = distMap[guName] ? distMap[guName].length : 0;
-          const hasPlaces = cnt > 0;
-          const color = GU_COLORS[idx % GU_COLORS.length];
-          const coords = f.geometry.coordinates[0].map(c => new kakao.maps.LatLng(c[1], c[0]));
-          const fillClr = hasPlaces ? '#D8D8D8' : '#E8E8E8';
-          const polygon = new kakao.maps.Polygon({
-            path: coords,
-            strokeWeight: 2,
-            strokeColor: '#ffffff',
-            strokeOpacity: 1,
-            fillColor: fillClr,
-            fillOpacity: 1
-          });
-          polygon.setMap(map);
-          _districtPolygons.push(polygon);
-          // 클릭 → 리스트로 전환 (해당 구 장소만 필터)
-          kakao.maps.event.addListener(polygon, 'click', () => {
-            _showDistrictList(guName, distMap[guName] || []);
-          });
-          // 호버 효과
-          kakao.maps.event.addListener(polygon, 'mouseover', () => {
-            polygon.setOptions({ fillColor: hasPlaces ? '#C0C0C0' : '#D8D8D8' });
-          });
-          kakao.maps.event.addListener(polygon, 'mouseout', () => {
-            polygon.setOptions({ fillColor: fillClr });
-          });
-          // 구 이름 + 개수 라벨
-          const center = SEOUL_GU[guName];
-          if (center) {
-            const el = document.createElement('div');
-            el.style.pointerEvents = 'none';
-            el.innerHTML = `<div style="font-size:12px;font-weight:700;color:${hasPlaces?'#333':'#888'};text-shadow:0 0 4px white,0 0 4px white;white-space:nowrap;text-align:center">
-              ${guName}${cnt ? '<br><span style="font-size:11px;color:var(--accent);font-weight:800">'+cnt+'곳</span>' : ''}
-            </div>`;
-            const label = new kakao.maps.CustomOverlay({
-              position: new kakao.maps.LatLng(center.lat, center.lng),
-              content: el, yAnchor: 0.5, xAnchor: 0.5, zIndex: 2
-            });
-            label.setMap(map);
-            _districtOverlays.push(label);
-          }
-        });
-      } else {
-        // GeoJSON 로드 실패 시 기존 말풍선 방식
-        Object.entries(SEOUL_GU).forEach(([name, coord]) => {
-          const cnt = distMap[name] ? distMap[name].length : 0;
-          const hasPlaces = cnt > 0;
-          const el = document.createElement('div');
-          el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;cursor:${hasPlaces?'pointer':'default'}">
-            <div style="background:${hasPlaces?'var(--accent)':'#ccc'};color:white;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.2);white-space:nowrap;border:2px solid white">
-              ${name} ${cnt?'<span style="background:white;color:var(--accent);border-radius:8px;padding:0 5px;margin-left:3px;font-size:10px">'+cnt+'</span>':''}
-            </div>
-          </div>`;
-          if (hasPlaces) el.onclick = () => _showDistrictPlaces(name, distMap[name]);
-          const overlay = new kakao.maps.CustomOverlay({ position: new kakao.maps.LatLng(coord.lat, coord.lng), content: el, yAnchor: 1, zIndex: hasPlaces ? 3 : 1 });
-          overlay.setMap(map);
-          _districtOverlays.push(overlay);
-        });
-      }
-      _showDistrictControls();
-      toast('구를 탭하면 장소를 볼 수 있어요');
-    }, 200);
-  }, 500);
-}
-function _showDistrictPlaces(guName, guPlaces) {
-  clearDistrictOverlays();
-  const coord = SEOUL_GU[guName];
-  map.setCenter(new kakao.maps.LatLng(coord.lat, coord.lng));
-  map.setLevel(5);
-  setTimeout(() => {
-    guPlaces.forEach((p, i) => {
-      if (!p.lat || !p.lng) return;
-      const c = getCat(p.cat);
-      const el = document.createElement('div');
-      el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer" onclick="showPlaceOnMap(${p.id})">
-        <div style="background:white;border-radius:10px;padding:3px 8px;font-size:10px;font-weight:600;color:#333;border:1.5px solid ${c.color};white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.12)">${p.name}</div>
-        <div style="width:24px;height:24px;background:${c.color};border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.25);margin-top:2px">
-          <span style="font-size:11px">${c.emoji||''}</span>
-        </div>
-      </div>`;
-      const marker = new kakao.maps.CustomOverlay({
-        position: new kakao.maps.LatLng(p.lat, p.lng), content: el, yAnchor: 1, zIndex: 5+i
-      });
-      marker.setMap(map);
-      _districtOverlays.push(marker);
     });
-    _showDistrictControls(guName);
-  }, 300);
-}
-function _showDistrictControls(guName) {
-  let ctrl = document.getElementById('distCtrl');
-  if (ctrl) ctrl.remove();
-  ctrl = document.createElement('div');
-  ctrl.id = 'distCtrl';
-  ctrl.style.cssText = 'position:absolute;top:10px;left:10px;z-index:100;display:flex;gap:6px';
-  if (guName) {
-    const backBtn = document.createElement('button');
-    backBtn.innerHTML = `← ${guName}`;
-    backBtn.style.cssText = 'background:var(--accent);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:white;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
-    backBtn.onclick = () => { clearDistrictOverlays(); openLabDistrict(); };
-    ctrl.appendChild(backBtn);
+    const pad=0.005; minX-=pad; maxX+=pad; minY-=pad; maxY+=pad;
+    const w=600, h=Math.round(w*(maxY-minY)/(maxX-minX));
+    const toX=lng=>(lng-minX)/(maxX-minX)*w;
+    const toY=lat=>h-(lat-minY)/(maxY-minY)*h;
+    let svgInner = '';
+    geo.features.forEach((f, idx) => {
+      const guName = f.properties.name;
+      const cnt = distMap[guName] ? distMap[guName].length : 0;
+      const hasPlaces = cnt > 0;
+      const color = GU_COLORS[idx % GU_COLORS.length];
+      const pts = f.geometry.coordinates[0].map(c => `${toX(c[0]).toFixed(1)},${toY(c[1]).toFixed(1)}`).join(' ');
+      // 중심점 계산
+      const cx = SEOUL_GU[guName] ? toX(SEOUL_GU[guName].lng) : f.geometry.coordinates[0].reduce((s,c)=>s+toX(c[0]),0)/f.geometry.coordinates[0].length;
+      const cy = SEOUL_GU[guName] ? toY(SEOUL_GU[guName].lat) : f.geometry.coordinates[0].reduce((s,c)=>s+toY(c[1]),0)/f.geometry.coordinates[0].length;
+      svgInner += `<polygon points="${pts}" fill="${hasPlaces?color:'#E8E8E8'}" stroke="white" stroke-width="2" style="cursor:pointer" data-gu="${guName}" opacity="${hasPlaces?'0.7':'0.5'}"/>`;
+      svgInner += `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="${hasPlaces?'#333':'#999'}" style="pointer-events:none">${guName.replace('구','')}</text>`;
+      if (cnt) svgInner += `<text x="${cx.toFixed(1)}" y="${(cy+14).toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="800" fill="var(--accent)" style="pointer-events:none">${cnt}곳</text>`;
+    });
+    body.innerHTML = `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto;display:block">${svgInner}</svg>`;
+    // SVG 클릭 이벤트
+    body.querySelector('svg').addEventListener('click', e => {
+      const poly = e.target.closest('polygon[data-gu]');
+      if (!poly) return;
+      const guName = poly.dataset.gu;
+      modal.remove();
+      _showDistrictList(guName, distMap[guName] || []);
+    });
+    // 터치 호버 효과
+    body.querySelectorAll('polygon[data-gu]').forEach(poly => {
+      poly.addEventListener('touchstart', () => { poly.style.opacity = '1'; }, {passive:true});
+      poly.addEventListener('touchend', () => { poly.style.opacity = ''; }, {passive:true});
+      poly.addEventListener('mouseenter', () => { poly.style.opacity = '1'; });
+      poly.addEventListener('mouseleave', () => { poly.style.opacity = ''; });
+    });
+  } else {
+    // GeoJSON 실패 시 그리드 버튼
+    let btns = '';
+    Object.entries(SEOUL_GU).forEach(([name]) => {
+      const cnt = distMap[name] ? distMap[name].length : 0;
+      btns += `<button onclick="document.getElementById('districtMapModal').remove();_showDistrictList('${name}',${JSON.stringify((distMap[name]||[]).map(p=>p.id))})" style="background:${cnt?'var(--cream)':'#f5f5f5'};border:1px solid ${cnt?'var(--accent)':'#ddd'};border-radius:10px;padding:8px 4px;font-size:12px;font-weight:600;color:${cnt?'var(--dark)':'#999'};cursor:pointer;text-align:center">${name}<br>${cnt?`<span style="color:var(--accent);font-size:11px">${cnt}곳</span>`:''}</button>`;
+    });
+    body.innerHTML = `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px">${btns}</div>`;
   }
-  const clearBtn = document.createElement('button');
-  clearBtn.textContent = '✕ 닫기';
-  clearBtn.style.cssText = 'background:white;border:1.5px solid #e0ddd8;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#333;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
-  clearBtn.onclick = () => { clearDistrictOverlays(); collapseMap(); };
-  ctrl.appendChild(clearBtn);
-  document.getElementById('mapWrap').appendChild(ctrl);
+  box.appendChild(body);
+  modal.appendChild(box);
+  document.body.appendChild(modal);
 }
 function _showDistrictList(guName, guPlaces) {
   clearDistrictOverlays();
@@ -2989,13 +2948,14 @@ function _showDistrictList(guName, guPlaces) {
     <button style="background:none;border:1px solid #ccc;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;color:#666" onclick="renderAll()">전체보기</button>
   </div>` + guPlaces.map(p => {
     const c = getCat(p.cat);
+    const stars = p.rating ? '⭐'.repeat(Math.round(p.rating)) : '';
     return `<div class="pi-wrap" data-pid="${p.id}" onclick="if(map){map.setCenter(new kakao.maps.LatLng(${p.lat},${p.lng}));map.setLevel(3);}">
       <div class="pi">
-        <div style="display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="pi-name" style="flex:none">${p.name}</span>
           <span class="pi-cat" style="background:${c.color}20;color:${c.color}">${c.emoji||''} ${c.name}</span>
-          <span class="pi-name" style="flex:1">${p.name}</span>
+          ${stars?`<span style="font-size:11px;letter-spacing:-1px">${stars}</span>`:''}
         </div>
-        ${p.addr?`<div class="pi-addr">${p.addr}</div>`:''}
         ${p.memo?`<div class="pi-memo">${p.memo}</div>`:''}
       </div>
     </div>`;
@@ -3025,6 +2985,13 @@ function clearDistrictOverlays() {
   _districtPolygons = [];
   const ctrl = document.getElementById('distCtrl');
   if (ctrl) ctrl.remove();
+  // 숨겼던 지도 컨트롤 복원
+  const nb = document.getElementById('nearbyBar');
+  const lvb = document.getElementById('listViewBtn');
+  const lb = document.getElementById('locBtn');
+  if (nb) nb.style.display = '';
+  if (lvb) lvb.style.display = '';
+  if (lb) lb.style.display = '';
 }
 
 function checkUpdateBtn() {
