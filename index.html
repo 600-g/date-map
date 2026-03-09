@@ -1815,7 +1815,7 @@ function renderList() {
         <button class="bx${p.visited?' vis':''}" style="min-width:62px;justify-content:center" onclick="event.stopPropagation();toggleV(${p.id})">${p.visited?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg> 방문':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> 미방문'}</button>
         <button class="bx" onclick="event.stopPropagation();openKakaoMap(${p.id})"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:middle"><rect x="1" y="1" width="22" height="22" rx="5" fill="#FEE500"/><path d="M12 6C8.13 6 5 8.52 5 11.6c0 1.96 1.3 3.68 3.26 4.66l-.66 2.44c-.04.15.13.27.26.19l2.9-1.93c.4.05.82.08 1.24.08 3.87 0 7-2.52 7-5.44S15.87 6 12 6z" fill="#3C1E1E"/></svg> 카카오</button>
         <button class="bx" onclick="event.stopPropagation();openNaverMap(${p.id})"><svg width="16" height="16" viewBox="0 0 24 24" style="vertical-align:middle"><rect x="1" y="1" width="22" height="22" rx="5" fill="#03C75A"/><path d="M13.5 12.5l-3.2-4.6H7.8v8.2h2.7v-4.6l3.2 4.6h2.5V7.9h-2.7v4.6z" fill="white"/></svg> 네이버</button>
-        <button class="bx" onclick="event.stopPropagation();openNavi(${p.id})" style="background:#5B7DB8;color:white;border-color:#5B7DB8;padding:4px 8px"><svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="white" stroke-width="1" style="vertical-align:middle"><path d="M3 11l19-9-9 19-2-8-8-2z"/></svg> 길찾기</button>
+        <button class="bx" onclick="event.stopPropagation();openNavi(${p.id})" style="background:#FEE500;color:#3C1E1E;border-color:#FEE500;padding:4px 8px"><svg width="14" height="14" viewBox="0 0 24 24" style="vertical-align:middle"><path d="M12 6C8.13 6 5 8.52 5 11.6c0 1.96 1.3 3.68 3.26 4.66l-.66 2.44c-.04.15.13.27.26.19l2.9-1.93c.4.05.82.08 1.24.08 3.87 0 7-2.52 7-5.44S15.87 6 12 6z" fill="#3C1E1E"/></svg> 길찾기</button>
         <button class="bx del" onclick="event.stopPropagation();delPlace(${p.id})"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#E05252" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg></button>
       </div>
     </div>
@@ -2005,16 +2005,15 @@ function openKakaoMap(id) {
 
 function openNaverMap(id) {
   const p = places.find(x=>x.id===id); if(!p) return;
-  window.open(`https://map.naver.com/v5/search/${encodeURIComponent(p.name)}?c=${p.lng},${p.lat},15,0,0,0,dh`, '_blank');
+  location.href = `nmap://search?query=${encodeURIComponent(p.name)}&appname=com.datemap`;
 }
 
 function openNavi(id) {
   const p = places.find(x=>x.id===id); if(!p) return;
   if (myLat !== null && myLng !== null) {
-    // 카카오맵 대중교통 길찾기
-    window.open(`https://map.kakao.com/link/from/내위치,${myLat},${myLng}/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`, '_blank');
+    location.href = `kakaomap://route?sp=${myLat},${myLng}&ep=${p.lat},${p.lng}&by=PUBLICTRANSIT`;
   } else {
-    window.open(`https://map.kakao.com/link/to/${encodeURIComponent(p.name)},${p.lat},${p.lng}`, '_blank');
+    location.href = `kakaomap://route?ep=${p.lat},${p.lng}&by=PUBLICTRANSIT`;
   }
 }
 
@@ -2137,7 +2136,7 @@ function renderNearbyResults(docs, iconKey, groupKey) {
       window.open(`https://map.kakao.com/link/map/${encodeURIComponent(d.place_name)},${d.y},${d.x}`, '_blank');
     };
     iwEl.querySelector('[data-action="nb-naver"]').onclick = () => {
-      window.open(`https://map.naver.com/v5/search/${encodeURIComponent(d.place_name)}`, '_blank');
+      location.href = `nmap://search?query=${encodeURIComponent(d.place_name)}&appname=com.datemap`;
     };
     iwEl.querySelector('[data-action="kakao-nav"]').onclick = () => {
       if (myLat !== null) window.open(`https://map.kakao.com/link/from/내위치,${myLat},${myLng}/to/${encodeURIComponent(d.place_name)},${d.y},${d.x}`, '_blank');
@@ -2569,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 184;
+const APP_VERSION = 185;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
