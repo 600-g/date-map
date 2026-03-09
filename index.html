@@ -204,8 +204,8 @@ header .lc svg{width:18px;height:18px}
   .panel{display:contents;width:100%;border-right:none}
   #tab-list.active{display:contents}
   /* 탭 → 하단 네비바 (노치 직전) */
-  .tabs{order:7;width:100%;flex-shrink:0;border-bottom:none;border-top:none;background:var(--dark);padding-bottom:env(safe-area-inset-bottom,0px);margin-top:auto}
-  body{padding-bottom:0!important}
+  .tabs{position:fixed;bottom:0;left:0;right:0;z-index:100;border-bottom:none;border-top:none;background:var(--dark);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .main{padding-bottom:calc(36px + env(safe-area-inset-bottom,0px))}
   .tab{border-bottom:none;border-top:2.5px solid transparent;padding:6px 2px 4px;font-size:12px;color:rgba(255,255,255,.6)}
   .tab.active{border-bottom:none;border-top-color:var(--accent);color:white}
   /* 검색바 상단 */
