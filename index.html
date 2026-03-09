@@ -218,7 +218,7 @@ header .lc svg{width:18px;height:18px}
   #map{height:100%}
   .my-loc-btn{top:10px;right:10px;width:38px;height:38px}
   /* 필터바 - 1줄 가로스크롤 */
-  .filter-bar{order:4;width:100%;padding:6px 8px 5px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none}
+  .filter-bar{order:4;width:100%;padding:8px 8px 6px;flex-wrap:nowrap;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;min-height:34px}
   .filter-bar::-webkit-scrollbar{display:none}
   .fb{flex-shrink:0}
   #myLocStatus{order:5;width:100%}
@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 164;
+const APP_VERSION = 165;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2658,7 +2658,11 @@ function renderCourseRoute() {
       const prev = _courseSel[i-1];
       const km = getDistanceKm(prev.lat, prev.lng, p.lat, p.lng);
       totalKm += km;
-      distHtml = `<div style="text-align:center;font-size:11px;color:var(--accent);padding:2px 0">↓ ${km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m'}</div>`;
+      const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
+      distHtml = `<div style="display:flex;align-items:center;justify-content:center;gap:6px;padding:3px 0">
+        <span style="font-size:11px;color:var(--accent)">↓ ${distTxt}</span>
+        <button style="background:#1EC800;color:white;border:none;border-radius:10px;padding:2px 8px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap" onclick="openNaverRoute(${i-1},${i})">🗺 경로</button>
+      </div>`;
     }
     return `${distHtml}<div style="padding:8px 10px;background:white;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:8px">
       <div style="width:22px;height:22px;background:var(--dark);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${i+1}</div>
@@ -2670,8 +2674,19 @@ function renderCourseRoute() {
       </div>
     </div>`;
   }).join('');
-  const mins = Math.round(totalKm / 4 * 60); // 도보 4km/h 기준
+  const mins = Math.round(totalKm / 4 * 60);
   document.getElementById('courseSummary').innerHTML = `총 거리 <b>${totalKm >= 1 ? totalKm.toFixed(1)+'km' : Math.round(totalKm*1000)+'m'}</b> · 도보 약 <b>${mins}분</b>`;
+}
+function openNaverRoute(fromIdx, toIdx) {
+  const sp = _courseSel[fromIdx], ep = _courseSel[toIdx];
+  if (!sp || !ep) return;
+  // nmap:// 앱 URL (매장명으로 검색)
+  const appUrl = `nmap://route/public?slat=${sp.lat}&slng=${sp.lng}&sname=${encodeURIComponent(sp.name)}&dlat=${ep.lat}&dlng=${ep.lng}&dname=${encodeURIComponent(ep.name)}&appname=com.datemap`;
+  // 웹 폴백 (매장명 검색 쿼리)
+  const webUrl = `https://map.naver.com/v5/search/${encodeURIComponent(sp.name)}%20→%20${encodeURIComponent(ep.name)}`;
+  const start = Date.now();
+  window.location.href = appUrl;
+  setTimeout(() => { if (Date.now() - start < 2000) window.open(webUrl, '_blank'); }, 1500);
 }
 function courseMove(i, dir) {
   const j = i + dir;
@@ -2713,38 +2728,35 @@ function courseShowMap() {
           marker.setMap(map);
           _courseMarkers.push(marker);
         });
-        // 구간별 폴리라인 + 화살표 + 시간
+        // 구간별 폴리라인 + 화살표 + 시간 + 경로버튼
         if (positions.length >= 2) {
           for (let i = 0; i < positions.length - 1; i++) {
             const from = positions[i], to = positions[i+1];
             const color = colors[i % colors.length];
-            // 폴리라인
-            const line = new kakao.maps.Polyline({
-              path: [from, to],
-              strokeWeight: 4,
-              strokeColor: color,
-              strokeOpacity: 0.8,
-              strokeStyle: 'dash'
-            });
+            // 폴리라인 (굵고 잘 보이게)
+            const lineBg = new kakao.maps.Polyline({ path: [from, to], strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: 0.9, strokeStyle: 'solid' });
+            lineBg.setMap(map);
+            _courseLines.push(lineBg);
+            const line = new kakao.maps.Polyline({ path: [from, to], strokeWeight: 5, strokeColor: color, strokeOpacity: 1, strokeStyle: 'solid' });
             line.setMap(map);
             _courseLines.push(line);
-            // 중간점 계산
+            // 중간점
             const midLat = (from.getLat() + to.getLat()) / 2;
             const midLng = (from.getLng() + to.getLng()) / 2;
             const angle = Math.atan2(to.getLng() - from.getLng(), to.getLat() - from.getLat()) * 180 / Math.PI;
-            // 거리/시간 계산
             const km = getDistanceKm(_courseSel[i].lat, _courseSel[i].lng, _courseSel[i+1].lat, _courseSel[i+1].lng);
             const walkMin = Math.round(km / 4 * 60);
-            const carMin = Math.max(1, Math.round(km / 30 * 60));
             const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
-            // 화살표 + 시간 라벨
+            const segIdx = i;
             const infoEl = document.createElement('div');
-            infoEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:1px">
-              <div style="transform:rotate(${angle-90}deg);color:${color};font-size:20px;text-shadow:0 0 3px white,0 0 3px white;line-height:1">➤</div>
-              <div style="background:white;border:1px solid ${color};border-radius:10px;padding:1px 6px;font-size:9px;color:#555;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.1)">
-                ${distTxt} · 🚶${walkMin}분 · 🚗${carMin}분
+            infoEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div style="transform:rotate(${angle-90}deg);color:${color};font-size:22px;text-shadow:0 0 4px white,0 0 4px white;line-height:1">➤</div>
+              <div style="background:white;border:1.5px solid ${color};border-radius:12px;padding:2px 8px;font-size:10px;color:#333;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);font-weight:600">
+                ${distTxt} · 🚶${walkMin}분
               </div>
+              <div id="navRouteBtn${i}" style="background:#1EC800;color:white;border:none;border-radius:10px;padding:3px 10px;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15)">🗺 경로보기</div>
             </div>`;
+            infoEl.querySelector(`#navRouteBtn${i}`).onclick = () => openNaverRoute(segIdx, segIdx+1);
             const info = new kakao.maps.CustomOverlay({
               position: new kakao.maps.LatLng(midLat, midLng),
               content: infoEl, yAnchor: 0.5, xAnchor: 0.5, zIndex: 6
@@ -2781,28 +2793,6 @@ function _showCourseControls() {
   clearBtn.style.cssText = 'background:white;border:1.5px solid #e0ddd8;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#333;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
   clearBtn.onclick = () => { clearCourseOverlays(); ctrl.remove(); collapseMap(); toast('코스 표시를 지웠어요'); };
   ctrl.appendChild(clearBtn);
-  // 네이버 지도 경로보기 버튼
-  if (_courseSel.length >= 2) {
-    const naverBtn = document.createElement('button');
-    naverBtn.textContent = '🗺 네이버 경로';
-    naverBtn.style.cssText = 'background:#1EC800;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:white;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
-    naverBtn.onclick = () => {
-      const sp = _courseSel[0], ep = _courseSel[_courseSel.length-1];
-      // nmap:// URL 스킴으로 네이버 지도 앱 직접 실행
-      let appUrl = `nmap://route/public?slat=${sp.lat}&slng=${sp.lng}&sname=${encodeURIComponent(sp.name)}`;
-      appUrl += `&dlat=${ep.lat}&dlng=${ep.lng}&dname=${encodeURIComponent(ep.name)}`;
-      appUrl += `&appname=com.datemap`;
-      // 웹 폴백 URL
-      let webUrl = `https://map.naver.com/v5/directions/${sp.lng},${sp.lat},${encodeURIComponent(sp.name)}/${ep.lng},${ep.lat},${encodeURIComponent(ep.name)}/-/transit`;
-      // 앱 열기 시도 → 실패 시 웹
-      const start = Date.now();
-      window.location.href = appUrl;
-      setTimeout(() => {
-        if (Date.now() - start < 2000) window.open(webUrl, '_blank');
-      }, 1500);
-    };
-    ctrl.appendChild(naverBtn);
-  }
   document.getElementById('mapWrap').appendChild(ctrl);
 }
 function clearCourseOverlays() {
