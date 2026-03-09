@@ -326,7 +326,7 @@ header .lc svg{width:18px;height:18px}
         <div class="empty"><div class="ico"><i data-lucide="map-pin" class="lc"></i></div><p>아직 장소가 없어요<br>위의 추가 버튼을 눌러보세요</p></div>
       </div>
       <div id="listViewBtn" onclick="collapseMap()" style="display:none">
-        <span style="font-size:13px;font-weight:550;color:var(--dark);display:flex;align-items:center;gap:4px"><i data-lucide="list" class="lc lc-sm"></i> 리스트 보기</span>
+        <span style="font-size:13px;font-weight:550;color:var(--dark);display:flex;align-items:center;gap:4px;margin-top:-2px"><i data-lucide="list" class="lc lc-sm"></i> 리스트 보기</span>
       </div>
     </div>
 
@@ -2532,7 +2532,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 154;
+const APP_VERSION = 155;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2648,8 +2648,10 @@ function courseBack() {
   document.getElementById('coursePhase2').style.display = 'none';
 }
 function courseShowMap() {
+  const selCopy = _courseSel.slice();
   closeCourseModal();
   clearCourseOverlays();
+  _courseSel = selCopy;
   showTab('list');
   expandMap();
   toast(`코스 ${_courseSel.length}곳 표시 중...`);
