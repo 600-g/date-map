@@ -68,10 +68,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .pi-name{font-size:14.5px;font-weight:600;flex:1}
 .pi-cat{font-size:12px;padding:4px 10px;border-radius:20px;font-weight:500;flex-shrink:0;cursor:pointer;display:inline-flex;align-items:center;gap:3px;overflow:hidden;max-width:100px;white-space:nowrap;text-overflow:ellipsis}
 .pi-cat svg{width:14px;height:14px;vertical-align:middle;flex-shrink:0;overflow:visible}
-.pi-addr{font-size:12.5px;color:var(--brown);margin-top:4px;padding-top:4px;border-top:1px solid #f0ebe4;display:flex;align-items:center;gap:2px}
+.pi-addr{font-size:12.5px;color:var(--brown);margin-top:5px;display:flex;align-items:center;gap:2px}
 .pi-addr .lc svg{width:7px;height:7px}
 .pi-dist .lc svg{width:11px;height:11px}
-.pi-memo{font-size:12.5px;color:#999;margin-top:4px;padding-top:4px;border-top:1px solid #f0ebe4;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pi-memo{font-size:12.5px;color:#999;margin-top:5px;font-style:italic;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .addr-search{color:var(--brown);font-size:9px;font-weight:500;cursor:pointer;margin-left:4px;background:var(--cream);border:1px solid var(--warm);border-radius:4px;padding:1px 6px;display:inline-block;vertical-align:middle}
 .addr-search:hover{background:var(--warm);color:var(--dark)}
 .pi-acts{display:flex;gap:4px;margin-top:7px;flex-wrap:wrap}
@@ -227,13 +227,13 @@ header .lc svg{width:18px;height:18px}
   .map-expanded #myLocStatus{display:none!important}
   .map-expanded #listViewBtn{display:flex!important}
   /* 리스트보기 버튼 */
-  #listViewBtn{display:none;order:5;width:100%;justify-content:center;padding:8px 0;background:white;border-top:1px solid var(--warm);cursor:pointer}
+  #listViewBtn{display:none;order:5;width:100%;justify-content:center;align-items:center;padding:8px 0;background:white;border-top:1px solid var(--warm);cursor:pointer;text-align:center}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
   .pi-name{font-size:13.5px}
-  .pi-addr{font-size:11.5px;margin-top:3px;padding-top:3px}
-  .pi-memo{font-size:11.5px;margin-top:3px;padding-top:3px}
+  .pi-addr{font-size:11.5px;margin-top:4px}
+  .pi-memo{font-size:11.5px;margin-top:4px}
   .pi-dist{font-size:11px}
   .pi-acts{margin-top:4px;gap:3px}
   .bx{padding:3px 7px;font-size:11px}
@@ -1816,7 +1816,7 @@ function renderMarkers() {
       <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:#aaa;line-height:1" data-action="close">&times;</div>
       <b style="font-size:14px">${p.name}</b>
       <div style="font-size:12px;margin-top:2px"><span data-action="cat" style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:11px;display:inline-flex;align-items:center;gap:2px;max-width:80px;overflow:hidden;white-space:nowrap;cursor:pointer">${svgSized(getIcon(c.emoji),12)||c.emoji} ${c.name}</span></div>
-      ${avg?`<div style="font-size:12px;margin-top:3px;color:#F1C40F;display:flex;align-items:center;gap:2px"><svg width="13" height="13" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> ${avg}</div>`:''}
+      ${avg?`<div style="font-size:12px;margin-top:3px;color:var(--dark);font-weight:500;display:flex;align-items:center;gap:2px"><span style="color:#F1C40F">★</span>${avg}</div>`:''}
       ${p.addr?`<div style="font-size:11px;color:#8B6F5E;margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;display:inline-flex;align-items:center;padding:1px 4px;border:1px solid #ddd;border-radius:3px;background:#fafafa;margin-left:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B6F5E" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></span></div>`:''}
       ${p.memo?`<div style="font-size:11px;color:#999;margin-top:3px;font-style:italic">${p.memo}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
@@ -2430,7 +2430,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 128;
+const APP_VERSION = 129;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
