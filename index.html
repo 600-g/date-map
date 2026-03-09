@@ -313,7 +313,7 @@ header .lc svg{width:18px;height:18px}
       <div class="filter-bar" id="filterBar">
         <button class="fb active" onclick="setFilter(this,'전체')">전체</button>
       </div>
-      <div id="myLocStatus" style="display:none;padding:6px 12px;font-size:11px;color:var(--green);background:#e8f5e9;border-bottom:1px solid var(--warm);display:flex;align-items:center;gap:6px"></div>
+      <div id="myLocStatus" style="display:none;padding:6px 12px;font-size:11px;color:var(--green);background:#e8f5e9;border-bottom:1px solid var(--warm);align-items:center;gap:6px"></div>
       <div class="place-list" id="placeList">
         <div class="empty"><div class="ico"><i data-lucide="map-pin" class="lc"></i></div><p>아직 장소가 없어요<br>위의 추가 버튼을 눌러보세요</p></div>
       </div>
@@ -356,7 +356,7 @@ header .lc svg{width:18px;height:18px}
         <div class="s-desc">모든 장소를 삭제합니다</div>
         <button class="btn btn-outline" style="width:100%" onclick="clearAll()">전체 초기화</button>
 
-        <div id="copyrightArea" style="text-align:center;margin-top:24px;padding:12px 0;color:#bbb;font-size:11px;letter-spacing:.5px;font-weight:550;cursor:default" onclick="easterTap()">© 600g</div>
+        <div id="copyrightArea" style="text-align:center;margin-top:24px;padding:12px 0;color:#bbb;font-size:11px;letter-spacing:.5px;font-weight:550;cursor:default;-webkit-user-select:none;user-select:none" ondblclick="easterTap()">© 600g</div>
       </div>
     </div>
   </div>
@@ -2388,16 +2388,9 @@ function showUpdatePopup(newVer) {
   el.innerHTML = `<span>🤖 새 버전(v${newVer})이 있어요!</span><button onclick="doForceReload()" style="background:white;color:#3B4C6B;border:none;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;font-family:inherit">업데이트</button>`;
   document.body.appendChild(el);
 }
-let _easterCount = 0, _easterTimer = null;
 function easterTap() {
-  _easterCount++;
-  if (_easterTimer) clearTimeout(_easterTimer);
-  _easterTimer = setTimeout(() => { _easterCount = 0; }, 1500);
-  if (_easterCount >= 5) {
-    _easterCount = 0;
-    wcConfetti();
-    toast('🎉 600g Easter Egg!');
-  }
+  wcConfetti();
+  toast('🎉 600g Easter Egg!');
 }
 
 function forceUpdate() {
