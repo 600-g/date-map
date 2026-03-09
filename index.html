@@ -47,6 +47,9 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .btn-sm{font-size:12px;padding:5px 12px}
 /* 검색 */
 .add-wrap{padding:12px;overflow-y:auto;flex:1}
+.cr-item{padding:8px 10px;background:white;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:8px;transition:transform .1s,box-shadow .1s}
+.cr-handle{font-size:16px;color:#bbb;cursor:grab;flex-shrink:0;line-height:1;padding:0 2px;-webkit-touch-callout:none}
+.cr-dist{display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0;cursor:pointer}
 .sr-item{padding:8px 10px;border:1px solid var(--warm);border-radius:6px;margin-bottom:5px;cursor:pointer;font-size:13px;transition:all .15s}
 .sr-item:hover{border-color:var(--brown);background:var(--cream)}
 .sr-name{font-weight:500;margin-bottom:2px}
@@ -2568,7 +2571,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 197;
+const APP_VERSION = 198;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2660,23 +2663,64 @@ function renderCourseRoute() {
       totalKm += km;
       const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
       const walkMin = Math.round(km / 4 * 60);
-      distHtml = `<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0;cursor:pointer" onclick="openKakaoRoute(${i-1},${i})">
+      distHtml = `<div class="cr-dist" onclick="openKakaoRoute(${i-1},${i})">
         <span style="font-size:11px;color:var(--accent)">↓ ${distTxt} · 🚶${walkMin}분</span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
       </div>`;
     }
-    return `${distHtml}<div style="padding:8px 10px;background:white;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:8px">
+    return `${distHtml}<div class="cr-item" data-idx="${i}">
+      <span class="cr-handle">☰</span>
       <div style="width:22px;height:22px;background:var(--dark);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${i+1}</div>
       <div style="width:16px;height:16px;background:${c.color};border-radius:50%;flex-shrink:0"></div>
       <div style="flex:1;min-width:0;font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
-      <div style="display:flex;gap:2px;flex-shrink:0">
-        ${i > 0 ? `<button style="border:1px solid #ddd;background:#f5f5f5;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" onclick="courseMove(${i},-1)">▲</button>` : ''}
-        ${i < _courseSel.length-1 ? `<button style="border:1px solid #ddd;background:#f5f5f5;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" onclick="courseMove(${i},1)">▼</button>` : ''}
-      </div>
     </div>`;
   }).join('');
   const mins = Math.round(totalKm / 4 * 60);
   document.getElementById('courseSummary').innerHTML = `총 거리 <b>${totalKm >= 1 ? totalKm.toFixed(1)+'km' : Math.round(totalKm*1000)+'m'}</b> · 도보 약 <b>${mins}분</b>`;
+  _initCourseDrag();
+}
+// 코스 드래그 정렬
+let _crDrag = null;
+function _initCourseDrag() {
+  const list = document.getElementById('courseRouteList');
+  list.querySelectorAll('.cr-item').forEach(item => {
+    const handle = item.querySelector('.cr-handle');
+    handle.addEventListener('touchstart', e => {
+      e.preventDefault();
+      const idx = parseInt(item.dataset.idx);
+      const rect = item.getBoundingClientRect();
+      _crDrag = { idx, el: item, startY: e.touches[0].clientY, offsetY: 0 };
+      item.style.zIndex = '10';
+      item.style.boxShadow = '0 4px 16px rgba(0,0,0,.2)';
+      item.style.opacity = '0.9';
+    }, { passive: false });
+  });
+  list.addEventListener('touchmove', e => {
+    if (!_crDrag) return;
+    e.preventDefault();
+    const dy = e.touches[0].clientY - _crDrag.startY;
+    _crDrag.el.style.transform = `translateY(${dy}px)`;
+    _crDrag.offsetY = dy;
+  }, { passive: false });
+  list.addEventListener('touchend', e => {
+    if (!_crDrag) return;
+    const items = list.querySelectorAll('.cr-item');
+    const fromIdx = _crDrag.idx;
+    // 이동량으로 목표 인덱스 계산
+    const itemH = _crDrag.el.offsetHeight + 30; // 아이템 높이 + 거리표시 + gap
+    let move = Math.round(_crDrag.offsetY / itemH);
+    let toIdx = Math.max(0, Math.min(_courseSel.length - 1, fromIdx + move));
+    _crDrag.el.style.transform = '';
+    _crDrag.el.style.zIndex = '';
+    _crDrag.el.style.boxShadow = '';
+    _crDrag.el.style.opacity = '';
+    _crDrag = null;
+    if (fromIdx !== toIdx) {
+      const [moved] = _courseSel.splice(fromIdx, 1);
+      _courseSel.splice(toIdx, 0, moved);
+      renderCourseRoute();
+    }
+  });
 }
 function openKakaoRoute(fromIdx, toIdx) {
   const sp = _courseSel[fromIdx], ep = _courseSel[toIdx];
