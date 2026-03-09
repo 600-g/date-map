@@ -204,7 +204,7 @@ header .lc svg{width:18px;height:18px}
   .panel{display:contents;width:100%;border-right:none}
   #tab-list.active{display:contents}
   /* 탭 → 하단 네비바 (노치 직전) */
-  .tabs{order:7;width:100%;flex-shrink:0;border-bottom:none;border-top:none;background:var(--dark);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 4px);margin-top:auto}
+  .tabs{order:7;width:100%;flex-shrink:0;border-bottom:none;border-top:none;background:var(--dark);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 10px);margin-top:auto}
   .tab{border-bottom:none;border-top:2.5px solid transparent;padding:6px 2px 4px;font-size:12px;color:rgba(255,255,255,.6)}
   .tab.active{border-bottom:none;border-top-color:var(--accent);color:white}
   /* 검색바 상단 */
@@ -317,7 +317,7 @@ header .lc svg{width:18px;height:18px}
       <div class="place-list" id="placeList">
         <div class="empty"><div class="ico"><i data-lucide="map-pin" class="lc"></i></div><p>아직 장소가 없어요<br>위의 추가 버튼을 눌러보세요</p></div>
       </div>
-      <div id="listViewBtn" onclick="collapseMap()">
+      <div id="listViewBtn" onclick="collapseMap()" style="display:none">
         <span style="font-size:13px;font-weight:550;color:var(--dark);display:flex;align-items:center;gap:4px"><i data-lucide="list" class="lc lc-sm"></i> 리스트 보기</span>
       </div>
     </div>
@@ -615,6 +615,7 @@ function startRealtimeSync() {
 
 // ── 지도 초기화 ──
 function initMap() {
+  document.getElementById('appVer').textContent = APP_VERSION;
   // 저장된 위치가 있으면 바로 사용
   const savedLoc = localStorage.getItem('datemap-lastloc');
   let initLat = 37.5665, initLng = 126.9780, initLevel = 5;
@@ -2375,7 +2376,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 116;
+const APP_VERSION = 117;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
