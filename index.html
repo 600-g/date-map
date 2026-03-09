@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 168;
+const APP_VERSION = 169;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2866,35 +2866,35 @@ async function openLabDistrict() {
           const hasPlaces = cnt > 0;
           const color = GU_COLORS[idx % GU_COLORS.length];
           const coords = f.geometry.coordinates[0].map(c => new kakao.maps.LatLng(c[1], c[0]));
+          const fillClr = hasPlaces ? '#D8D8D8' : '#E8E8E8';
           const polygon = new kakao.maps.Polygon({
             path: coords,
-            strokeWeight: 2.5,
-            strokeColor: '#666',
+            strokeWeight: 2,
+            strokeColor: '#ffffff',
             strokeOpacity: 1,
-            fillColor: color,
-            fillOpacity: hasPlaces ? 0.7 : 0.4
+            fillColor: fillClr,
+            fillOpacity: 1
           });
           polygon.setMap(map);
           _districtPolygons.push(polygon);
-          // 클릭 이벤트
+          // 클릭 → 리스트로 전환 (해당 구 장소만 필터)
           kakao.maps.event.addListener(polygon, 'click', () => {
-            if (hasPlaces) _showDistrictPlaces(guName, distMap[guName]);
-            else toast(`${guName}에 저장된 장소가 없어요`);
+            _showDistrictList(guName, distMap[guName] || []);
           });
           // 호버 효과
           kakao.maps.event.addListener(polygon, 'mouseover', () => {
-            polygon.setOptions({ fillOpacity: hasPlaces ? 0.85 : 0.55, strokeWeight: 3.5 });
+            polygon.setOptions({ fillColor: hasPlaces ? '#C0C0C0' : '#D8D8D8' });
           });
           kakao.maps.event.addListener(polygon, 'mouseout', () => {
-            polygon.setOptions({ fillOpacity: hasPlaces ? 0.7 : 0.4, strokeWeight: 2.5 });
+            polygon.setOptions({ fillColor: fillClr });
           });
           // 구 이름 + 개수 라벨
           const center = SEOUL_GU[guName];
           if (center) {
             const el = document.createElement('div');
             el.style.pointerEvents = 'none';
-            el.innerHTML = `<div style="font-size:11px;font-weight:700;color:${hasPlaces?'#333':'#999'};text-shadow:0 0 3px white,0 0 3px white,0 0 3px white;white-space:nowrap;text-align:center">
-              ${guName}${cnt ? '<br><span style="font-size:10px;color:var(--accent);font-weight:800">'+cnt+'곳</span>' : ''}
+            el.innerHTML = `<div style="font-size:12px;font-weight:700;color:${hasPlaces?'#333':'#888'};text-shadow:0 0 4px white,0 0 4px white;white-space:nowrap;text-align:center">
+              ${guName}${cnt ? '<br><span style="font-size:11px;color:var(--accent);font-weight:800">'+cnt+'곳</span>' : ''}
             </div>`;
             const label = new kakao.maps.CustomOverlay({
               position: new kakao.maps.LatLng(center.lat, center.lng),
@@ -2970,6 +2970,36 @@ function _showDistrictControls(guName) {
   clearBtn.onclick = () => { clearDistrictOverlays(); collapseMap(); };
   ctrl.appendChild(clearBtn);
   document.getElementById('mapWrap').appendChild(ctrl);
+}
+function _showDistrictList(guName, guPlaces) {
+  clearDistrictOverlays();
+  collapseMap();
+  if (!guPlaces.length) { toast(`${guName}에 저장된 장소가 없어요`); return; }
+  // 해당 구 장소만 보이게 필터링 + 지도 이동
+  const coord = SEOUL_GU[guName];
+  if (coord && map) {
+    map.setCenter(new kakao.maps.LatLng(coord.lat, coord.lng));
+    map.setLevel(5);
+  }
+  // 카테고리 필터를 해당 구 장소로 임시 표시
+  const listEl = document.getElementById('placeList');
+  listEl.innerHTML = `<div style="padding:8px 10px;background:var(--cream);border-radius:8px;margin:4px 8px;display:flex;align-items:center;justify-content:space-between">
+    <span style="font-size:13px;font-weight:600;color:var(--dark)">📍 ${guName} · ${guPlaces.length}곳</span>
+    <button style="background:none;border:1px solid #ccc;border-radius:6px;padding:2px 8px;font-size:11px;cursor:pointer;color:#666" onclick="renderAll()">전체보기</button>
+  </div>` + guPlaces.map(p => {
+    const c = getCat(p.cat);
+    return `<div class="pi-wrap" data-pid="${p.id}" onclick="if(map){map.setCenter(new kakao.maps.LatLng(${p.lat},${p.lng}));map.setLevel(3);}">
+      <div class="pi">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="pi-cat" style="background:${c.color}20;color:${c.color}">${c.emoji||''} ${c.name}</span>
+          <span class="pi-name" style="flex:1">${p.name}</span>
+        </div>
+        ${p.addr?`<div class="pi-addr">${p.addr}</div>`:''}
+        ${p.memo?`<div class="pi-memo">${p.memo}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+  toast(`${guName} ${guPlaces.length}곳`);
 }
 function showPlaceOnMap(id) {
   const p = places.find(x => x.id === id);
