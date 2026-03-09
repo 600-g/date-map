@@ -220,7 +220,7 @@ header .lc svg{width:18px;height:18px}
   .filter-bar{order:4;width:100%;padding:4px 8px 2px}
   #myLocStatus{order:5;width:100%}
   /* 카드 리스트 */
-  .place-list{order:6;overflow-y:auto;width:100%;max-height:25vh;flex-shrink:0;-webkit-overflow-scrolling:touch}
+  .place-list{order:6;overflow-y:auto;width:100%;max-height:20vh;flex-shrink:0;-webkit-overflow-scrolling:touch}
   /* 설정탭 */
   #tab-cfg{order:6;width:100%;flex:1;overflow-y:auto}
   /* 지도 확대 모드 */
@@ -241,7 +241,7 @@ header .lc svg{width:18px;height:18px}
 }
 @supports(height:100dvh){
   @media(max-width:680px){
-    .place-list{max-height:25dvh}
+    .place-list{max-height:20dvh}
     .map-expanded .place-list{max-height:0}
   }
 }
@@ -407,7 +407,7 @@ header .lc svg{width:18px;height:18px}
       <div style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s" onclick="openLabCourse()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--warm)'">
         <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="route" class="lc lc-sm" style="color:var(--accent)"></i> 코스 짜기</div>
         <div style="font-size:12px;color:var(--brown);line-height:1.5">저장된 장소로 데이트 코스를 만들어보세요. 이동 경로와 예상 시간을 확인할 수 있어요.</div>
-        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FFF3E0;color:#E65100">준비 중</span></div>
+        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">베타</span></div>
       </div>
       <div style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s" onclick="openLabDistrict()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--warm)'">
         <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="map" class="lc lc-sm" style="color:var(--accent)"></i> 지역별 탐색</div>
@@ -418,6 +418,30 @@ header .lc svg{width:18px;height:18px}
         <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="share-2" class="lc lc-sm" style="color:var(--accent)"></i> 코스 공유</div>
         <div style="font-size:12px;color:var(--brown);line-height:1.5">만든 코스를 링크로 공유하세요.</div>
         <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E8F5E9;color:#2E7D32">예정</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 코스 짜기 모달 -->
+<div class="modal-overlay" id="courseModal" onclick="if(event.target===this)closeCourseModal()">
+  <div class="modal" style="width:320px;max-height:85vh;padding:20px;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">
+      <h3 style="margin:0;font-size:16px"><i data-lucide="route" class="lc lc-sm"></i> 코스 짜기</h3>
+      <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="closeCourseModal()">&times;</span>
+    </div>
+    <div id="coursePhase1" style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
+      <p style="font-size:12px;color:var(--brown);margin-bottom:10px">코스에 포함할 장소를 선택하세요 (2개 이상)</p>
+      <div id="coursePlaceList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
+      <button class="btn btn-dark" id="courseMakeBtn" style="width:100%;display:none;flex-shrink:0" onclick="buildCourse()">코스 만들기</button>
+    </div>
+    <div id="coursePhase2" style="flex:1;overflow-y:auto;display:none;flex-direction:column">
+      <p style="font-size:12px;color:var(--brown);margin-bottom:10px">순서를 조정하세요</p>
+      <div id="courseRouteList" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px"></div>
+      <div id="courseSummary" style="font-size:12px;color:var(--dark);padding:10px;background:#f5f0e8;border-radius:8px;margin-bottom:12px;text-align:center;font-weight:500;flex-shrink:0"></div>
+      <div style="display:flex;gap:8px;flex-shrink:0">
+        <button class="btn btn-outline" style="flex:1" onclick="courseBack()">다시 선택</button>
+        <button class="btn btn-dark" style="flex:1" onclick="courseShowMap()">지도에서 보기</button>
       </div>
     </div>
   </div>
@@ -456,7 +480,7 @@ header .lc svg{width:18px;height:18px}
 <div class="modal-overlay" id="wcModal" onclick="if(event.target===this)closeWorldCup()">
   <div class="modal" style="width:340px;max-height:90vh;padding:16px;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <h3 style="margin:0;font-size:15px" id="wcTitle">🏆 장소 월드컵</h3>
+      <h3 style="margin:0;font-size:15px" id="wcTitle"><svg viewBox="0 0 24 24" width="15" height="15" fill="#F1C40F" stroke="#DAA520" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M6 9H4.5a2 2 0 01-2-2V4h19v3a2 2 0 01-2 2H18"/><path d="M6 9a6 6 0 006 6 6 6 0 006-6"/><path d="M12 15v3"/><path d="M8 21h8"/><path d="M8 21v-3h8v3"/></svg> 장소 월드컵</h3>
       <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="closeWorldCup()">&times;</span>
     </div>
     <div id="wcRound" style="text-align:center;font-size:13px;color:var(--brown);margin-bottom:10px"></div>
@@ -1151,7 +1175,7 @@ function startWorldCup() {
   const catCounts = {};
   visited.forEach(p => { catCounts[p.cat] = (catCounts[p.cat]||0) + 1; });
   let html = `<div style="display:flex;flex-direction:column;gap:6px">`;
-  html += `<button class="btn btn-dark btn-sm" style="width:100%;padding:10px" onclick="launchWc('all')">🏆 전체 (${visited.length}곳)</button>`;
+  html += `<button class="btn btn-dark btn-sm" style="width:100%;padding:10px;display:flex;align-items:center;justify-content:center;gap:4px" onclick="launchWc('all')"><svg viewBox="0 0 24 24" width="14" height="14" fill="#F1C40F" stroke="#DAA520" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2 2 0 01-2-2V4h19v3a2 2 0 01-2 2H18"/><path d="M6 9a6 6 0 006 6 6 6 0 006-6"/><path d="M12 15v3"/><path d="M8 21h8"/><path d="M8 21v-3h8v3"/></svg> 전체 (${visited.length}곳)</button>`;
   cats.forEach(c => {
     const cnt = catCounts[c.id] || 0;
     if (cnt >= 2) {
@@ -1270,13 +1294,13 @@ function renderWcWinner(p) {
   const c = getCat(p.cat);
   const avg = getAvgRating(p);
   const photo = wcPhoto(p);
-  document.getElementById('wcRound').textContent = '🎉 우승!';
+  document.getElementById('wcRound').innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#F1C40F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> 우승!';
   document.getElementById('wcBody').innerHTML = `
     <div class="wc-winner">
       ${photo ? `<img src="${photo}">` : `<div class="wc-noimg" style="background:${c.color}">${getIcon(c.emoji,48)||c.emoji}</div>`}
-      <div style="font-size:18px;font-weight:700;margin-bottom:4px">🏆 ${p.name}</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px"><svg viewBox="0 0 24 24" width="16" height="16" fill="#F1C40F" stroke="#DAA520" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M6 9H4.5a2 2 0 01-2-2V4h19v3a2 2 0 01-2 2H18"/><path d="M6 9a6 6 0 006 6 6 6 0 006-6"/><path d="M12 15v3"/><path d="M8 21h8"/><path d="M8 21v-3h8v3"/></svg> ${p.name}</div>
       <div style="font-size:13px;color:var(--brown)">${c.name}</div>
-      ${avg ? `<div style="margin-top:4px;color:#F1C40F;font-size:14px">⭐ ${avg}</div>` : ''}
+      ${avg ? `<div style="margin-top:4px;color:#F1C40F;font-size:14px"><svg viewBox="0 0 24 24" width="14" height="14" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5" style="vertical-align:middle"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> ${avg}</div>` : ''}
       ${p.memo ? `<div style="margin-top:4px;font-size:12px;color:#999;font-style:italic">${p.memo}</div>` : ''}
       <button class="btn btn-dark btn-sm" onclick="startWorldCup()" style="margin-top:12px">다시 하기</button>
       <button class="btn btn-outline btn-sm" onclick="closeWorldCup()" style="margin-top:12px">닫기</button>
@@ -2504,7 +2528,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 139;
+const APP_VERSION = 140;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2535,15 +2559,132 @@ function openLab() {
   document.getElementById('labModal').classList.add('open');
   try{lucide.createIcons();}catch(e){}
 }
+
+// ── 코스 짜기 ──
+let _courseSel = [];
+let _coursePolyline = null;
+let _courseMarkers = [];
+
 function openLabCourse() {
   document.getElementById('labModal').classList.remove('open');
   if (places.length < 2) { toast('코스를 만들려면 장소가 2개 이상 필요해요'); return; }
-  toast('코스 짜기 기능 준비 중이에요');
+  _courseSel = [];
+  document.getElementById('coursePhase1').style.display = 'flex';
+  document.getElementById('coursePhase2').style.display = 'none';
+  document.getElementById('courseModal').classList.add('open');
+  renderCourseList();
+  try{lucide.createIcons();}catch(e){}
 }
+function closeCourseModal() {
+  document.getElementById('courseModal').classList.remove('open');
+  _courseSel = [];
+}
+function renderCourseList() {
+  const el = document.getElementById('coursePlaceList');
+  el.innerHTML = places.map(p => {
+    const c = getCat(p.cat);
+    const sel = _courseSel.some(s => s.id === p.id);
+    return `<div style="padding:8px 10px;background:${sel?'#EEF0FF':'white'};border:1.5px solid ${sel?'var(--accent)':'#e0ddd8'};border-radius:8px;cursor:pointer;display:flex;align-items:center;gap:8px;transition:all .1s" onclick="toggleCourseSel(${p.id})">
+      <div style="width:20px;height:20px;border-radius:4px;border:2px solid ${sel?'var(--accent)':'#ccc'};background:${sel?'var(--accent)':'white'};display:flex;align-items:center;justify-content:center;flex-shrink:0">${sel?'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>':''}</div>
+      <div style="width:18px;height:18px;background:${c.color};border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center">${svgSized(getIcon(c.emoji),10)||''}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div></div>
+      ${sel?`<span style="font-size:11px;color:var(--accent);font-weight:600">${_courseSel.findIndex(s=>s.id===p.id)+1}</span>`:''}
+    </div>`;
+  }).join('');
+  const btn = document.getElementById('courseMakeBtn');
+  btn.style.display = _courseSel.length >= 2 ? 'block' : 'none';
+  btn.textContent = `코스 만들기 (${_courseSel.length}곳)`;
+}
+function toggleCourseSel(id) {
+  const idx = _courseSel.findIndex(s => s.id === id);
+  if (idx >= 0) _courseSel.splice(idx, 1);
+  else { const p = places.find(x => x.id === id); if (p) _courseSel.push({...p}); }
+  renderCourseList();
+}
+function buildCourse() {
+  if (_courseSel.length < 2) { toast('2개 이상 선택해주세요'); return; }
+  document.getElementById('coursePhase1').style.display = 'none';
+  document.getElementById('coursePhase2').style.display = 'flex';
+  renderCourseRoute();
+}
+function renderCourseRoute() {
+  const el = document.getElementById('courseRouteList');
+  let totalKm = 0;
+  el.innerHTML = _courseSel.map((p, i) => {
+    const c = getCat(p.cat);
+    let distHtml = '';
+    if (i > 0) {
+      const prev = _courseSel[i-1];
+      const km = getDistanceKm(prev.lat, prev.lng, p.lat, p.lng);
+      totalKm += km;
+      distHtml = `<div style="text-align:center;font-size:11px;color:var(--accent);padding:2px 0">↓ ${km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m'}</div>`;
+    }
+    return `${distHtml}<div style="padding:8px 10px;background:white;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:8px">
+      <div style="width:22px;height:22px;background:var(--dark);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${i+1}</div>
+      <div style="width:16px;height:16px;background:${c.color};border-radius:50%;flex-shrink:0"></div>
+      <div style="flex:1;min-width:0;font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
+      <div style="display:flex;gap:2px;flex-shrink:0">
+        ${i > 0 ? `<button style="border:1px solid #ddd;background:#f5f5f5;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" onclick="courseMove(${i},-1)">▲</button>` : ''}
+        ${i < _courseSel.length-1 ? `<button style="border:1px solid #ddd;background:#f5f5f5;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px" onclick="courseMove(${i},1)">▼</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+  const mins = Math.round(totalKm / 4 * 60); // 도보 4km/h 기준
+  document.getElementById('courseSummary').innerHTML = `총 거리 <b>${totalKm >= 1 ? totalKm.toFixed(1)+'km' : Math.round(totalKm*1000)+'m'}</b> · 도보 약 <b>${mins}분</b>`;
+}
+function courseMove(i, dir) {
+  const j = i + dir;
+  if (j < 0 || j >= _courseSel.length) return;
+  [_courseSel[i], _courseSel[j]] = [_courseSel[j], _courseSel[i]];
+  renderCourseRoute();
+}
+function courseBack() {
+  document.getElementById('coursePhase1').style.display = 'flex';
+  document.getElementById('coursePhase2').style.display = 'none';
+}
+function courseShowMap() {
+  closeCourseModal();
+  // 기존 코스 마커/라인 제거
+  clearCourseOverlays();
+  // 번호 마커 생성
+  const positions = [];
+  _courseSel.forEach((p, i) => {
+    if (!p.lat || !p.lng) return;
+    const pos = new kakao.maps.LatLng(p.lat, p.lng);
+    positions.push(pos);
+    const c = getCat(p.cat);
+    const el = document.createElement('div');
+    el.innerHTML = `<div style="width:32px;height:32px;background:var(--dark);border:2.5px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);color:white;font-weight:700;font-size:14px;cursor:pointer">${i+1}</div>`;
+    const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:5 });
+    marker.setMap(map);
+    _courseMarkers.push(marker);
+  });
+  // 폴리라인
+  if (positions.length >= 2) {
+    _coursePolyline = new kakao.maps.Polyline({
+      path: positions, strokeWeight:4, strokeColor:'#5B7DB8', strokeOpacity:0.8, strokeStyle:'solid'
+    });
+    _coursePolyline.setMap(map);
+  }
+  // 범위 맞추기
+  if (positions.length > 0) {
+    const bounds = new kakao.maps.LatLngBounds();
+    positions.forEach(pos => bounds.extend(pos));
+    map.setBounds(bounds);
+  }
+  // 목록탭으로 전환
+  showTab('list');
+  toast(`코스 ${_courseSel.length}곳 표시 완료 · 지도를 확인하세요`);
+}
+function clearCourseOverlays() {
+  _courseMarkers.forEach(m => { try{m.setMap(null);}catch(e){} });
+  _courseMarkers = [];
+  if (_coursePolyline) { try{_coursePolyline.setMap(null);}catch(e){} _coursePolyline = null; }
+}
+
 function openLabDistrict() {
   document.getElementById('labModal').classList.remove('open');
   if (!places.length) { toast('저장된 장소가 없어요'); return; }
-  // 구별 분류 미리보기
   const distMap = {};
   places.forEach(p => {
     if (!p.addr) return;
@@ -2553,7 +2694,7 @@ function openLabDistrict() {
   const keys = Object.keys(distMap);
   if (!keys.length) { toast('주소에서 지역을 찾을 수 없어요'); return; }
   let msg = keys.sort().map(k => `${k}: ${distMap[k].length}곳`).join(' · ');
-  toast(`📍 ${msg}`);
+  toast(msg);
 }
 
 function checkUpdateBtn() {
