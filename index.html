@@ -227,7 +227,7 @@ header .lc svg{width:18px;height:18px}
   .map-expanded #myLocStatus{display:none!important}
   .map-expanded #listViewBtn{display:flex!important}
   /* 리스트보기 버튼 */
-  #listViewBtn{display:none;order:5;width:100%;justify-content:center;align-items:center;padding:12px 0;background:white;border-top:1px solid var(--warm);cursor:pointer;text-align:center}
+  #listViewBtn{display:none;order:5;width:100%;justify-content:center;align-items:center;padding:14px 0;background:white;border-top:1px solid var(--warm);border-bottom:1px solid var(--warm);cursor:pointer;text-align:center}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
@@ -270,7 +270,7 @@ header .lc svg{width:18px;height:18px}
         <div class="list-search-row">
           <div class="list-search-box collapsed" id="listSearchBox" onclick="expandListSearch()">
             <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();toggleListSearch()"></i>
-            <input id="listSearchInput" type="text" placeholder="Ex) 매장명, 초성 (ㅅㅂㅅ)" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
+            <input id="listSearchInput" type="text" placeholder="Ex) 매장명, 초성 (ㅅㅂㅅ)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0">
           </div>
           <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()"><i data-lucide="plus" class="lc lc-sm"></i> 추가</button>
         </div>
@@ -356,6 +356,11 @@ header .lc svg{width:18px;height:18px}
         <button class="btn btn-outline" id="updateBtn" style="width:100%;margin-bottom:12px;opacity:.5" onclick="forceUpdate()"> 최신 버전입니다</button>
 
         <hr class="div">
+        <div class="s-title"><i data-lucide="flask-conical" class="lc lc-sm"></i> 실험실</div>
+        <div class="s-desc">새로운 기능을 미리 체험해보세요</div>
+        <button class="btn btn-outline" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openLab()"><i data-lucide="beaker" class="lc lc-sm"></i> 실험실 입장</button>
+
+        <hr class="div">
         <div class="s-title"><i data-lucide="trash-2" class="lc lc-sm"></i> 초기화</div>
         <div class="s-desc">모든 장소를 삭제합니다</div>
         <button class="btn btn-outline" style="width:100%" onclick="clearAll()">전체 초기화</button>
@@ -386,6 +391,34 @@ header .lc svg{width:18px;height:18px}
     <h3>카테고리 변경</h3>
     <div id="modalCatList"></div>
     <button class="modal-close" onclick="closeModal()">닫기</button>
+  </div>
+</div>
+
+<!-- 실험실 모달 -->
+<div class="modal-overlay" id="labModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal" style="width:320px;max-height:85vh;padding:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+      <h3 style="margin:0;font-size:16px"><i data-lucide="flask-conical" class="lc lc-sm"></i> 실험실</h3>
+      <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="document.getElementById('labModal').classList.remove('open')">&times;</span>
+    </div>
+    <p style="font-size:12px;color:var(--brown);margin-bottom:14px;line-height:1.6">개발 중인 기능을 미리 체험해보세요.<br>불안정할 수 있어요.</p>
+    <div id="labList">
+      <div style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s" onclick="openLabCourse()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--warm)'">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="route" class="lc lc-sm" style="color:var(--accent)"></i> 코스 짜기</div>
+        <div style="font-size:12px;color:var(--brown);line-height:1.5">저장된 장소로 데이트 코스를 만들어보세요. 이동 경로와 예상 시간을 확인할 수 있어요.</div>
+        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FFF3E0;color:#E65100">준비 중</span></div>
+      </div>
+      <div style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s" onclick="openLabDistrict()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--warm)'">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="map" class="lc lc-sm" style="color:var(--accent)"></i> 지역별 탐색</div>
+        <div style="font-size:12px;color:var(--brown);line-height:1.5">서울 구별로 저장된 장소를 탐색하고 핫플레이스를 발견해보세요.</div>
+        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FFF3E0;color:#E65100">준비 중</span></div>
+      </div>
+      <div style="padding:12px;border:1px solid var(--warm);border-radius:10px;cursor:pointer;transition:all .15s" onclick="toast('곧 추가될 예정이에요')" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--warm)'">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="share-2" class="lc lc-sm" style="color:var(--accent)"></i> 코스 공유</div>
+        <div style="font-size:12px;color:var(--brown);line-height:1.5">만든 코스를 링크로 공유하세요.</div>
+        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E8F5E9;color:#2E7D32">예정</span></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -2087,29 +2120,34 @@ function clearNearbyMarkers() {
 }
 // 주변장소 버튼 이벤트 위임 (inline onclick 대신)
 document.addEventListener('DOMContentLoaded', () => {
-  const bar = document.getElementById('nearbyBar');
-  if (!bar) return;
-  bar.addEventListener('click', e => {
-    e.stopPropagation();
-    const btn = e.target.closest('.nb-btn');
-    if (!btn) return;
-    const type = btn.dataset.nb;
-    if (type === 'cat') searchNearby(btn.dataset.code, btn.dataset.label, btn, btn.dataset.icon);
-    else if (type === 'kw') searchNearbyKeyword(btn.dataset.kw, btn.dataset.label, btn, btn.dataset.icon, btn.dataset.filter||null);
+  document.querySelectorAll('.nb-btn').forEach(btn => {
+    const handler = e => {
+      e.stopPropagation();
+      e.preventDefault();
+      const type = btn.dataset.nb;
+      if (type === 'cat') searchNearby(btn.dataset.code, btn.dataset.label, btn, btn.dataset.icon);
+      else if (type === 'kw') searchNearbyKeyword(btn.dataset.kw, btn.dataset.label, btn, btn.dataset.icon, btn.dataset.filter||null);
+    };
+    btn.addEventListener('click', handler);
   });
+  // nearbyBar 전체 클릭이 지도로 전파 방지
+  const bar = document.getElementById('nearbyBar');
+  if (bar) bar.addEventListener('click', e => e.stopPropagation());
 });
-// iOS 하단바 고정 - visualViewport 활용
-if (window.visualViewport) {
-  const _fixTabs = () => {
-    if (window.innerWidth > 680) return;
-    const tabs = document.querySelector('.tabs');
-    if (!tabs) return;
-    const vv = window.visualViewport;
-    tabs.style.bottom = (window.innerHeight - vv.height - vv.offsetTop) + 'px';
-  };
-  window.visualViewport.addEventListener('resize', _fixTabs);
-  window.visualViewport.addEventListener('scroll', _fixTabs);
-}
+// iOS 하단바 고정 - 입력 포커스 시 하단바 숨겨서 키보드/자동완성에 의한 밀림 방지
+(function(){
+  if (window.innerWidth > 680) return;
+  const tabs = document.querySelector('.tabs');
+  if (!tabs) return;
+  document.addEventListener('focusin', e => {
+    if (e.target.matches('input,textarea,select')) tabs.style.display = 'none';
+  });
+  document.addEventListener('focusout', e => {
+    if (e.target.matches('input,textarea,select')) {
+      setTimeout(() => { tabs.style.display = ''; tabs.style.bottom = '0px'; }, 150);
+    }
+  });
+})();
 
 let deletingPlaceId = null;
 function delPlace(id) {
@@ -2465,7 +2503,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 137;
+const APP_VERSION = 138;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2489,6 +2527,32 @@ function easterTap() {
     wcConfetti();
     toast('안녕하세요 개발자입니다.');
   }
+}
+
+// ── 실험실 ──
+function openLab() {
+  document.getElementById('labModal').classList.add('open');
+  try{lucide.createIcons();}catch(e){}
+}
+function openLabCourse() {
+  document.getElementById('labModal').classList.remove('open');
+  if (places.length < 2) { toast('코스를 만들려면 장소가 2개 이상 필요해요'); return; }
+  toast('코스 짜기 기능 준비 중이에요');
+}
+function openLabDistrict() {
+  document.getElementById('labModal').classList.remove('open');
+  if (!places.length) { toast('저장된 장소가 없어요'); return; }
+  // 구별 분류 미리보기
+  const distMap = {};
+  places.forEach(p => {
+    if (!p.addr) return;
+    const m = p.addr.match(/(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[^\s]*\s+(\S+[구군시])/);
+    if (m) { const d = m[2]; if (!distMap[d]) distMap[d]=[]; distMap[d].push(p); }
+  });
+  const keys = Object.keys(distMap);
+  if (!keys.length) { toast('주소에서 지역을 찾을 수 없어요'); return; }
+  let msg = keys.sort().map(k => `${k}: ${distMap[k].length}곳`).join(' · ');
+  toast(`📍 ${msg}`);
 }
 
 function checkUpdateBtn() {
