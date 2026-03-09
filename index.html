@@ -1999,21 +1999,32 @@ const NEARBY_ICONS = {
   starbucks: '<img src="https://upload.wikimedia.org/wikipedia/en/thumb/d/d3/Starbucks_Corporation_Logo_2011.svg/200px-Starbucks_Corporation_Logo_2011.svg.png" width="18" height="18" style="border-radius:50%">',
   movie: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3B4C6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg>',
   conv: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg>',
-  cu: '<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/CU_BI_%282017%29.svg/200px-CU_BI_%282017%29.svg.png" width="18" height="12" style="object-fit:contain">',
-  gs25: '<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/GS25_bi_%282019%29.svg/200px-GS25_bi_%282019%29.svg.png" width="18" height="12" style="object-fit:contain">',
+  cu: '<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/CU_BI_%282017%29.svg/200px-CU_BI_%282017%29.svg.png" width="18" height="12" style="object-fit:contain">',
+  gs25: '<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/78/GS25_bi_%282019%29.svg/200px-GS25_bi_%282019%29.svg.png" width="18" height="12" style="object-fit:contain">',
   seven: '<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/7-eleven_logo.svg/200px-7-eleven_logo.svg.png" width="18" height="18" style="object-fit:contain">',
+  emart24: '<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fc/Emart_24_logo.svg/200px-Emart_24_logo.svg.png" width="18" height="12" style="object-fit:contain">',
   pharmacy: '<svg viewBox="0 0 24 24" width="18" height="18"><rect x="9" y="3" width="6" height="18" rx="1" fill="#E74C3C"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#E74C3C"/></svg>',
   toilet: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="6.5" cy="5" r="2.2" fill="#3498DB"/><polygon points="2.5,9 10.5,9 8.5,18 4.5,18" fill="#3498DB"/><line x1="12" y1="2" x2="12" y2="20" stroke="#ddd" stroke-width=".6"/><circle cx="17.5" cy="5" r="2.2" fill="#E74C3C"/><polygon points="13.5,18 21.5,18 17.5,9" fill="#E74C3C"/></svg>',
+  cgv: '<img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/a3/CGV_logo.svg/200px-CGV_logo.svg.png" width="18" height="10" style="object-fit:contain">',
+  megabox: '<svg viewBox="0 0 60 20" width="24" height="8"><rect width="60" height="20" rx="3" fill="#362996"/><text x="30" y="14.5" text-anchor="middle" fill="white" font-size="10" font-weight="bold" font-family="Arial,sans-serif">MEGABOX</text></svg>',
+  lottecinema: '<svg viewBox="0 0 46 20" width="22" height="10"><rect width="46" height="20" rx="3" fill="#E50012"/><text x="23" y="14" text-anchor="middle" fill="white" font-size="8" font-weight="bold" font-family="Arial,sans-serif">LOTTE</text></svg>',
 };
 function getConvIcon(name) {
   if (/CU|씨유/.test(name)) return NEARBY_ICONS.cu;
   if (/GS25|지에스/.test(name)) return NEARBY_ICONS.gs25;
   if (/세븐일레븐|7-Eleven|7eleven/i.test(name)) return NEARBY_ICONS.seven;
+  if (/이마트24|emart24/i.test(name)) return NEARBY_ICONS.emart24;
   return NEARBY_ICONS.conv;
+}
+function getMovieIcon(name) {
+  if (/CGV/i.test(name)) return NEARBY_ICONS.cgv;
+  if (/메가박스|MEGABOX/i.test(name)) return NEARBY_ICONS.megabox;
+  if (/롯데시네마|LOTTE CINEMA/i.test(name)) return NEARBY_ICONS.lottecinema;
+  return NEARBY_ICONS.movie;
 }
 function renderNearbyResults(docs, iconKey) {
   docs.forEach(d => {
-    const svgIcon = iconKey === 'conv' ? getConvIcon(d.place_name) : (NEARBY_ICONS[iconKey] || '');
+    const svgIcon = iconKey === 'conv' ? getConvIcon(d.place_name) : iconKey === 'movie' ? getMovieIcon(d.place_name) : (NEARBY_ICONS[iconKey] || '');
     const pos = new kakao.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
     const dist = d.distance ? (d.distance >= 1000 ? (d.distance/1000).toFixed(1)+'km' : d.distance+'m') : '';
     const el = document.createElement('div');
@@ -2419,7 +2430,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 126;
+const APP_VERSION = 127;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
