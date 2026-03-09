@@ -223,7 +223,7 @@ header .lc svg{width:18px;height:18px}
   .fb{flex-shrink:0}
   #myLocStatus{order:5;width:100%}
   /* 카드 리스트 */
-  .place-list{order:6;overflow-y:auto;width:100%;max-height:20vh;flex-shrink:0;-webkit-overflow-scrolling:touch;scroll-snap-type:y mandatory}
+  .place-list{order:6;overflow-y:auto;width:100%;max-height:20vh;flex-shrink:0;-webkit-overflow-scrolling:touch;scroll-snap-type:y proximity;scroll-padding-top:2px;scroll-padding-bottom:2px}
   .pi-wrap{scroll-snap-align:start;scroll-margin-top:2px}
   /* 설정탭 */
   #tab-cfg{order:6;width:100%;flex:1;overflow-y:auto}
@@ -232,7 +232,7 @@ header .lc svg{width:18px;height:18px}
   .map-expanded #myLocStatus{display:none!important}
   .map-expanded #listViewBtn{display:flex!important}
   /* 리스트보기 버튼 */
-  #listViewBtn{display:none;order:5;width:100%;justify-content:center;align-items:center;padding:10px 0 12px;background:white;border-top:1px solid var(--warm);border-bottom:1px solid var(--warm);cursor:pointer;text-align:center;margin-top:-2px}
+  #listViewBtn{display:none;order:5;width:100%;justify-content:center;align-items:center;padding:8px 0;background:white;border-top:1px solid var(--warm);border-bottom:1px solid var(--warm);cursor:pointer;text-align:center;margin-top:-2px}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
@@ -2532,7 +2532,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 153;
+const APP_VERSION = 154;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2650,62 +2650,70 @@ function courseBack() {
 function courseShowMap() {
   closeCourseModal();
   clearCourseOverlays();
-  // 1) 먼저 탭 전환 + 지도 확장
   showTab('list');
   expandMap();
   toast(`코스 ${_courseSel.length}곳 표시 중...`);
-  // 2) relayout 완료 후 오버레이 그리기 + bounds 맞추기
   setTimeout(() => {
     if (map) map.relayout();
     setTimeout(() => {
-      const positions = [];
-      const colors = ['#FF6B6B','#5B7DB8','#2D8659','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB'];
-      _courseSel.forEach((p, i) => {
-        if (!p.lat || !p.lng) return;
-        const pos = new kakao.maps.LatLng(p.lat, p.lng);
-        positions.push(pos);
-        const color = colors[i % colors.length];
-        const isFirst = i === 0, isLast = i === _courseSel.length - 1;
-        const label = isFirst ? '출발' : isLast ? '도착' : (i+1);
-        const el = document.createElement('div');
-        el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
-          <div style="background:white;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;color:${color};border:1.5px solid ${color};margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15)">${p.name}</div>
-          <div style="width:${isFirst||isLast?36:30}px;height:${isFirst||isLast?36:30}px;background:${color};border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);color:white;font-weight:700;font-size:${isFirst||isLast?11:13}px">${label}</div>
-        </div>`;
-        const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:5+i });
-        marker.setMap(map);
-        _courseMarkers.push(marker);
-      });
-      // 구간별 폴리라인 + 화살표
-      for (let i = 0; i < positions.length - 1; i++) {
-        const from = positions[i], to = positions[i+1];
-        const color = colors[i % colors.length];
-        const line = new kakao.maps.Polyline({
-          path:[from, to], strokeWeight:4, strokeColor:color, strokeOpacity:0.9, strokeStyle:'shortdash'
+      try {
+        const positions = [];
+        const colors = ['#FF6B6B','#5B7DB8','#2D8659','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB'];
+        _courseSel.forEach((p, i) => {
+          if (!p.lat || !p.lng) return;
+          const pos = new kakao.maps.LatLng(p.lat, p.lng);
+          positions.push(pos);
+          const color = colors[i % colors.length];
+          const isFirst = i === 0, isLast = i === _courseSel.length - 1;
+          const label = isFirst ? '출발' : isLast ? '도착' : (i+1);
+          const el = document.createElement('div');
+          el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
+            <div style="background:white;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;color:${color};border:1.5px solid ${color};margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15)">${p.name}</div>
+            <div style="width:${isFirst||isLast?36:30}px;height:${isFirst||isLast?36:30}px;background:${color};border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);color:white;font-weight:700;font-size:${isFirst||isLast?11:13}px">${label}</div>
+          </div>`;
+          const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:5+i });
+          marker.setMap(map);
+          _courseMarkers.push(marker);
         });
-        line.setMap(map);
-        _courseLines.push(line);
-        // 중간 화살표
-        const midLat = (from.getLat() + to.getLat()) / 2;
-        const midLng = (from.getLng() + to.getLng()) / 2;
-        const angle = Math.atan2(to.getLng() - from.getLng(), to.getLat() - from.getLat()) * 180 / Math.PI;
-        const arrowEl = document.createElement('div');
-        arrowEl.innerHTML = `<div style="transform:rotate(${angle-90}deg);color:${color};font-size:20px;text-shadow:0 0 4px white,0 0 4px white;line-height:1">➤</div>`;
-        const arrow = new kakao.maps.CustomOverlay({
-          position: new kakao.maps.LatLng(midLat, midLng),
-          content: arrowEl, yAnchor:0.5, xAnchor:0.5, zIndex:4
-        });
-        arrow.setMap(map);
-        _courseMarkers.push(arrow);
+        // 전체 경로를 하나의 폴리라인으로 (setMap 별도 호출 필수)
+        if (positions.length >= 2) {
+          const line = new kakao.maps.Polyline({
+            path: positions,
+            strokeWeight: 5,
+            strokeColor: '#FF6B6B',
+            strokeOpacity: 1,
+            strokeStyle: 'solid'
+          });
+          line.setMap(map);
+          _courseLines.push(line);
+          // 구간별 화살표
+          for (let i = 0; i < positions.length - 1; i++) {
+            const from = positions[i], to = positions[i+1];
+            const midLat = (from.getLat() + to.getLat()) / 2;
+            const midLng = (from.getLng() + to.getLng()) / 2;
+            const angle = Math.atan2(to.getLng() - from.getLng(), to.getLat() - from.getLat()) * 180 / Math.PI;
+            const arrowEl = document.createElement('div');
+            arrowEl.innerHTML = `<div style="transform:rotate(${angle-90}deg);color:#FF6B6B;font-size:22px;text-shadow:0 0 3px white,0 0 3px white;line-height:1">➤</div>`;
+            const arrow = new kakao.maps.CustomOverlay({
+              position: new kakao.maps.LatLng(midLat, midLng),
+              content: arrowEl, yAnchor:0.5, xAnchor:0.5, zIndex:4
+            });
+            arrow.setMap(map);
+            _courseMarkers.push(arrow);
+          }
+        }
+        // bounds 맞추기
+        if (positions.length > 0) {
+          const bounds = new kakao.maps.LatLngBounds();
+          positions.forEach(pos => bounds.extend(pos));
+          map.setBounds(bounds, 80, 80, 80, 80);
+        }
+        toast(`코스 ${_courseSel.length}곳 표시 · 지도를 확인하세요`);
+      } catch(e) {
+        console.error('courseShowMap error:', e);
+        toast('경로 표시 오류: ' + e.message);
       }
-      // bounds 맞추기 (줌아웃)
-      if (positions.length > 0) {
-        const bounds = new kakao.maps.LatLngBounds();
-        positions.forEach(pos => bounds.extend(pos));
-        map.setBounds(bounds, 80, 80, 80, 80);
-      }
-      toast(`코스 ${_courseSel.length}곳 표시 · 지도를 확인하세요`);
-    }, 200);
+    }, 300);
   }, 600);
 }
 function clearCourseOverlays() {
