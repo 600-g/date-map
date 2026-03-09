@@ -416,7 +416,7 @@ header .lc svg{width:18px;height:18px}
       <div style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s" onclick="openLabDistrict()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--warm)'">
         <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="map" class="lc lc-sm" style="color:var(--accent)"></i> 지역별 탐색</div>
         <div style="font-size:12px;color:var(--brown);line-height:1.5">서울 구별로 저장된 장소를 탐색하고 핫플레이스를 발견해보세요.</div>
-        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FFF3E0;color:#E65100">준비 중</span></div>
+        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">베타</span></div>
       </div>
       <div style="padding:12px;border:1px solid var(--warm);border-radius:10px;cursor:pointer;transition:all .15s" onclick="toast('곧 추가될 예정이에요')" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--warm)'">
         <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="share-2" class="lc lc-sm" style="color:var(--accent)"></i> 코스 공유</div>
@@ -2532,7 +2532,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 157;
+const APP_VERSION = 158;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2773,19 +2773,120 @@ function clearCourseOverlays() {
   if (ctrl) ctrl.remove();
 }
 
+// 서울 25개 구 중심 좌표
+const SEOUL_GU = {
+  '강남구':{lat:37.5172,lng:127.0473},'강동구':{lat:37.5301,lng:127.1238},'강북구':{lat:37.6396,lng:127.0255},
+  '강서구':{lat:37.5510,lng:126.8495},'관악구':{lat:37.4784,lng:126.9516},'광진구':{lat:37.5385,lng:127.0823},
+  '구로구':{lat:37.4954,lng:126.8874},'금천구':{lat:37.4569,lng:126.8955},'노원구':{lat:37.6542,lng:127.0568},
+  '도봉구':{lat:37.6688,lng:127.0471},'동대문구':{lat:37.5744,lng:127.0400},'동작구':{lat:37.5124,lng:126.9393},
+  '마포구':{lat:37.5663,lng:126.9014},'서대문구':{lat:37.5791,lng:126.9368},'서초구':{lat:37.4837,lng:127.0324},
+  '성동구':{lat:37.5634,lng:127.0371},'성북구':{lat:37.5894,lng:127.0167},'송파구':{lat:37.5145,lng:127.1060},
+  '양천구':{lat:37.5170,lng:126.8665},'영등포구':{lat:37.5264,lng:126.8963},'용산구':{lat:37.5326,lng:126.9909},
+  '은평구':{lat:37.6027,lng:126.9291},'종로구':{lat:37.5735,lng:126.9790},'중구':{lat:37.5641,lng:126.9979},
+  '중랑구':{lat:37.6066,lng:127.0927}
+};
+let _districtOverlays = [];
+
 function openLabDistrict() {
   document.getElementById('labModal').classList.remove('open');
-  if (!places.length) { toast('저장된 장소가 없어요'); return; }
+  // 구별 장소 집계
   const distMap = {};
   places.forEach(p => {
     if (!p.addr) return;
-    const m = p.addr.match(/(서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)[^\s]*\s+(\S+[구군시])/);
-    if (m) { const d = m[2]; if (!distMap[d]) distMap[d]=[]; distMap[d].push(p); }
+    const m = p.addr.match(/서울[^\s]*\s+(\S+구)/);
+    if (m) { const d = m[1]; if (!distMap[d]) distMap[d]=[]; distMap[d].push(p); }
   });
-  const keys = Object.keys(distMap);
-  if (!keys.length) { toast('주소에서 지역을 찾을 수 없어요'); return; }
-  let msg = keys.sort().map(k => `${k}: ${distMap[k].length}곳`).join(' · ');
-  toast(msg);
+  // 지도 표시
+  showTab('list');
+  expandMap();
+  clearDistrictOverlays();
+  setTimeout(() => {
+    if (map) map.relayout();
+    setTimeout(() => {
+      // 서울 전체 보이게 줌
+      const seoulCenter = new kakao.maps.LatLng(37.5665, 126.9780);
+      map.setCenter(seoulCenter);
+      map.setLevel(8);
+      // 각 구 오버레이
+      Object.entries(SEOUL_GU).forEach(([name, coord]) => {
+        const cnt = distMap[name] ? distMap[name].length : 0;
+        const hasPlaces = cnt > 0;
+        const el = document.createElement('div');
+        el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;cursor:${hasPlaces?'pointer':'default'}">
+          <div style="background:${hasPlaces?'var(--accent)':'#ccc'};color:white;border-radius:12px;padding:4px 10px;font-size:11px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,.2);white-space:nowrap;border:2px solid white">
+            ${name.replace('구','')} ${cnt?'<span style="background:white;color:var(--accent);border-radius:8px;padding:0 5px;margin-left:3px;font-size:10px">'+cnt+'</span>':''}
+          </div>
+          ${hasPlaces?'<div style="width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:5px solid var(--accent);margin-top:-1px"></div>':''}
+        </div>`;
+        if (hasPlaces) {
+          el.onclick = () => _showDistrictPlaces(name, distMap[name]);
+        }
+        const overlay = new kakao.maps.CustomOverlay({
+          position: new kakao.maps.LatLng(coord.lat, coord.lng),
+          content: el, yAnchor: 1, zIndex: hasPlaces ? 3 : 1
+        });
+        overlay.setMap(map);
+        _districtOverlays.push(overlay);
+      });
+      // 컨트롤 버튼
+      _showDistrictControls();
+    }, 200);
+  }, 500);
+}
+function _showDistrictPlaces(guName, guPlaces) {
+  // 해당 구 줌인 + 장소 마커 표시
+  clearDistrictOverlays();
+  const coord = SEOUL_GU[guName];
+  map.setCenter(new kakao.maps.LatLng(coord.lat, coord.lng));
+  map.setLevel(5);
+  setTimeout(() => {
+    guPlaces.forEach((p, i) => {
+      if (!p.lat || !p.lng) return;
+      const c = getCat(p.cat);
+      const el = document.createElement('div');
+      el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;cursor:pointer" onclick="showPlaceOnMap(${p.id})">
+        <div style="background:white;border-radius:10px;padding:3px 8px;font-size:10px;font-weight:600;color:#333;border:1.5px solid ${c.color};white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.12)">${p.name}</div>
+        <div style="width:24px;height:24px;background:${c.color};border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.25);margin-top:2px">
+          <span style="font-size:11px">${c.emoji||''}</span>
+        </div>
+      </div>`;
+      const marker = new kakao.maps.CustomOverlay({
+        position: new kakao.maps.LatLng(p.lat, p.lng),
+        content: el, yAnchor: 1, zIndex: 5+i
+      });
+      marker.setMap(map);
+      _districtOverlays.push(marker);
+    });
+    // 뒤로가기 + 지우기 버튼
+    _showDistrictControls(guName);
+  }, 300);
+}
+function _showDistrictControls(guName) {
+  let ctrl = document.getElementById('distCtrl');
+  if (ctrl) ctrl.remove();
+  ctrl = document.createElement('div');
+  ctrl.id = 'distCtrl';
+  ctrl.style.cssText = 'position:absolute;top:10px;left:10px;z-index:100;display:flex;flex-direction:column;gap:6px';
+  if (guName) {
+    // 구 이름 표시 + 뒤로
+    const backBtn = document.createElement('button');
+    backBtn.innerHTML = `← ${guName}`;
+    backBtn.style.cssText = 'background:var(--accent);border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:white;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
+    backBtn.onclick = () => { clearDistrictOverlays(); openLabDistrict(); };
+    ctrl.appendChild(backBtn);
+  }
+  const clearBtn = document.createElement('button');
+  clearBtn.textContent = '✕ 닫기';
+  clearBtn.style.cssText = 'background:white;border:1.5px solid #e0ddd8;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#333;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
+  clearBtn.onclick = () => { clearDistrictOverlays(); collapseMap(); };
+  ctrl.appendChild(clearBtn);
+  document.getElementById('mapWrap').appendChild(ctrl);
+}
+function clearDistrictOverlays() {
+  _districtOverlays.forEach(m => { try{m.setMap(null);}catch(e){} });
+  _districtOverlays = [];
+  const ctrl = document.getElementById('distCtrl');
+  if (ctrl) ctrl.remove();
 }
 
 function checkUpdateBtn() {
