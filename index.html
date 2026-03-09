@@ -203,16 +203,30 @@ header .lc svg{width:18px;height:18px}
   .main{flex-direction:column}
   .panel{display:contents;width:100%;border-right:none}
   #tab-list.active{display:contents}
-  .tabs{order:1;width:100%;flex-shrink:0}
-  .list-top-bar{order:2;width:100%}
-  #addPanel{order:3;width:100%;max-height:40vh}
-  #mapWrap{order:4;flex:1;min-height:0}
+  /* 탭 → 하단 네비바 */
+  .tabs{order:99;width:100%;flex-shrink:0;border-bottom:none;border-top:1px solid var(--warm);background:white;padding-bottom:env(safe-area-inset-bottom,0px)}
+  .tab{border-bottom:none;border-top:2.5px solid transparent;padding:10px 2px 8px}
+  .tab.active{border-bottom:none;border-top-color:var(--accent)}
+  /* 검색바 상단 */
+  .list-top-bar{order:1;width:100%}
+  #addPanel{order:2;width:100%;max-height:40vh}
+  /* 지도 중간 */
+  #mapWrap{order:3;flex:1;min-height:0;transition:flex .3s}
   #map{height:100%}
   .my-loc-btn{top:10px;right:10px;width:38px;height:38px}
-  .filter-bar{order:5;width:100%}
-  #myLocStatus{order:6;width:100%}
-  .place-list{order:7;overflow-y:auto;width:100%;max-height:28vh;flex-shrink:0}
-  #tab-cfg{order:8;width:100%;flex:1;overflow-y:auto}
+  /* 필터바 */
+  .filter-bar{order:4;width:100%}
+  #myLocStatus{order:5;width:100%}
+  /* 카드 리스트 */
+  .place-list{order:6;overflow-y:auto;width:100%;max-height:28vh;flex-shrink:0;transition:max-height .3s,opacity .3s}
+  /* 설정탭 */
+  #tab-cfg{order:7;width:100%;flex:1;overflow-y:auto}
+  /* 지도 확대 모드 */
+  .map-expanded .place-list{max-height:0;opacity:0;overflow:hidden;padding:0}
+  .map-expanded #myLocStatus{display:none!important}
+  .map-expanded #listViewBtn{display:flex!important}
+  /* 리스트보기 버튼 */
+  #listViewBtn{display:none;order:5;width:100%;justify-content:center;padding:8px 0;background:white;border-top:1px solid var(--warm);cursor:pointer}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
@@ -226,6 +240,7 @@ header .lc svg{width:18px;height:18px}
 @supports(height:100dvh){
   @media(max-width:680px){
     .place-list{max-height:28dvh}
+    .map-expanded .place-list{max-height:0}
   }
 }
 </style>
@@ -301,6 +316,9 @@ header .lc svg{width:18px;height:18px}
       <div id="myLocStatus" style="display:none;padding:6px 12px;font-size:11px;color:var(--green);background:#e8f5e9;border-bottom:1px solid var(--warm);display:flex;align-items:center;gap:6px"></div>
       <div class="place-list" id="placeList">
         <div class="empty"><div class="ico"><i data-lucide="map-pin" class="lc"></i></div><p>아직 장소가 없어요<br>위의 추가 버튼을 눌러보세요</p></div>
+      </div>
+      <div id="listViewBtn" onclick="collapseMap()">
+        <span style="font-size:13px;font-weight:550;color:var(--dark);display:flex;align-items:center;gap:4px"><i data-lucide="list" class="lc lc-sm"></i> 리스트 보기</span>
       </div>
     </div>
 
@@ -605,7 +623,7 @@ function initMap() {
   map = new kakao.maps.Map(document.getElementById('map'), {
     center: new kakao.maps.LatLng(initLat, initLng), level: initLevel
   });
-  kakao.maps.event.addListener(map, 'click', () => closeAllIw());
+  kakao.maps.event.addListener(map, 'click', () => { closeAllIw(); expandMap(); });
   renderAll();
   // 앱 시작 시: savedLoc으로 즉시 마커+거리 표시
   if (savedLoc) {
@@ -626,6 +644,18 @@ function initMap() {
   handleLocClick();
 }
 
+// ── 지도 확대/축소 (모바일) ──
+function expandMap() {
+  if (window.innerWidth > 680) return;
+  document.querySelector('.main').classList.add('map-expanded');
+  setTimeout(() => { if(map) map.relayout(); }, 350);
+}
+function collapseMap() {
+  document.querySelector('.main').classList.remove('map-expanded');
+  setTimeout(() => { if(map) map.relayout(); }, 350);
+  try{lucide.createIcons();}catch(e){}
+}
+
 // ── 탭 ──
 function showTab(name) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -634,7 +664,7 @@ function showTab(name) {
   document.querySelectorAll('.tab')[['list','cfg'].indexOf(name)].classList.add('active');
   const mw = document.getElementById('mapWrap');
   if (name==='cfg') { mw.style.display='none'; catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; document.getElementById('appVer').textContent = APP_VERSION; try{lucide.createIcons();}catch(e){} }
-  else { mw.style.display=''; }
+  else { mw.style.display=''; collapseMap(); }
   if (name==='list') populateCatSelect();
 }
 
@@ -2344,7 +2374,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 111;
+const APP_VERSION = 112;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
