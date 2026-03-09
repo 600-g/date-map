@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 175;
+const APP_VERSION = 176;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2681,9 +2681,14 @@ function renderCourseRoute() {
 function openNaverRoute(fromIdx, toIdx) {
   const sp = _courseSel[fromIdx], ep = _courseSel[toIdx];
   if (!sp || !ep) return;
-  // 네이버 지도 웹 경로 (매장명 기반 검색으로 열림)
-  const webUrl = `https://map.naver.com/v5/directions/${encodeURIComponent(sp.name)},,${sp.lat},${sp.lng}/${encodeURIComponent(ep.name)},,${ep.lat},${ep.lng}/-/transit?c=${ep.lat},${ep.lng},15,0,0,0,dh`;
-  window.open(webUrl, '_blank');
+  // nmap:// 앱 (매장명 라벨 + 좌표 기반)
+  const appUrl = `nmap://route/public?slat=${sp.lat}&slng=${sp.lng}&sname=${encodeURIComponent(sp.name)}&dlat=${ep.lat}&dlng=${ep.lng}&dname=${encodeURIComponent(ep.name)}&appname=com.datemap`;
+  // 웹 폴백 (좌표 기반 경로)
+  const webUrl = `https://map.naver.com/v5/directions/${sp.lng},${sp.lat},${encodeURIComponent(sp.name)}/${ep.lng},${ep.lat},${encodeURIComponent(ep.name)}/-/transit`;
+  const a = document.createElement('a');
+  a.href = appUrl;
+  a.click();
+  setTimeout(() => { window.location.href = webUrl; }, 1500);
 }
 function courseMove(i, dir) {
   const j = i + dir;
