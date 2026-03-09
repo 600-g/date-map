@@ -205,7 +205,7 @@ header .lc svg{width:18px;height:18px}
   #tab-list.active{display:contents}
   /* 탭 → 하단 네비바 (노치 직전) */
   .tabs{position:fixed;bottom:0;left:0;right:0;z-index:100;border-bottom:none;border-top:none;background:var(--dark);padding-bottom:env(safe-area-inset-bottom,0px)}
-  .main{padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))}
+  .main{padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))}
   .tab{border-bottom:none;border-top:2px solid transparent;padding:3px 2px 1px;font-size:11px;color:rgba(255,255,255,.6)}
   .tab.active{border-bottom:none;border-top-color:var(--accent);color:white}
   /* 검색바 상단 */
@@ -227,7 +227,7 @@ header .lc svg{width:18px;height:18px}
   .map-expanded #myLocStatus{display:none!important}
   .map-expanded #listViewBtn{display:flex!important}
   /* 리스트보기 버튼 */
-  #listViewBtn{display:none;order:5;width:100%;justify-content:center;align-items:center;padding:8px 0;background:white;border-top:1px solid var(--warm);cursor:pointer;text-align:center}
+  #listViewBtn{display:none;order:5;width:100%;justify-content:center;align-items:center;padding:5px 0 7px;background:white;border-top:1px solid var(--warm);cursor:pointer;text-align:center}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
@@ -2430,7 +2430,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 131;
+const APP_VERSION = 132;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
