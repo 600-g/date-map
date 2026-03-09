@@ -484,7 +484,7 @@ header .lc svg{width:18px;height:18px}
 <div class="modal-overlay" id="wcModal" onclick="if(event.target===this)closeWorldCup()">
   <div class="modal" style="width:340px;max-height:90vh;padding:16px;overflow-y:auto">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-      <h3 style="margin:0;font-size:15px" id="wcTitle"><svg viewBox="0 0 24 24" width="15" height="15" fill="#F1C40F" stroke="#DAA520" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M6 9H4.5a2 2 0 01-2-2V4h19v3a2 2 0 01-2 2H18"/><path d="M6 9a6 6 0 006 6 6 6 0 006-6"/><path d="M12 15v3"/><path d="M8 21h8"/><path d="M8 21v-3h8v3"/></svg> 장소 월드컵</h3>
+      <h3 style="margin:0;font-size:15px" id="wcTitle">🏆 장소 월드컵</h3>
       <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="closeWorldCup()">&times;</span>
     </div>
     <div id="wcRound" style="text-align:center;font-size:13px;color:var(--brown);margin-bottom:10px"></div>
@@ -1179,7 +1179,7 @@ function startWorldCup() {
   const catCounts = {};
   visited.forEach(p => { catCounts[p.cat] = (catCounts[p.cat]||0) + 1; });
   let html = `<div style="display:flex;flex-direction:column;gap:6px">`;
-  html += `<button class="btn btn-dark btn-sm" style="width:100%;padding:10px;display:flex;align-items:center;justify-content:center;gap:4px" onclick="launchWc('all')"><svg viewBox="0 0 24 24" width="14" height="14" fill="#F1C40F" stroke="#DAA520" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9H4.5a2 2 0 01-2-2V4h19v3a2 2 0 01-2 2H18"/><path d="M6 9a6 6 0 006 6 6 6 0 006-6"/><path d="M12 15v3"/><path d="M8 21h8"/><path d="M8 21v-3h8v3"/></svg> 전체 (${visited.length}곳)</button>`;
+  html += `<button class="btn btn-dark btn-sm" style="width:100%;padding:10px" onclick="launchWc('all')">🏆 전체 (${visited.length}곳)</button>`;
   cats.forEach(c => {
     const cnt = catCounts[c.id] || 0;
     if (cnt >= 2) {
@@ -1298,13 +1298,13 @@ function renderWcWinner(p) {
   const c = getCat(p.cat);
   const avg = getAvgRating(p);
   const photo = wcPhoto(p);
-  document.getElementById('wcRound').innerHTML = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#F1C40F" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> 우승!';
+  document.getElementById('wcRound').textContent = '🎉 우승!';
   document.getElementById('wcBody').innerHTML = `
     <div class="wc-winner">
       ${photo ? `<img src="${photo}">` : `<div class="wc-noimg" style="background:${c.color}">${getIcon(c.emoji,48)||c.emoji}</div>`}
-      <div style="font-size:18px;font-weight:700;margin-bottom:4px"><svg viewBox="0 0 24 24" width="16" height="16" fill="#F1C40F" stroke="#DAA520" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M6 9H4.5a2 2 0 01-2-2V4h19v3a2 2 0 01-2 2H18"/><path d="M6 9a6 6 0 006 6 6 6 0 006-6"/><path d="M12 15v3"/><path d="M8 21h8"/><path d="M8 21v-3h8v3"/></svg> ${p.name}</div>
+      <div style="font-size:18px;font-weight:700;margin-bottom:4px">🏆 ${p.name}</div>
       <div style="font-size:13px;color:var(--brown)">${c.name}</div>
-      ${avg ? `<div style="margin-top:4px;color:#F1C40F;font-size:14px"><svg viewBox="0 0 24 24" width="14" height="14" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5" style="vertical-align:middle"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 21 12 17.27 5.82 21 7 14.14l-5-4.87 6.91-1.01L12 2z"/></svg> ${avg}</div>` : ''}
+      ${avg ? `<div style="margin-top:4px;color:#F1C40F;font-size:14px">⭐ ${avg}</div>` : ''}
       ${p.memo ? `<div style="margin-top:4px;font-size:12px;color:#999;font-style:italic">${p.memo}</div>` : ''}
       <button class="btn btn-dark btn-sm" onclick="startWorldCup()" style="margin-top:12px">다시 하기</button>
       <button class="btn btn-outline btn-sm" onclick="closeWorldCup()" style="margin-top:12px">닫기</button>
@@ -2532,7 +2532,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 151;
+const APP_VERSION = 152;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2692,16 +2692,19 @@ function courseShowMap() {
     arrow.setMap(map);
     _courseMarkers.push(arrow);
   }
-  // 목록탭 전환 후 지도 relayout 완료된 뒤 범위 맞추기
+  // 목록탭 전환 후 지도 확장 → relayout → 범위 맞추기
   showTab('list');
+  expandMap();
   setTimeout(() => {
     if (map) map.relayout();
-    if (positions.length > 0) {
-      const bounds = new kakao.maps.LatLngBounds();
-      positions.forEach(pos => bounds.extend(pos));
-      map.setBounds(bounds, 80, 80, 80, 80); // 여백 80px
-    }
-  }, 400);
+    setTimeout(() => {
+      if (positions.length > 0) {
+        const bounds = new kakao.maps.LatLngBounds();
+        positions.forEach(pos => bounds.extend(pos));
+        map.setBounds(bounds, 60, 60, 60, 60);
+      }
+    }, 100);
+  }, 500);
   toast(`코스 ${_courseSel.length}곳 표시 · 지도를 확인하세요`);
 }
 function clearCourseOverlays() {
