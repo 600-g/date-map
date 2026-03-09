@@ -230,7 +230,7 @@ header .lc svg{width:18px;height:18px}
   /* 지도 확대 모드 */
   .map-expanded .place-list{max-height:0;overflow:hidden;padding:0}
   .map-expanded #myLocStatus{display:none!important}
-  #listViewBtn{display:flex!important;position:fixed;bottom:calc(42px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:9998;justify-content:center;align-items:center;padding:8px 18px;background:white;border-radius:20px;cursor:pointer;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.08)}
+  #listViewBtn{display:flex!important;position:fixed;bottom:calc(80px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:9998;justify-content:center;align-items:center;padding:8px 18px;background:white;border-radius:20px;cursor:pointer;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.08)}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 165;
+const APP_VERSION = 166;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2821,7 +2821,7 @@ let _districtOverlays = [];
 let _districtPolygons = [];
 let _seoulGeoCache = null;
 const SEOUL_GEO_URL = 'https://raw.githubusercontent.com/southkorea/seoul-maps/master/kostat/2013/json/seoul_municipalities_geo_simple.json';
-const GU_COLORS = ['#FF6B6B','#5B7DB8','#2D8659','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB','#F39C12','#8E44AD','#27AE60','#C0392B','#2980B9','#D35400','#16A085','#7F8C8D','#E91E63','#00BCD4','#FF9800','#4CAF50','#673AB7','#009688','#795548','#607D8B','#CDDC39'];
+const GU_COLORS = ['#FFB3B3','#A8C4E0','#A3D9B1','#C9A8E8','#F5C28E','#8ED8C8','#F2A6A6','#8EC5E8','#F5D08E','#B89CD8','#8ED8A0','#E8A8A8','#8EB5D8','#E8B88E','#8ED8C0','#B8C8D0','#F0A0B8','#80D0E0','#F5C078','#A0D0A0','#B098D8','#80C8B8','#C0A898','#A0B0B8','#D8E088'];
 
 async function _loadSeoulGeo() {
   if (_seoulGeoCache) return _seoulGeoCache;
@@ -2868,11 +2868,11 @@ async function openLabDistrict() {
           const coords = f.geometry.coordinates[0].map(c => new kakao.maps.LatLng(c[1], c[0]));
           const polygon = new kakao.maps.Polygon({
             path: coords,
-            strokeWeight: 2,
-            strokeColor: color,
-            strokeOpacity: 0.8,
+            strokeWeight: 2.5,
+            strokeColor: '#666',
+            strokeOpacity: 1,
             fillColor: color,
-            fillOpacity: hasPlaces ? 0.35 : 0.12
+            fillOpacity: hasPlaces ? 0.7 : 0.4
           });
           polygon.setMap(map);
           _districtPolygons.push(polygon);
@@ -2883,10 +2883,10 @@ async function openLabDistrict() {
           });
           // 호버 효과
           kakao.maps.event.addListener(polygon, 'mouseover', () => {
-            polygon.setOptions({ fillOpacity: hasPlaces ? 0.55 : 0.25 });
+            polygon.setOptions({ fillOpacity: hasPlaces ? 0.85 : 0.55, strokeWeight: 3.5 });
           });
           kakao.maps.event.addListener(polygon, 'mouseout', () => {
-            polygon.setOptions({ fillOpacity: hasPlaces ? 0.35 : 0.12 });
+            polygon.setOptions({ fillOpacity: hasPlaces ? 0.7 : 0.4, strokeWeight: 2.5 });
           });
           // 구 이름 + 개수 라벨
           const center = SEOUL_GU[guName];
@@ -2956,7 +2956,7 @@ function _showDistrictControls(guName) {
   if (ctrl) ctrl.remove();
   ctrl = document.createElement('div');
   ctrl.id = 'distCtrl';
-  ctrl.style.cssText = 'position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:100;display:flex;gap:6px';
+  ctrl.style.cssText = 'position:absolute;top:10px;left:10px;z-index:100;display:flex;gap:6px';
   if (guName) {
     const backBtn = document.createElement('button');
     backBtn.innerHTML = `← ${guName}`;
@@ -2970,6 +2970,22 @@ function _showDistrictControls(guName) {
   clearBtn.onclick = () => { clearDistrictOverlays(); collapseMap(); };
   ctrl.appendChild(clearBtn);
   document.getElementById('mapWrap').appendChild(ctrl);
+}
+function showPlaceOnMap(id) {
+  const p = places.find(x => x.id === id);
+  if (!p || !p.lat || !p.lng) return;
+  clearDistrictOverlays();
+  collapseMap();
+  showTab('list');
+  setTimeout(() => {
+    if (map) {
+      map.setCenter(new kakao.maps.LatLng(p.lat, p.lng));
+      map.setLevel(3);
+    }
+    // 카드로 스크롤
+    const card = document.querySelector(`[data-pid="${id}"]`);
+    if (card) card.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }, 400);
 }
 function clearDistrictOverlays() {
   _districtOverlays.forEach(m => { try{m.setMap(null);}catch(e){} });
