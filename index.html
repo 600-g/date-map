@@ -349,7 +349,7 @@ header .lc svg{width:18px;height:18px}
 
         <hr class="div">
         <div class="s-title"><i data-lucide="refresh-cw" class="lc lc-sm"></i> 앱 업데이트 <span style="font-size:12px;font-weight:400;color:#aaa">현재 버전: v<span id="appVer"></span></span></div>
-        <button class="btn btn-dark" style="width:100%;margin-bottom:12px" onclick="forceUpdate()"><i data-lucide="download" class="lc lc-sm"></i> 최신 버전 확인</button>
+        <button class="btn btn-outline" id="updateBtn" style="width:100%;margin-bottom:12px;opacity:.5;pointer-events:none" onclick="forceUpdate()"><i data-lucide="download" class="lc lc-sm"></i> 최신 버전입니다</button>
 
         <hr class="div">
         <div class="s-title"><i data-lucide="trash-2" class="lc lc-sm"></i> 초기화</div>
@@ -663,7 +663,7 @@ function showTab(name) {
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('.tab')[['list','cfg'].indexOf(name)].classList.add('active');
   const mw = document.getElementById('mapWrap');
-  if (name==='cfg') { mw.style.display='none'; catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; document.getElementById('appVer').textContent = APP_VERSION; try{lucide.createIcons();}catch(e){} }
+  if (name==='cfg') { mw.style.display='none'; catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; try{lucide.createIcons();}catch(e){} document.getElementById('appVer').textContent = APP_VERSION; checkUpdateBtn(); }
   else { mw.style.display=''; collapseMap(); }
   if (name==='list') populateCatSelect();
 }
@@ -2374,7 +2374,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 114;
+const APP_VERSION = 115;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2398,6 +2398,24 @@ function easterTap() {
     wcConfetti();
     toast('안녕하세요 개발자입니다.');
   }
+}
+
+function checkUpdateBtn() {
+  const btn = document.getElementById('updateBtn');
+  fetch('version.json?t='+Date.now()).then(r=>r.json()).then(d=>{
+    if (d.v && d.v > APP_VERSION) {
+      btn.textContent = '새 버전 업데이트 (v'+d.v+')';
+      btn.className = 'btn btn-dark';
+      btn.style.opacity = '1';
+      btn.style.pointerEvents = 'auto';
+    } else {
+      btn.innerHTML = '<i data-lucide="check" class="lc lc-sm"></i> 최신 버전입니다';
+      btn.className = 'btn btn-outline';
+      btn.style.opacity = '.5';
+      btn.style.pointerEvents = 'none';
+      try{lucide.createIcons();}catch(e){}
+    }
+  }).catch(()=>{});
 }
 
 function forceUpdate() {
