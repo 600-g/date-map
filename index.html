@@ -48,8 +48,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 /* 검색 */
 .add-wrap{padding:12px;overflow-y:auto;flex:1}
 .cr-item{padding:8px 10px;background:white;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:8px;transition:transform .15s,box-shadow .15s}
-.cr-item.touch-dragging{z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.3);transform:scale(1.04);background:white;opacity:.95;border:1px solid var(--accent)}
-.cr-item.drag-over{box-shadow:0 -3px 0 0 var(--accent);background:#EEF0FF;border:1px dashed var(--accent)}
+.cr-item.touch-dragging{z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.3);background:white;opacity:.95;border:1px solid var(--accent);will-change:transform}
+.cr-item.drag-over{box-shadow:0 -3px 0 0 var(--accent);background:#EEF0FF;border:1px dashed var(--accent);transition:all .25s ease}
 .cr-handle{font-size:16px;color:#bbb;cursor:grab;flex-shrink:0;line-height:1;padding:0 2px;-webkit-touch-callout:none;touch-action:none;user-select:none;-webkit-user-select:none}
 .cr-dist{display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0;cursor:pointer}
 .sr-item{padding:8px 10px;border:1px solid var(--warm);border-radius:6px;margin-bottom:5px;cursor:pointer;font-size:13px;transition:all .15s}
@@ -144,8 +144,8 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .cat-handle{cursor:grab;color:var(--brown);font-size:16px;padding:4px 6px;flex-shrink:0;touch-action:none;user-select:none;-webkit-user-select:none}
 .cat-handle:active{cursor:grabbing}
 .cat-row.dragging{opacity:.4;background:var(--warm);transform:scale(0.95)}
-.cat-row.drag-over{box-shadow:0 -3px 0 0 var(--accent);background:#EEF0FF;border:1px dashed var(--accent);transition:all 0.15s}
-.cat-row.touch-dragging{z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.3);transform:scale(1.04);background:white;opacity:.95;border:1px solid var(--accent)}
+.cat-row.drag-over{box-shadow:0 -3px 0 0 var(--accent);background:#EEF0FF;border:1px dashed var(--accent);transition:all .25s ease}
+.cat-row.touch-dragging{z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.3);background:white;opacity:.95;border:1px solid var(--accent);will-change:transform}
 .cat-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:15px;padding:4px 6px;flex-shrink:0}
 .cat-del:hover{color:var(--red)}
 .cat-summary-item{display:inline-flex;align-items:center;gap:3px;font-size:12px;padding:3px 8px;border-radius:12px;margin:2px;border:1px solid var(--warm);background:white}
@@ -1643,37 +1643,39 @@ function setupCatDrag() {
       // 아래 row와 스왑
       const allRows = [...list.querySelectorAll('.cat-row')];
       const curDomIdx = allRows.indexOf(dragRow);
-      if (dy > rowH * 0.6 && curDomIdx < allRows.length - 1) {
+      if (dy > rowH * 0.45 && curDomIdx < allRows.length - 1) {
         const next = allRows[curDomIdx + 1];
         list.insertBefore(next, dragRow);
         touchDragState.startY += rowH;
-        next.style.transition = 'transform 0.15s';
+        next.style.transition = 'transform .25s ease';
         next.style.transform = 'translateY(-' + rowH + 'px)';
-        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 150); });
+        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 260); });
       }
       // 위 row와 스왑
-      else if (dy < -rowH * 0.6 && curDomIdx > 0) {
+      else if (dy < -rowH * 0.45 && curDomIdx > 0) {
         const prev = allRows[curDomIdx - 1];
         list.insertBefore(dragRow, prev);
         touchDragState.startY -= rowH;
-        prev.style.transition = 'transform 0.15s';
+        prev.style.transition = 'transform .25s ease';
         prev.style.transform = 'translateY(' + rowH + 'px)';
-        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 150); });
+        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 260); });
       }
     }, { passive: false });
 
     list.addEventListener('touchend', e => {
       if (!touchDragState) return;
       const { dragRow } = touchDragState;
-      dragRow.classList.remove('touch-dragging');
+      dragRow.style.transition = 'transform .2s ease';
       dragRow.style.transform = '';
+      dragRow.classList.remove('touch-dragging');
+      setTimeout(() => { dragRow.style.transition = ''; }, 220);
       // DOM 순서에서 cats 배열 재구성
       const allRows = [...list.querySelectorAll('.cat-row')];
       const newCats = allRows.map(r => cats[parseInt(r.dataset.idx)]);
       cats.splice(0, cats.length, ...newCats);
       touchDragState = null;
       autosaveCats();
-      renderCatEditor(); // data-idx 갱신
+      setTimeout(() => renderCatEditor(), 220); // 애니메이션 후 data-idx 갱신
     });
   }
 }
@@ -2579,7 +2581,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 203;
+const APP_VERSION = 204;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2714,47 +2716,47 @@ function _initCourseDrag() {
       const { dragRow, rowH } = _crDrag;
       const curY = e.touches[0].clientY;
       const dy = curY - _crDrag.startY;
-      dragRow.style.transform = `translateY(${dy}px) scale(1.04)`;
+      dragRow.style.transform = `translateY(${dy}px) scale(1.03)`;
       // 아래 row와 스왑
       const allRows = [...list.querySelectorAll('.cr-item')];
       const curDomIdx = allRows.indexOf(dragRow);
-      if (dy > rowH * 0.6 && curDomIdx < allRows.length - 1) {
+      if (dy > rowH * 0.45 && curDomIdx < allRows.length - 1) {
         const next = allRows[curDomIdx + 1];
-        // 사이에 cr-dist가 있을 수 있으므로 next의 다음 형제 앞에 삽입
         const nextSib = next.nextElementSibling;
         if (nextSib) list.insertBefore(dragRow, nextSib);
         else list.appendChild(dragRow);
-        // dist 요소도 함께 이동
         const prevDist = dragRow.previousElementSibling;
         if (prevDist && prevDist.classList.contains('cr-dist')) {
           list.insertBefore(prevDist, dragRow);
         }
         _crDrag.startY += rowH;
-        next.style.transition = 'transform 0.15s';
+        next.style.transition = 'transform .25s ease';
         next.style.transform = 'translateY(-' + rowH + 'px)';
-        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 150); });
+        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 260); });
       }
       // 위 row와 스왑
-      else if (dy < -rowH * 0.6 && curDomIdx > 0) {
+      else if (dy < -rowH * 0.45 && curDomIdx > 0) {
         const prev = allRows[curDomIdx - 1];
         list.insertBefore(dragRow, prev);
         _crDrag.startY -= rowH;
-        prev.style.transition = 'transform 0.15s';
+        prev.style.transition = 'transform .25s ease';
         prev.style.transform = 'translateY(' + rowH + 'px)';
-        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 150); });
+        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 260); });
       }
     }, { passive: false });
     list.addEventListener('touchend', e => {
       if (!_crDrag) return;
       const { dragRow } = _crDrag;
-      dragRow.classList.remove('touch-dragging');
+      dragRow.style.transition = 'transform .2s ease';
       dragRow.style.transform = '';
+      dragRow.classList.remove('touch-dragging');
+      setTimeout(() => { dragRow.style.transition = ''; }, 220);
       // DOM 순서에서 _courseSel 배열 재구성
       const allRows = [...list.querySelectorAll('.cr-item')];
       const newSel = allRows.map(r => _courseSel[parseInt(r.dataset.idx)]);
       _courseSel.splice(0, _courseSel.length, ...newSel);
       _crDrag = null;
-      renderCourseRoute();
+      setTimeout(() => renderCourseRoute(), 220);
     });
   }
 }
