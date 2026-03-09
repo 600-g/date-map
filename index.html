@@ -732,9 +732,15 @@ function toggleMapExpand() {
   if (document.querySelector('.main').classList.contains('map-expanded')) collapseMap();
   else expandMap();
 }
+let _courseMode = false;
 function _updateListViewBtn() {
   const label = document.getElementById('listViewLabel');
   if (!label) return;
+  if (_courseMode) {
+    label.innerHTML = '<i data-lucide="route" class="lc lc-sm"></i> 경로보기';
+    try{lucide.createIcons();}catch(e){}
+    return;
+  }
   const expanded = document.querySelector('.main').classList.contains('map-expanded');
   label.innerHTML = expanded
     ? '<i data-lucide="list" class="lc lc-sm"></i> 리스트 보기'
@@ -2573,7 +2579,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 202;
+const APP_VERSION = 203;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2865,12 +2871,11 @@ function _showCourseControls() {
   if (lb) lb.style.display = 'none';
   if (fb) fb.style.display = 'none';
   // listViewBtn을 "경로보기"로 변경
+  _courseMode = true;
   if (lvb) {
     lvb.style.display = 'flex';
     lvb.onclick = () => _showCourseList();
-    const label = document.getElementById('listViewLabel');
-    if (label) label.innerHTML = '<i data-lucide="route" class="lc lc-sm"></i> 경로보기';
-    try{lucide.createIcons();}catch(e){}
+    _updateListViewBtn();
   }
   ctrl = document.createElement('div');
   ctrl.id = 'courseCtrl';
@@ -2941,6 +2946,7 @@ function clearCourseOverlays() {
   const lb = document.getElementById('locBtn');
   const fb = document.getElementById('filterBar');
   if (nb) nb.style.display = '';
+  _courseMode = false;
   if (lvb) { lvb.style.display = ''; lvb.onclick = toggleMapExpand; _updateListViewBtn(); }
   if (lb) lb.style.display = '';
   if (fb) fb.style.display = '';
