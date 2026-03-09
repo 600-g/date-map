@@ -230,7 +230,7 @@ header .lc svg{width:18px;height:18px}
   /* 지도 확대 모드 */
   .map-expanded .place-list{max-height:0;overflow:hidden;padding:0}
   .map-expanded #myLocStatus{display:none!important}
-  #listViewBtn{display:flex!important;position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:100;justify-content:center;align-items:center;padding:8px 18px;background:white;border-radius:20px;cursor:pointer;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.08)}
+  #listViewBtn{display:flex!important;position:fixed;bottom:calc(42px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);z-index:9998;justify-content:center;align-items:center;padding:8px 18px;background:white;border-radius:20px;cursor:pointer;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.25);border:1px solid rgba(0,0,0,.08)}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
@@ -2568,7 +2568,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 162;
+const APP_VERSION = 163;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
