@@ -628,7 +628,7 @@ function initMap() {
   map = new kakao.maps.Map(document.getElementById('map'), {
     center: new kakao.maps.LatLng(initLat, initLng), level: initLevel
   });
-  kakao.maps.event.addListener(map, 'click', () => { closeAllIw(); expandMap(); });
+  kakao.maps.event.addListener(map, 'click', () => { closeAllIw(); expandMap(); if(addPanelOpen) closeAddPanel(); });
   renderAll();
   // 앱 시작 시: savedLoc으로 즉시 마커+거리 표시
   if (savedLoc) {
@@ -966,6 +966,11 @@ function pickSearch(i) {
   document.getElementById('searchConfirm').style.display = 'block';
   document.getElementById('sr').innerHTML = '';
   document.getElementById('srBatchBar').style.display = 'none';
+  // 지도를 해당 매장 위치로 이동
+  if (map && p.y && p.x) {
+    map.setCenter(new kakao.maps.LatLng(parseFloat(p.y), parseFloat(p.x)));
+    map.setLevel(3);
+  }
 }
 
 function confirmSearch() {
@@ -2390,7 +2395,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 121;
+const APP_VERSION = 122;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
