@@ -47,11 +47,10 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .btn-sm{font-size:12px;padding:5px 12px}
 /* 검색 */
 .add-wrap{padding:12px;overflow-y:auto;flex:1}
-.cr-item{padding:8px 10px;background:white;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:8px;transition:transform .15s,box-shadow .15s}
-.cr-item.touch-dragging{z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.3);background:white;opacity:.95;border:1px solid var(--accent);will-change:transform}
-.cr-item.drag-over{box-shadow:0 -3px 0 0 var(--accent);background:#EEF0FF;border:1px dashed var(--accent);transition:all .25s ease}
-.cr-handle{font-size:16px;color:#bbb;cursor:grab;flex-shrink:0;line-height:1;padding:0 2px;-webkit-touch-callout:none;touch-action:none;user-select:none;-webkit-user-select:none}
-.cr-dist{display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0;cursor:pointer}
+.cr-item{padding:10px 12px;background:white;border:1px solid #e0ddd8;border-radius:10px;display:flex;align-items:center;gap:10px;font-size:14px}
+.cr-item.touch-dragging{z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.25);background:white;border:1.5px solid var(--accent);will-change:transform;transition:none!important}
+.cr-handle{font-size:18px;color:#bbb;cursor:grab;flex-shrink:0;line-height:1;padding:4px 6px;-webkit-touch-callout:none;touch-action:none;user-select:none;-webkit-user-select:none}
+.cr-dist{display:flex;align-items:center;justify-content:center;gap:4px;padding:4px 0;cursor:pointer}
 .sr-item{padding:8px 10px;border:1px solid var(--warm);border-radius:6px;margin-bottom:5px;cursor:pointer;font-size:13px;transition:all .15s}
 .sr-item:hover{border-color:var(--brown);background:var(--cream)}
 .sr-name{font-weight:500;margin-bottom:2px}
@@ -145,7 +144,7 @@ hr.div{border:none;border-top:1px solid var(--warm);margin:14px 0}
 .cat-handle:active{cursor:grabbing}
 .cat-row.dragging{opacity:.4;background:var(--warm);transform:scale(0.95)}
 .cat-row.drag-over{box-shadow:0 -3px 0 0 var(--accent);background:#EEF0FF;border:1px dashed var(--accent);transition:all .25s ease}
-.cat-row.touch-dragging{z-index:100;box-shadow:0 4px 16px rgba(0,0,0,0.3);background:white;opacity:.95;border:1px solid var(--accent);will-change:transform}
+.cat-row.touch-dragging{z-index:100;box-shadow:0 6px 20px rgba(0,0,0,.25);background:white;border:1.5px solid var(--accent);will-change:transform;transition:none!important}
 .cat-del{background:none;border:none;cursor:pointer;color:#ccc;font-size:15px;padding:4px 6px;flex-shrink:0}
 .cat-del:hover{color:var(--red)}
 .cat-summary-item{display:inline-flex;align-items:center;gap:3px;font-size:12px;padding:3px 8px;border-radius:12px;margin:2px;border:1px solid var(--warm);background:white}
@@ -1638,44 +1637,43 @@ function setupCatDrag() {
       const { dragRow, rowH } = touchDragState;
       const curY = e.touches[0].clientY;
       const dy = curY - touchDragState.startY;
-      dragRow.style.transform = `translateY(${dy}px) scale(1.04)`;
+      dragRow.style.transform = `translateY(${dy}px)`;
 
       // 아래 row와 스왑
       const allRows = [...list.querySelectorAll('.cat-row')];
       const curDomIdx = allRows.indexOf(dragRow);
-      if (dy > rowH * 0.45 && curDomIdx < allRows.length - 1) {
+      if (dy > rowH * 0.5 && curDomIdx < allRows.length - 1) {
         const next = allRows[curDomIdx + 1];
         list.insertBefore(next, dragRow);
         touchDragState.startY += rowH;
-        next.style.transition = 'transform .25s ease';
+        next.style.transition = 'transform .3s cubic-bezier(.2,.8,.4,1)';
         next.style.transform = 'translateY(-' + rowH + 'px)';
-        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 260); });
+        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 320); });
       }
       // 위 row와 스왑
-      else if (dy < -rowH * 0.45 && curDomIdx > 0) {
+      else if (dy < -rowH * 0.5 && curDomIdx > 0) {
         const prev = allRows[curDomIdx - 1];
         list.insertBefore(dragRow, prev);
         touchDragState.startY -= rowH;
-        prev.style.transition = 'transform .25s ease';
+        prev.style.transition = 'transform .3s cubic-bezier(.2,.8,.4,1)';
         prev.style.transform = 'translateY(' + rowH + 'px)';
-        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 260); });
+        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 320); });
       }
     }, { passive: false });
 
     list.addEventListener('touchend', e => {
       if (!touchDragState) return;
       const { dragRow } = touchDragState;
-      dragRow.style.transition = 'transform .2s ease';
+      dragRow.style.transition = 'transform .25s cubic-bezier(.2,.8,.4,1)';
       dragRow.style.transform = '';
-      dragRow.classList.remove('touch-dragging');
-      setTimeout(() => { dragRow.style.transition = ''; }, 220);
+      setTimeout(() => { dragRow.classList.remove('touch-dragging'); dragRow.style.transition = ''; }, 260);
       // DOM 순서에서 cats 배열 재구성
       const allRows = [...list.querySelectorAll('.cat-row')];
       const newCats = allRows.map(r => cats[parseInt(r.dataset.idx)]);
       cats.splice(0, cats.length, ...newCats);
       touchDragState = null;
       autosaveCats();
-      setTimeout(() => renderCatEditor(), 220); // 애니메이션 후 data-idx 갱신
+      setTimeout(() => renderCatEditor(), 280);
     });
   }
 }
@@ -2581,7 +2579,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 205;
+const APP_VERSION = 206;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2679,9 +2677,9 @@ function renderCourseRoute() {
       </div>`;
     }
     return `${distHtml}<div class="cr-item" data-idx="${i}">
-      <div style="width:22px;height:22px;background:var(--dark);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">${i+1}</div>
-      <span style="font-size:15px;flex-shrink:0">${c.emoji}</span>
-      <div style="flex:1;min-width:0;font-size:13px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
+      <div style="width:26px;height:26px;background:var(--dark);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">${i+1}</div>
+      <span style="font-size:17px;flex-shrink:0">${c.emoji}</span>
+      <div style="flex:1;min-width:0;font-size:14px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
       <span class="cr-handle">☰</span>
     </div>`;
   }).join('');
@@ -2716,11 +2714,11 @@ function _initCourseDrag() {
       const { dragRow, rowH } = _crDrag;
       const curY = e.touches[0].clientY;
       const dy = curY - _crDrag.startY;
-      dragRow.style.transform = `translateY(${dy}px) scale(1.03)`;
+      dragRow.style.transform = `translateY(${dy}px)`;
       // 아래 row와 스왑
       const allRows = [...list.querySelectorAll('.cr-item')];
       const curDomIdx = allRows.indexOf(dragRow);
-      if (dy > rowH * 0.45 && curDomIdx < allRows.length - 1) {
+      if (dy > rowH * 0.5 && curDomIdx < allRows.length - 1) {
         const next = allRows[curDomIdx + 1];
         const nextSib = next.nextElementSibling;
         if (nextSib) list.insertBefore(dragRow, nextSib);
@@ -2730,33 +2728,32 @@ function _initCourseDrag() {
           list.insertBefore(prevDist, dragRow);
         }
         _crDrag.startY += rowH;
-        next.style.transition = 'transform .25s ease';
+        next.style.transition = 'transform .3s cubic-bezier(.2,.8,.4,1)';
         next.style.transform = 'translateY(-' + rowH + 'px)';
-        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 260); });
+        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 320); });
       }
       // 위 row와 스왑
-      else if (dy < -rowH * 0.45 && curDomIdx > 0) {
+      else if (dy < -rowH * 0.5 && curDomIdx > 0) {
         const prev = allRows[curDomIdx - 1];
         list.insertBefore(dragRow, prev);
         _crDrag.startY -= rowH;
-        prev.style.transition = 'transform .25s ease';
+        prev.style.transition = 'transform .3s cubic-bezier(.2,.8,.4,1)';
         prev.style.transform = 'translateY(' + rowH + 'px)';
-        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 260); });
+        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 320); });
       }
     }, { passive: false });
     list.addEventListener('touchend', e => {
       if (!_crDrag) return;
       const { dragRow } = _crDrag;
-      dragRow.style.transition = 'transform .2s ease';
+      dragRow.style.transition = 'transform .25s cubic-bezier(.2,.8,.4,1)';
       dragRow.style.transform = '';
-      dragRow.classList.remove('touch-dragging');
-      setTimeout(() => { dragRow.style.transition = ''; }, 220);
+      setTimeout(() => { dragRow.classList.remove('touch-dragging'); dragRow.style.transition = ''; }, 260);
       // DOM 순서에서 _courseSel 배열 재구성
       const allRows = [...list.querySelectorAll('.cr-item')];
       const newSel = allRows.map(r => _courseSel[parseInt(r.dataset.idx)]);
       _courseSel.splice(0, _courseSel.length, ...newSel);
       _crDrag = null;
-      setTimeout(() => renderCourseRoute(), 220);
+      setTimeout(() => renderCourseRoute(), 280);
     });
   }
 }
@@ -2799,9 +2796,10 @@ function courseShowMap() {
           const color = colors[i % colors.length];
           const isFirst = i === 0, isLast = i === _courseSel.length - 1;
           const label = isFirst ? '출발' : isLast ? '도착' : (i+1);
+          const c = getCat(p.cat);
           const el = document.createElement('div');
           el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
-            <div style="background:white;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;color:${color};border:1.5px solid ${color};margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15)">${p.name}</div>
+            <div style="background:white;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;color:${color};border:1.5px solid ${color};margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);display:flex;align-items:center;gap:3px"><span style="font-size:12px">${c.emoji}</span> ${p.name}</div>
             <div style="width:${isFirst||isLast?36:30}px;height:${isFirst||isLast?36:30}px;background:${color};border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);color:white;font-weight:700;font-size:${isFirst||isLast?11:13}px">${label}</div>
           </div>`;
           const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:5+i });
@@ -2887,7 +2885,7 @@ function _showCourseControls() {
   ctrl.style.cssText = 'position:absolute;top:10px;right:10px;z-index:100;display:flex;flex-direction:column;gap:6px';
   const clearBtn = document.createElement('button');
   clearBtn.textContent = '✕ 코스 지우기';
-  clearBtn.style.cssText = 'background:white;border:1.5px solid #e0ddd8;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:#333;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.15);white-space:nowrap';
+  clearBtn.style.cssText = 'background:white;border:1.5px solid #e0ddd8;border-radius:10px;padding:8px 16px;font-size:14px;font-weight:600;color:#333;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);white-space:nowrap';
   clearBtn.onclick = () => { clearCourseOverlays(); collapseMap(); toast('코스 표시를 지웠어요'); };
   ctrl.appendChild(clearBtn);
   document.getElementById('mapWrap').appendChild(ctrl);
