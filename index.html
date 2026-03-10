@@ -212,9 +212,9 @@ header .lc svg{width:18px;height:18px}
   .panel{display:contents;width:100%;border-right:none}
   #tab-list.active{display:contents}
   /* 탭 → 하단 네비바 (노치 직전) */
-  .tabs{position:fixed;bottom:0;left:0;right:0;z-index:9999;border-bottom:none;border-top:none;background:var(--dark);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);-webkit-backface-visibility:hidden;backface-visibility:hidden}
-  .main{padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
-  .tab{border-bottom:none;border-top:2px solid transparent;padding:3px 2px 1px;font-size:11px;color:rgba(255,255,255,.6)}
+  .tabs{position:fixed;bottom:0;left:0;right:0;z-index:9999;border-bottom:none;border-top:1px solid rgba(255,255,255,.15);background:var(--dark);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);-webkit-backface-visibility:hidden;backface-visibility:hidden}
+  .main{padding-bottom:calc(48px + env(safe-area-inset-bottom,0px))}
+  .tab{border-bottom:none;border-top:2.5px solid transparent;padding:8px 2px 4px;font-size:11px;color:rgba(255,255,255,.6)}
   .tab.active{border-bottom:none;border-top-color:var(--accent);color:white}
   /* 검색바 상단 */
   .list-top-bar{order:1;width:100%;padding:6px 10px 3px;background:white}
@@ -2581,7 +2581,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 204;
+const APP_VERSION = 205;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2874,6 +2874,9 @@ function _showCourseControls() {
   if (fb) fb.style.display = 'none';
   // listViewBtn을 "경로보기"로 변경
   _courseMode = true;
+  // 코스 외 장소 마커/팝업 숨기기
+  markers.forEach(m => { try{m.setMap(null);}catch(e){} });
+  iws.forEach(w => { try{w.setMap(null);}catch(e){} });
   if (lvb) {
     lvb.style.display = 'flex';
     lvb.onclick = () => _showCourseList();
@@ -2896,7 +2899,7 @@ function _showCourseList() {
   panel.id = 'courseListPanel';
   panel.style.cssText = 'position:absolute;bottom:10px;left:10px;right:10px;z-index:100;background:white;border-radius:12px;padding:12px;max-height:50%;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.2)';
   const colors = ['#FF6B6B','#5B7DB8','#2D8659','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB'];
-  let html = '<div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px">코스 경로</div>';
+  let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;font-weight:700;color:var(--dark)">코스 경로</span><span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1;padding:0 4px" onclick="document.getElementById(\'courseListPanel\').remove()">&times;</span></div>';
   _courseSel.forEach((p, i) => {
     const c = getCat(p.cat);
     const color = colors[i % colors.length];
@@ -2949,6 +2952,8 @@ function clearCourseOverlays() {
   const fb = document.getElementById('filterBar');
   if (nb) nb.style.display = '';
   _courseMode = false;
+  // 장소 마커 복원
+  markers.forEach(m => { try{m.setMap(map);}catch(e){} });
   if (lvb) { lvb.style.display = ''; lvb.onclick = toggleMapExpand; _updateListViewBtn(); }
   if (lb) lb.style.display = '';
   if (fb) fb.style.display = '';
