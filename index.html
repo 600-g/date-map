@@ -2623,7 +2623,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 212;
+const APP_VERSION = 213;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3220,58 +3220,67 @@ function _closeDistrictPage() {
   if (_districtPage) { _districtPage.remove(); _districtPage = null; }
 }
 function _renderIllustMap(body) {
-  // 일러스트 블록 지도 - 스크린샷 참고, 위치만 대략 맞춘 불규칙 블록
+  // 인접한 블록끼리 맞붙는 퍼즐 스타일 서울 지도
+  // 한강 북쪽 블록 → 한강 → 남쪽 블록, 모든 블록이 이웃과 변을 공유
   const D = [
-    // === 한강 북쪽 ===
-    {name:'성북구',   p:[[178,12],[390,8],[396,78],[172,84]],       tx:284, ty:45},
-    {name:'강북구',   p:[[406,6],[548,2],[554,76],[400,82]],        tx:477, ty:40},
-    {name:'도봉구',   p:[[562,0],[665,4],[660,74],[556,70]],        tx:611, ty:36},
-    {name:'노원구',   p:[[674,6],[755,12],[750,76],[668,72]],       tx:712, ty:40},
-    {name:'은평구',   p:[[10,56],[164,48],[170,228],[14,238]],      tx:90, ty:142},
-    {name:'서대문구', p:[[112,148],[262,140],[268,222],[106,230]],   tx:188, ty:184},
-    {name:'종로구',   p:[[274,88],[424,82],[432,180],[268,186]],    tx:350, ty:134},
-    {name:'동대문구', p:[[440,84],[592,78],[600,176],[434,182]],    tx:517, ty:130},
-    {name:'중랑구',   p:[[606,76],[755,70],[760,174],[600,180]],    tx:680, ty:125},
-    {name:'마포구',   p:[[6,248],[168,240],[176,342],[10,350]],     tx:92, ty:294},
-    {name:'중구',     p:[[274,194],[424,188],[430,274],[268,280]],   tx:350, ty:235},
-    {name:'성동구',   p:[[440,186],[585,180],[592,268],[434,276]],  tx:513, ty:227},
-    {name:'광진구',   p:[[598,178],[755,172],[760,266],[592,274]],  tx:677, ty:221},
-    {name:'용산구',   p:[[176,290],[430,282],[438,372],[170,380]],  tx:305, ty:333},
-    // === 한강 남쪽 ===
-    {name:'강서구',   p:[[6,440],[146,434],[152,524],[10,530]],     tx:79, ty:481},
-    {name:'강동구',   p:[[602,426],[758,420],[762,510],[606,516]],  tx:682, ty:467},
-    {name:'양천구',   p:[[6,538],[146,532],[152,608],[10,614]],     tx:79, ty:573},
-    {name:'영등포구', p:[[160,530],[310,524],[316,604],[154,610]],  tx:236, ty:566},
-    {name:'동작구',   p:[[324,522],[458,516],[464,600],[318,608]],  tx:392, ty:560},
-    {name:'서초구',   p:[[472,514],[625,508],[632,598],[466,606]],  tx:550, ty:555},
-    {name:'강남구',   p:[[638,506],[762,500],[768,594],[632,602]],  tx:701, ty:550},
-    {name:'송파구',   p:[[638,608],[765,602],[770,678],[634,684]],  tx:702, ty:643},
-    {name:'구로구',   p:[[6,622],[146,616],[150,688],[10,694]],     tx:79, ty:654},
-    {name:'금천구',   p:[[160,614],[304,608],[310,684],[154,690]],  tx:232, ty:648},
-    {name:'관악구',   p:[[318,606],[460,600],[466,682],[312,688]],  tx:390, ty:643},
+    // === 한강 북쪽 (y:0~360) — 공유 꼭짓점으로 빈틈 없이 연결 ===
+    // Row 0: 도봉·노원 (최상단)
+    {name:'도봉구',   p:[[340,0],[510,0],[510,82],[340,82]],         tx:425, ty:38},
+    {name:'노원구',   p:[[510,0],[700,0],[700,82],[510,82]],         tx:605, ty:38},
+    // Row 1: 은평·강북·성북·중랑
+    {name:'은평구',   p:[[0,42],[170,42],[170,170],[0,170]],          tx:85, ty:103},
+    {name:'강북구',   p:[[340,82],[510,82],[510,170],[340,170]],      tx:425, ty:123},
+    {name:'성북구',   p:[[170,42],[340,42],[340,170],[170,170]],      tx:255, ty:103},
+    {name:'중랑구',   p:[[510,82],[700,82],[700,170],[510,170]],      tx:605, ty:123},
+    // Row 2: 서대문·종로·동대문·광진
+    {name:'서대문구', p:[[0,170],[140,170],[140,264],[0,264]],        tx:70, ty:214},
+    {name:'종로구',   p:[[140,170],[340,170],[340,264],[140,264]],    tx:240, ty:214},
+    {name:'동대문구', p:[[340,170],[530,170],[530,264],[340,264]],    tx:435, ty:214},
+    {name:'광진구',   p:[[530,170],[700,170],[700,264],[530,264]],    tx:615, ty:214},
+    // Row 3: 마포·중구·성동·강동(상)
+    {name:'마포구',   p:[[0,264],[140,264],[140,362],[0,362]],        tx:70, ty:310},
+    {name:'중구',     p:[[140,264],[310,264],[310,362],[140,362]],    tx:225, ty:310},
+    {name:'성동구',   p:[[310,264],[490,264],[490,362],[310,362]],    tx:400, ty:310},
+    {name:'용산구',   p:[[140,362],[310,362],[310,420],[140,420]],    tx:225, ty:388},
+    {name:'강동구',   p:[[570,264],[700,264],[700,420],[570,420]],    tx:635, ty:338},
+    // === 한강 (y:362~468, 용산 아래~남쪽 블록 위) ===
+    // === 한강 남쪽 (y:468~) — 빈틈 없이 연결 ===
+    // Row S0: 강서·양천·영등포·동작·서초·강남·송파
+    {name:'강서구',   p:[[0,468],[130,468],[130,566],[0,566]],        tx:65, ty:514},
+    {name:'양천구',   p:[[130,468],[260,468],[260,566],[130,566]],    tx:195, ty:514},
+    {name:'영등포구', p:[[260,468],[400,468],[400,566],[260,566]],    tx:330, ty:514},
+    {name:'동작구',   p:[[400,468],[530,468],[530,566],[400,566]],    tx:465, ty:514},
+    {name:'서초구',   p:[[310,566],[490,566],[490,660],[310,660]],    tx:400, ty:610},
+    {name:'강남구',   p:[[490,468],[620,468],[620,610],[490,610]],    tx:555, ty:536},
+    {name:'송파구',   p:[[620,468],[700,468],[700,610],[620,610]],    tx:660, ty:536},
+    // Row S1: 구로·금천·관악
+    {name:'구로구',   p:[[0,566],[130,566],[130,660],[0,660]],        tx:65, ty:610},
+    {name:'금천구',   p:[[130,566],[220,566],[220,660],[130,660]],    tx:175, ty:610},
+    {name:'관악구',   p:[[220,566],[310,566],[310,660],[220,660]],    tx:265, ty:610},
   ];
   const COLORS=['#FFD1DC','#C5E1A5','#FFE0B2','#B3E5FC','#E1BEE7','#DCEDC8','#F8BBD0','#D1C4E9','#FFE082','#B2DFDB','#FFCCBC','#C8E6C9','#F0F4C3','#D7CCC8','#B3E5FC','#FFD180','#FFAB91','#CE93D8','#80DEEA','#FFF59D','#A5D6A7','#EF9A9A','#BCAAA4','#90CAF9','#E6EE9C'];
   // 둥근 모서리 폴리곤 패스 생성
   function rp(pts,r){const n=pts.length;let d='';for(let i=0;i<n;i++){const pv=pts[(i-1+n)%n],c=pts[i],nx=pts[(i+1)%n];const d1x=c[0]-pv[0],d1y=c[1]-pv[1],d2x=nx[0]-c[0],d2y=nx[1]-c[1];const l1=Math.sqrt(d1x*d1x+d1y*d1y),l2=Math.sqrt(d2x*d2x+d2y*d2y);const o=Math.min(r,l1/2,l2/2);const x1=c[0]-(d1x/l1)*o,y1=c[1]-(d1y/l1)*o;const x2=c[0]+(d2x/l2)*o,y2=c[1]+(d2y/l2)*o;d+=(i===0?'M':'L')+x1.toFixed(1)+','+y1.toFixed(1);d+='Q'+c[0]+','+c[1]+' '+x2.toFixed(1)+','+y2.toFixed(1);}return d+'Z';}
-  const W=770,H=700;
-  let svg=`<defs><filter id="bs" x="-4%" y="-4%" width="108%" height="116%"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="rgba(0,0,0,.08)"/></filter></defs>`;
-  svg+=`<rect x="0" y="0" width="${W}" height="${H}" fill="#F5F0E8"/>`;
-  // 장식
-  svg+=`<ellipse cx="700" cy="55" rx="55" ry="35" fill="#E8F5E9" opacity="0.4"/>`;
-  svg+=`<ellipse cx="50" cy="660" rx="42" ry="28" fill="#E8F5E9" opacity="0.35"/>`;
-  svg+=`<ellipse cx="400" cy="5" rx="80" ry="14" fill="#E8F5E9" opacity="0.25"/>`;
-  // 한강
-  svg+=`<path d="M770,382 C660,405 540,420 400,408 C260,396 130,362 -10,298 L-10,338 C130,402 260,436 400,448 C540,460 660,445 770,422 Z" fill="#B3E5FC" opacity="0.5"/>`;
-  svg+=`<path d="M770,400 C650,420 530,432 390,422 C250,412 120,378 -10,316" fill="none" stroke="#64B5F6" stroke-width="1.5" opacity="0.3"/>`;
-  svg+=`<text x="385" y="405" text-anchor="middle" font-size="17" font-weight="700" fill="#42A5F5" opacity="0.5" letter-spacing="10" style="pointer-events:none">한 강</text>`;
-  // 구 블록
+  const W=700,H=670;
+  let svg=`<defs><filter id="bs" x="-4%" y="-4%" width="108%" height="116%"><feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="rgba(0,0,0,.07)"/></filter></defs>`;
+  svg+=`<rect x="0" y="0" width="${W}" height="${H}" fill="#F5F0E8" rx="12"/>`;
+  // 장식 (나무/공원 느낌 타원)
+  svg+=`<ellipse cx="660" cy="30" rx="35" ry="22" fill="#E8F5E9" opacity="0.4"/>`;
+  svg+=`<ellipse cx="30" cy="630" rx="28" ry="18" fill="#E8F5E9" opacity="0.35"/>`;
+  // 한강 — 물결 밴드 (북쪽 블록 아래~남쪽 블록 위 사이)
+  svg+=`<path d="M-5,370 C80,358 200,380 350,372 C500,364 620,376 705,362 L705,460 C620,474 500,456 350,464 C200,472 80,454 -5,466 Z" fill="#B3E5FC" opacity="0.55"/>`;
+  svg+=`<path d="M-5,400 C100,388 250,404 380,396 C510,388 630,400 705,390" fill="none" stroke="#64B5F6" stroke-width="1.2" opacity="0.3"/>`;
+  svg+=`<path d="M-5,430 C100,422 260,438 400,428 C540,418 650,432 705,424" fill="none" stroke="#64B5F6" stroke-width="1" opacity="0.2"/>`;
+  svg+=`<text x="350" y="420" text-anchor="middle" font-size="16" font-weight="700" fill="#42A5F5" opacity="0.5" letter-spacing="12" style="pointer-events:none">한 강</text>`;
+  // 구 블록 렌더
   D.forEach((d,idx)=>{
     const cnt=_districtDistMap[d.name]?_districtDistMap[d.name].length:0;
     const has=cnt>0;
-    const path=rp(d.p,16);
-    svg+=`<path d="${path}" fill="${has?COLORS[idx%COLORS.length]:'#EDEDED'}" stroke="white" stroke-width="3" filter="url(#bs)" style="cursor:pointer" data-gu="${d.name}"/>`;
-    svg+=`<text x="${d.tx}" y="${d.ty-(cnt?9:0)}" text-anchor="middle" dominant-baseline="central" font-size="17" font-weight="800" fill="${has?'#333':'#aaa'}" style="pointer-events:none">${d.name}</text>`;
-    if(cnt) svg+=`<text x="${d.tx}" y="${d.ty+13}" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="var(--accent)" style="pointer-events:none">${cnt}곳</text>`;
+    const path=rp(d.p,14);
+    svg+=`<path d="${path}" fill="${has?COLORS[idx%COLORS.length]:'#EDEDED'}" stroke="#fff" stroke-width="2.5" filter="url(#bs)" style="cursor:pointer" data-gu="${d.name}"/>`;
+    const fs=d.name.length>3?13:15;
+    svg+=`<text x="${d.tx}" y="${d.ty-(cnt?8:0)}" text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="800" fill="${has?'#333':'#aaa'}" style="pointer-events:none">${d.name}</text>`;
+    if(cnt) svg+=`<text x="${d.tx}" y="${d.ty+11}" text-anchor="middle" dominant-baseline="central" font-size="12" font-weight="700" fill="var(--accent)" style="pointer-events:none">${cnt}곳</text>`;
   });
   body.innerHTML=`<div id="illustMapWrap" style="width:100%;height:100%;overflow:auto;-webkit-overflow-scrolling:touch"><svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block">${svg}</svg></div>`;
   const wrap=document.getElementById('illustMapWrap'),svgEl=wrap.querySelector('svg');
