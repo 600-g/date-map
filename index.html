@@ -1646,18 +1646,24 @@ function setupCatDrag() {
         const next = allRows[curDomIdx + 1];
         list.insertBefore(next, dragRow);
         touchDragState.startY += rowH;
-        next.style.transition = 'transform .3s cubic-bezier(.2,.8,.4,1)';
+        next.style.transition = 'none';
         next.style.transform = 'translateY(-' + rowH + 'px)';
-        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 320); });
+        next.offsetHeight;
+        next.style.transition = 'transform .3s cubic-bezier(.25,.1,.25,1)';
+        next.style.transform = '';
+        setTimeout(() => { next.style.transition = ''; }, 320);
       }
       // 위 row와 스왑
       else if (dy < -rowH * 0.5 && curDomIdx > 0) {
         const prev = allRows[curDomIdx - 1];
         list.insertBefore(dragRow, prev);
         touchDragState.startY -= rowH;
-        prev.style.transition = 'transform .3s cubic-bezier(.2,.8,.4,1)';
+        prev.style.transition = 'none';
         prev.style.transform = 'translateY(' + rowH + 'px)';
-        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 320); });
+        prev.offsetHeight;
+        prev.style.transition = 'transform .3s cubic-bezier(.25,.1,.25,1)';
+        prev.style.transform = '';
+        setTimeout(() => { prev.style.transition = ''; }, 320);
       }
     }, { passive: false });
 
@@ -2579,7 +2585,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 206;
+const APP_VERSION = 207;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2728,18 +2734,24 @@ function _initCourseDrag() {
           list.insertBefore(prevDist, dragRow);
         }
         _crDrag.startY += rowH;
-        next.style.transition = 'transform .3s cubic-bezier(.2,.8,.4,1)';
+        next.style.transition = 'none';
         next.style.transform = 'translateY(-' + rowH + 'px)';
-        requestAnimationFrame(() => { next.style.transform = ''; setTimeout(() => { next.style.transition = ''; }, 320); });
+        next.offsetHeight;
+        next.style.transition = 'transform .3s cubic-bezier(.25,.1,.25,1)';
+        next.style.transform = '';
+        setTimeout(() => { next.style.transition = ''; }, 320);
       }
       // 위 row와 스왑
       else if (dy < -rowH * 0.5 && curDomIdx > 0) {
         const prev = allRows[curDomIdx - 1];
         list.insertBefore(dragRow, prev);
         _crDrag.startY -= rowH;
-        prev.style.transition = 'transform .3s cubic-bezier(.2,.8,.4,1)';
+        prev.style.transition = 'none';
         prev.style.transform = 'translateY(' + rowH + 'px)';
-        requestAnimationFrame(() => { prev.style.transform = ''; setTimeout(() => { prev.style.transition = ''; }, 320); });
+        prev.offsetHeight;
+        prev.style.transition = 'transform .3s cubic-bezier(.25,.1,.25,1)';
+        prev.style.transform = '';
+        setTimeout(() => { prev.style.transition = ''; }, 320);
       }
     }, { passive: false });
     list.addEventListener('touchend', e => {
