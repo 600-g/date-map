@@ -421,11 +421,6 @@ header .lc svg{width:18px;height:18px}
         <div style="font-size:12px;color:var(--brown);line-height:1.5">저장된 장소로 데이트 코스를 만들어보세요. 이동 경로와 예상 시간을 확인할 수 있어요.</div>
         <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">베타</span></div>
       </div>
-      <div style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer;transition:all .15s" onclick="openLabSavedCourses()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--warm)'">
-        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="bookmark" class="lc lc-sm" style="color:var(--accent)"></i> 저장된 코스</div>
-        <div style="font-size:12px;color:var(--brown);line-height:1.5">저장해둔 데이트 코스를 다시 불러오세요.</div>
-        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">베타</span></div>
-      </div>
       <div style="padding:12px;border:1px solid var(--warm);border-radius:10px;cursor:pointer;transition:all .15s" onclick="openLabAiRec()" onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--warm)'">
         <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="search" class="lc lc-sm" style="color:var(--accent)"></i> 장소 추천</div>
         <div style="font-size:12px;color:var(--brown);line-height:1.5">지역명으로 인기 맛집·카페·놀거리를 검색하고 바로 추가해보세요.</div>
@@ -442,8 +437,8 @@ header .lc svg{width:18px;height:18px}
       <h3 style="margin:0;font-size:16px"><i data-lucide="route" class="lc lc-sm"></i> 코스 짜기</h3>
       <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="closeCourseModal()">&times;</span>
     </div>
+    <button class="btn btn-outline" style="width:100%;margin-bottom:10px;font-size:12px;padding:7px;flex-shrink:0" onclick="closeCourseModal();openLabSavedCourses()"><i data-lucide="bookmark" class="lc lc-sm"></i> 저장된 코스 보기</button>
     <div id="coursePhase1" style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
-      <button class="btn btn-outline" style="width:100%;margin-bottom:10px;font-size:12px;padding:7px;flex-shrink:0" onclick="closeCourseModal();openLabSavedCourses()"><i data-lucide="bookmark" class="lc lc-sm"></i> 저장된 코스 보기</button>
       <p style="font-size:12px;color:var(--brown);margin-bottom:10px">코스에 포함할 장소를 선택하세요 (2개 이상)</p>
       <div id="coursePlaceList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
       <button class="btn btn-dark" id="courseMakeBtn" style="width:100%;display:none;flex-shrink:0" onclick="buildCourse()">코스 만들기</button>
@@ -2624,7 +2619,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 214;
+const APP_VERSION = 215;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
