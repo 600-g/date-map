@@ -437,7 +437,7 @@ header .lc svg{width:18px;height:18px}
       <h3 style="margin:0;font-size:16px"><i data-lucide="route" class="lc lc-sm"></i> 코스 짜기</h3>
       <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="closeCourseModal()">&times;</span>
     </div>
-    <button class="btn btn-outline" style="width:100%;margin-bottom:10px;font-size:12px;padding:7px;flex-shrink:0" onclick="closeCourseModal();openLabSavedCourses()"><i data-lucide="bookmark" class="lc lc-sm"></i> 저장된 코스 보기</button>
+    <button class="btn btn-outline" style="width:100%;margin-bottom:10px;font-size:12px;padding:7px;flex-shrink:0" onclick="openLabSavedCourses(true)"><i data-lucide="bookmark" class="lc lc-sm"></i> 저장된 코스 보기</button>
     <div id="coursePhase1" style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
       <p style="font-size:12px;color:var(--brown);margin-bottom:10px">코스에 포함할 장소를 선택하세요 (2개 이상)</p>
       <div id="coursePlaceList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
@@ -457,11 +457,11 @@ header .lc svg{width:18px;height:18px}
 </div>
 
 <!-- 저장된 코스 모달 -->
-<div class="modal-overlay" id="savedCoursesModal" onclick="if(event.target===this)this.classList.remove('open')">
+<div class="modal-overlay" id="savedCoursesModal" onclick="if(event.target===this)closeSavedCoursesModal()">
   <div class="modal" style="width:320px;max-height:85vh;padding:20px;display:flex;flex-direction:column">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">
       <h3 style="margin:0;font-size:16px"><i data-lucide="bookmark" class="lc lc-sm"></i> 저장된 코스</h3>
-      <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="document.getElementById('savedCoursesModal').classList.remove('open')">&times;</span>
+      <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="closeSavedCoursesModal()">&times;</span>
     </div>
     <div id="savedCoursesList" style="flex:1;overflow-y:auto"></div>
   </div>
@@ -2619,7 +2619,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 215;
+const APP_VERSION = 216;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2663,8 +2663,15 @@ function saveCourse(){
   _setSavedCourses(courses);
   toast('코스가 저장되었어요');
 }
-function openLabSavedCourses(){
-  document.getElementById('labModal').classList.remove('open');
+let _savedCoursesFromCourse=false;
+function closeSavedCoursesModal(){
+  document.getElementById('savedCoursesModal').classList.remove('open');
+  if(_savedCoursesFromCourse){_savedCoursesFromCourse=false;openLabCourse();}
+}
+function openLabSavedCourses(fromCourse){
+  _savedCoursesFromCourse=!!fromCourse;
+  if(!fromCourse) document.getElementById('labModal').classList.remove('open');
+  document.getElementById('courseModal').classList.remove('open');
   const modal=document.getElementById('savedCoursesModal');
   modal.classList.add('open');
   const list=document.getElementById('savedCoursesList');
@@ -2747,7 +2754,7 @@ async function aiRecSearch(){
             <div style="font-size:11px;color:var(--brown);margin-top:2px">${item.road_address_name||item.address_name||''}</div>
           </div>
           <div style="display:flex;gap:4px;align-items:center;flex-shrink:0" id="aiBtn_${item.id||Math.random().toString(36).slice(2,8)}">
-          ${ep?`<button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:var(--accent);border-color:var(--accent)" onclick="aiRecFocus('${esc}')">지도보기</button><button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:#e57373;border-color:#e57373" onclick="aiRecDel(this,'${esc}')">삭제</button>`
+          ${ep?`<button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:var(--accent);border-color:var(--accent)" onclick="aiRecFocus('${item.y}','${item.x}','${esc}')">지도보기</button><button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:#e57373;border-color:#e57373" onclick="aiRecDel(this,'${item.y}','${item.x}','${esc}')">삭제</button>`
           :`<button class="btn btn-outline" style="font-size:11px;padding:3px 8px" onclick="aiRecAdd(this,'${esc}','${item.y}','${item.x}','${cat}','${(item.road_address_name||item.address_name||'').replace(/'/g,"\\'")}')">추가</button>`}
           </div>
         </div>
@@ -2763,11 +2770,12 @@ function aiRecAdd(btn,name,lat,lng,catCode,addr){
   addPlace({name,cat:catId,lat:parseFloat(lat),lng:parseFloat(lng),memo:'',addr:addr||''});
   const wrap=btn.parentElement;
   const esc=name.replace(/'/g,"\\'");
-  wrap.innerHTML=`<button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:var(--accent);border-color:var(--accent)" onclick="aiRecFocus('${esc}')">지도보기</button><button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:#e57373;border-color:#e57373" onclick="aiRecDel(this,'${esc}')">삭제</button>`;
+  wrap.innerHTML=`<button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:var(--accent);border-color:var(--accent)" onclick="aiRecFocus('${lat}','${lng}','${esc}')">지도보기</button><button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:#e57373;border-color:#e57373" onclick="aiRecDel(this,'${lat}','${lng}','${esc}')">삭제</button>`;
   toast(name+' 추가!');
 }
-function aiRecFocus(name){
-  const p=places.find(x=>x.name===name);
+function aiRecFocus(lat,lng,name){
+  const la=parseFloat(lat),lo=parseFloat(lng);
+  const p=places.find(x=>Math.abs(x.lat-la)<0.0001&&Math.abs(x.lng-lo)<0.0001)||places.find(x=>x.name===name);
   if(!p||!p.lat||!p.lng){toast('위치 정보가 없어요');return;}
   document.getElementById('aiRecModal').classList.remove('open');
   showTab('list');
@@ -2777,8 +2785,10 @@ function aiRecFocus(name){
     if(iwMap[p.id])iwMap[p.id].setMap(map);
   },300);
 }
-function aiRecDel(btn,name){
-  const idx=places.findIndex(x=>x.name===name);
+function aiRecDel(btn,lat,lng,name){
+  const la=parseFloat(lat),lo=parseFloat(lng);
+  let idx=places.findIndex(x=>Math.abs(x.lat-la)<0.0001&&Math.abs(x.lng-lo)<0.0001);
+  if(idx<0) idx=places.findIndex(x=>x.name===name);
   if(idx<0){toast('이미 삭제됨');return;}
   const p=places[idx];
   places.splice(idx,1);
@@ -3179,15 +3189,23 @@ async function _loadSeoulGeo() {
 
 let _districtPage = null;
 let _districtDistMap = {};
+const REGION_GROUPS = [
+  {name:'서울', emoji:'🏙️', type:'map'},
+  {name:'경기', emoji:'🌳', areas:['수원','성남','고양','용인','부천','안산','안양','화성','평택','의정부','시흥','파주','김포','광명','하남','구리','남양주','양주','포천','이천','여주','동두천']},
+  {name:'인천', emoji:'🌊', areas:['중구','미추홀구','연수구','남동구','부평구','계양구','서구','강화','옹진']},
+  {name:'부산', emoji:'🏖️', areas:['해운대','서면','광안리','남포동','센텀시티','기장','영도','송도']},
+  {name:'대구', emoji:'🌸', areas:['동성로','수성구','달서구','북구','앞산','팔공산']},
+  {name:'대전', emoji:'🔬', areas:['유성구','둔산동','대전역','계족산']},
+  {name:'광주', emoji:'🎨', areas:['동구','서구','남구','북구','광산구','충장로']},
+  {name:'강원', emoji:'⛰️', areas:['춘천','강릉','속초','양양','평창','정선','원주','동해','삼척']},
+  {name:'충청', emoji:'🏛️', areas:['천안','청주','세종','공주','부여','보령','단양','제천']},
+  {name:'전라', emoji:'🥘', areas:['전주','여수','순천','목포','담양','광양','남원','군산']},
+  {name:'경상', emoji:'🏯', areas:['경주','포항','통영','거제','창원','진주','안동','영주','울산']},
+  {name:'제주', emoji:'🍊', areas:['제주시','서귀포','애월','성산','중문','한림','우도']},
+];
 function openLabDistrict() {
   document.getElementById('labModal').classList.remove('open');
-  _districtDistMap = {};
-  places.forEach(p => {
-    if (!p.addr) return;
-    const m = p.addr.match(/서울[^\s]*\s+(\S+구)/);
-    if (m) { const d = m[1]; if (!_districtDistMap[d]) _districtDistMap[d]=[]; _districtDistMap[d].push(p); }
-  });
-  _showDistrictPage('map');
+  _showDistrictPage('region');
 }
 // 서울 25구 대략적 버블 배치 (row, col 기반 - 지하철 노선도 느낌)
 const GU_LAYOUT = [
@@ -3205,18 +3223,82 @@ function _showDistrictPage(view, geo, guName) {
   _districtPage = document.createElement('div');
   _districtPage.id = 'districtPage';
   _districtPage.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#ffffff;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
-  if (view === 'map') {
+  if (view === 'region') {
+    const counts = {};
+    REGION_GROUPS.forEach(r => {
+      counts[r.name] = places.filter(p => p.addr && p.addr.includes(r.name === '충청' ? '충' : r.name === '전라' ? '전' : r.name === '경상' ? '경' : r.name)).length;
+    });
+    counts['서울'] = places.filter(p => p.addr && p.addr.includes('서울')).length;
+    counts['경기'] = places.filter(p => p.addr && p.addr.includes('경기')).length;
+    counts['강원'] = places.filter(p => p.addr && (p.addr.includes('강원') || p.addr.includes('춘천') || p.addr.includes('강릉') || p.addr.includes('속초'))).length;
+    counts['제주'] = places.filter(p => p.addr && p.addr.includes('제주')).length;
     _districtPage.innerHTML = `<div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #eee;flex-shrink:0;background:white">
       <button onclick="_closeDistrictPage()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px 8px">←</button>
+      <span style="font-size:17px;font-weight:700;color:var(--dark)">지역별 탐색</span>
+    </div>
+    <div style="flex:1;overflow:auto;padding:16px">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+        ${REGION_GROUPS.map(r => {
+          const cnt = counts[r.name] || 0;
+          return `<div style="padding:18px 10px;border:1.5px solid ${cnt?'var(--accent)':'var(--warm)'};border-radius:14px;text-align:center;cursor:pointer;transition:all .15s;background:${cnt?'#faf5f0':'#fafaf7'}" onclick="_openRegion('${r.name}')" onmouseover="this.style.transform='scale(1.03)'" onmouseout="this.style.transform='scale(1)'">
+            <div style="font-size:24px;margin-bottom:4px">${r.emoji}</div>
+            <div style="font-size:14px;font-weight:700;color:var(--dark)">${r.name}</div>
+            ${cnt?`<div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:2px">${cnt}곳</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+    document.body.appendChild(_districtPage);
+  } else if (view === 'map') {
+    _districtDistMap = {};
+    places.forEach(p => {
+      if (!p.addr) return;
+      const m = p.addr.match(/서울[^\s]*\s+(\S+구)/);
+      if (m) { const d = m[1]; if (!_districtDistMap[d]) _districtDistMap[d]=[]; _districtDistMap[d].push(p); }
+    });
+    _districtPage.innerHTML = `<div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #eee;flex-shrink:0;background:white">
+      <button onclick="_showDistrictPage('region')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px 8px">←</button>
       <span style="font-size:17px;font-weight:700;color:var(--dark)">서울 지역별 탐색</span>
     </div>
     <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:16px" id="distMapBody"></div>`;
     document.body.appendChild(_districtPage);
     _renderIllustMap(document.getElementById('distMapBody'));
-  } else if (view === 'list') {
-    const guPlaces = _districtDistMap[guName] || [];
+  } else if (view === 'area') {
+    // 서울 외 지역의 세부 지역 리스트
+    const region = REGION_GROUPS.find(r => r.name === guName);
+    if (!region) return;
+    const areaPlaces = {};
+    let totalCnt = 0;
+    (region.areas||[]).forEach(a => { areaPlaces[a] = []; });
+    places.forEach(p => {
+      if (!p.addr) return;
+      (region.areas||[]).forEach(a => {
+        if (p.addr.includes(a)) { areaPlaces[a].push(p); totalCnt++; }
+      });
+    });
     _districtPage.innerHTML = `<div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #eee;flex-shrink:0;background:white">
-      <button onclick="_showDistrictPage('map')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px 8px">←</button>
+      <button onclick="_showDistrictPage('region')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px 8px">←</button>
+      <span style="font-size:17px;font-weight:700;color:var(--dark)">${region.emoji} ${guName}</span>
+      <span style="font-size:13px;color:var(--accent);font-weight:600">${totalCnt}곳</span>
+    </div>
+    <div style="flex:1;overflow:auto;padding:12px">
+      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
+        ${(region.areas||[]).map(a => {
+          const cnt = areaPlaces[a].length;
+          return `<div style="padding:14px;border:1.5px solid ${cnt?'var(--accent)':'var(--warm)'};border-radius:12px;cursor:pointer;background:${cnt?'#faf5f0':'#fafaf7'}" onclick="_showDistrictPage('list',null,'${a}')">
+            <div style="font-size:13px;font-weight:600;color:var(--dark)">${a}</div>
+            ${cnt?`<div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:2px">${cnt}곳</div>`:''}
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+    document.body.appendChild(_districtPage);
+  } else if (view === 'list') {
+    let guPlaces = _districtDistMap[guName] || [];
+    if (!guPlaces.length) guPlaces = places.filter(p => p.addr && p.addr.includes(guName));
+    const backView = _districtDistMap[guName] ? 'map' : 'region';
+    _districtPage.innerHTML = `<div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #eee;flex-shrink:0;background:white">
+      <button onclick="_showDistrictPage('${backView}')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px 8px">←</button>
       <span style="font-size:17px;font-weight:700;color:var(--dark)">${guName}</span>
       <span style="font-size:13px;color:var(--accent);font-weight:600">${guPlaces.length}곳</span>
     </div>
@@ -3244,58 +3326,55 @@ function _showDistrictPage(view, geo, guName) {
 function _closeDistrictPage() {
   if (_districtPage) { _districtPage.remove(); _districtPage = null; }
 }
+function _openRegion(name) {
+  if (name === '서울') { _showDistrictPage('map'); }
+  else { _showDistrictPage('area', null, name); }
+}
 function _renderIllustMap(body) {
   // 퍼즐 스타일 서울 지도 — 사다리꼴·5각형 블록이 맞물림
   // 경사진 경계선으로 다양한 형태, 인접 구끼리 변 공유
   const D = [
-    // === 한강 북쪽 ===
-    // Row 0: 도봉·노원
-    {name:'도봉구',   p:[[258,0],[468,0],[472,90],[245,96]],                       tx:362, ty:44},
-    {name:'노원구',   p:[[468,0],[700,0],[700,84],[472,90]],                       tx:588, ty:40},
+    // === 한강 북쪽 — 5각형 3개 + 사다리꼴, 빈틈 없음 ===
+    // Row 0: 도봉·노원 (상단 우측만 → 비사각형 실루엣)
+    {name:'도봉구',   p:[[248,10],[432,0],[440,98],[235,105]],                      tx:338, ty:50},
+    {name:'노원구',   p:[[432,0],[670,8],[675,94],[440,98]],                        tx:555, ty:46},
     // Row 1: 은평·성북(5각형!)·강북·중랑
-    {name:'은평구',   p:[[0,52],[152,46],[158,172],[0,180]],                        tx:78, ty:112},
-    {name:'성북구',   p:[[152,46],[200,14],[245,96],[288,172],[158,172]],            tx:218, ty:118},
-    {name:'강북구',   p:[[245,96],[472,90],[486,170],[288,172]],                    tx:375, ty:132},
-    {name:'중랑구',   p:[[472,90],[700,84],[700,166],[486,170]],                    tx:592, ty:126},
+    {name:'은평구',   p:[[22,72],[158,62],[165,192],[26,202]],                       tx:93, ty:132},
+    {name:'성북구',   p:[[158,62],[206,22],[235,105],[296,192],[165,192]],            tx:222, ty:126},
+    {name:'강북구',   p:[[235,105],[440,98],[456,188],[296,192]],                    tx:357, ty:144},
+    {name:'중랑구',   p:[[440,98],[675,94],[680,184],[456,188]],                     tx:563, ty:138},
     // Row 2: 서대문·종로·동대문·광진
-    {name:'서대문구', p:[[0,180],[158,172],[168,268],[0,276]],                      tx:82, ty:222},
-    {name:'종로구',   p:[[158,172],[288,172],[310,268],[168,268]],                  tx:230, ty:218},
-    {name:'동대문구', p:[[288,172],[486,170],[504,264],[310,268]],                  tx:397, ty:216},
-    {name:'광진구',   p:[[486,170],[700,166],[700,260],[504,264]],                  tx:598, ty:214},
-    // Row 3: 마포·중구·성동·강동
-    {name:'마포구',   p:[[0,276],[168,268],[178,358],[0,366]],                      tx:88, ty:314},
-    {name:'중구',     p:[[168,268],[310,268],[322,360],[178,358]],                  tx:244, ty:310},
-    {name:'성동구',   p:[[310,268],[504,264],[518,354],[322,360]],                  tx:414, ty:308},
-    {name:'강동구',   p:[[504,264],[700,260],[700,350],[518,354]],                  tx:606, ty:304},
-    // Row 4: 용산 (넓은 사다리꼴)
-    {name:'용산구',   p:[[178,358],[518,354],[526,402],[172,408]],                  tx:350, ty:378},
-    // === 한강 (y:~402~458) ===
+    {name:'서대문구', p:[[26,202],[165,192],[176,296],[30,306]],                     tx:98, ty:246},
+    {name:'종로구',   p:[[165,192],[296,192],[316,294],[176,296]],                   tx:238, ty:240},
+    {name:'동대문구', p:[[296,192],[456,188],[476,288],[316,294]],                   tx:386, ty:238},
+    {name:'광진구',   p:[[456,188],[680,184],[686,284],[476,288]],                   tx:575, ty:234},
+    // Row 3: 마포(5각형!)·중구(작음)·성동·강동(5각형!)
+    {name:'마포구',   p:[[30,306],[176,296],[192,388],[195,422],[34,432]],            tx:112, ty:362},
+    {name:'중구',     p:[[176,296],[316,294],[330,384],[192,388]],                   tx:254, ty:338},
+    {name:'성동구',   p:[[316,294],[476,288],[492,382],[330,384]],                   tx:404, ty:336},
+    {name:'강동구',   p:[[476,288],[686,284],[692,420],[498,426],[492,382]],          tx:586, ty:352},
+    // 용산: 중구+성동 아래, 마포~강동 사이 (빈틈 채움)
+    {name:'용산구',   p:[[192,388],[492,382],[498,426],[195,422]],                   tx:345, ty:404},
     // === 한강 남쪽 ===
-    // Row S0: 강서·양천·영등포·동작·송파
-    {name:'강서구',   p:[[0,458],[140,452],[148,548],[0,555]],                      tx:73, ty:502},
-    {name:'양천구',   p:[[140,452],[278,458],[284,550],[148,548]],                  tx:212, ty:500},
-    {name:'영등포구', p:[[278,458],[412,454],[420,546],[284,550]],                  tx:349, ty:500},
-    {name:'동작구',   p:[[412,454],[538,460],[544,554],[420,546]],                  tx:479, ty:502},
-    {name:'송파구',   p:[[538,460],[700,456],[700,550],[544,554]],                  tx:622, ty:502},
-    // Row S1: 구로·금천·관악·서초·강남
-    {name:'구로구',   p:[[0,555],[148,548],[154,642],[0,650]],                      tx:76, ty:596},
-    {name:'금천구',   p:[[148,548],[264,554],[270,646],[154,642]],                  tx:209, ty:594},
-    {name:'관악구',   p:[[264,554],[396,550],[404,644],[270,646]],                  tx:334, ty:596},
-    {name:'서초구',   p:[[396,550],[544,554],[550,648],[404,644]],                  tx:474, ty:596},
-    {name:'강남구',   p:[[544,554],[700,550],[700,644],[550,648]],                  tx:624, ty:596},
+    {name:'강서구',   p:[[20,480],[142,474],[148,572],[25,578]],                     tx:84, ty:524},
+    {name:'양천구',   p:[[142,474],[268,480],[274,576],[148,572]],                   tx:208, ty:522},
+    {name:'영등포구', p:[[268,480],[410,476],[416,570],[274,576]],                   tx:341, ty:524},
+    {name:'동작구',   p:[[410,476],[538,482],[544,574],[416,570]],                   tx:477, ty:524},
+    {name:'송파구',   p:[[538,482],[700,478],[705,572],[544,574]],                   tx:623, ty:524},
+    {name:'구로구',   p:[[25,578],[148,572],[155,662],[32,668]],                     tx:90, ty:618},
+    {name:'금천구',   p:[[148,572],[274,576],[280,666],[155,662]],                   tx:214, ty:616},
+    {name:'관악구',   p:[[274,576],[416,570],[424,660],[280,666]],                   tx:349, ty:616},
+    {name:'서초구',   p:[[416,570],[544,574],[552,666],[424,660]],                   tx:484, ty:618},
+    {name:'강남구',   p:[[544,574],[705,572],[712,664],[552,666]],                   tx:628, ty:616},
   ];
   const COLORS=['#FFD1DC','#C5E1A5','#FFE0B2','#B3E5FC','#E1BEE7','#DCEDC8','#F8BBD0','#D1C4E9','#FFE082','#B2DFDB','#FFCCBC','#C8E6C9','#F0F4C3','#D7CCC8','#B3E5FC','#FFD180','#FFAB91','#CE93D8','#80DEEA','#FFF59D','#A5D6A7','#EF9A9A','#BCAAA4','#90CAF9','#E6EE9C'];
   function rp(pts,r){const n=pts.length;let d='';for(let i=0;i<n;i++){const pv=pts[(i-1+n)%n],c=pts[i],nx=pts[(i+1)%n];const d1x=c[0]-pv[0],d1y=c[1]-pv[1],d2x=nx[0]-c[0],d2y=nx[1]-c[1];const l1=Math.sqrt(d1x*d1x+d1y*d1y),l2=Math.sqrt(d2x*d2x+d2y*d2y);const o=Math.min(r,l1/2,l2/2);const x1=c[0]-(d1x/l1)*o,y1=c[1]-(d1y/l1)*o;const x2=c[0]+(d2x/l2)*o,y2=c[1]+(d2y/l2)*o;d+=(i===0?'M':'L')+x1.toFixed(1)+','+y1.toFixed(1);d+='Q'+c[0]+','+c[1]+' '+x2.toFixed(1)+','+y2.toFixed(1);}return d+'Z';}
-  const W=700,H=660;
+  const W=720,H=680;
   let svg=`<defs><filter id="bs" x="-4%" y="-4%" width="108%" height="116%"><feDropShadow dx="0" dy="1.5" stdDeviation="2" flood-color="rgba(0,0,0,.07)"/></filter></defs>`;
-  svg+=`<rect x="0" y="0" width="${W}" height="${H}" fill="#F5F0E8" rx="12"/>`;
-  svg+=`<ellipse cx="660" cy="30" rx="35" ry="22" fill="#E8F5E9" opacity="0.4"/>`;
-  svg+=`<ellipse cx="30" cy="630" rx="28" ry="18" fill="#E8F5E9" opacity="0.35"/>`;
   // 한강 — 물결 밴드 (용산 아래~남쪽 블록 위)
-  svg+=`<path d="M-5,406 C100,396 250,414 400,404 C550,394 650,410 705,400 L705,456 C650,466 550,450 400,460 C250,470 100,454 -5,462 Z" fill="#B3E5FC" opacity="0.55"/>`;
-  svg+=`<path d="M-5,420 C120,412 280,428 420,418 C560,408 660,422 705,416" fill="none" stroke="#64B5F6" stroke-width="1.2" opacity="0.3"/>`;
-  svg+=`<path d="M-5,442 C120,436 290,448 430,440 C570,432 660,444 705,438" fill="none" stroke="#64B5F6" stroke-width="1" opacity="0.2"/>`;
-  svg+=`<text x="350" y="434" text-anchor="middle" font-size="15" font-weight="700" fill="#42A5F5" opacity="0.5" letter-spacing="12" style="pointer-events:none">한 강</text>`;
+  svg+=`<path d="M10,428 C120,416 280,438 420,424 C560,412 660,430 710,418 L710,474 C660,486 560,468 420,480 C280,492 120,474 10,484 Z" fill="#B3E5FC" opacity="0.55"/>`;
+  svg+=`<path d="M10,442 C140,432 310,452 440,440 C570,428 660,444 710,436" fill="none" stroke="#64B5F6" stroke-width="1.2" opacity="0.3"/>`;
+  svg+=`<text x="365" y="455" text-anchor="middle" font-size="15" font-weight="700" fill="#42A5F5" opacity="0.5" letter-spacing="12" style="pointer-events:none">한 강</text>`;
   D.forEach((d,idx)=>{
     const cnt=_districtDistMap[d.name]?_districtDistMap[d.name].length:0;
     const has=cnt>0;
