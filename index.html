@@ -432,7 +432,7 @@ header .lc svg{width:18px;height:18px}
 
 <!-- 코스 짜기 모달 -->
 <div class="modal-overlay" id="courseModal" onclick="if(event.target===this)closeCourseModal()">
-  <div class="modal" style="width:320px;max-height:85vh;padding:20px;display:flex;flex-direction:column">
+  <div class="modal" style="width:320px;max-height:80vh;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0">
       <h3 style="margin:0;font-size:16px"><i data-lucide="route" class="lc lc-sm"></i> 코스 짜기</h3>
       <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="closeCourseModal()">&times;</span>
@@ -441,8 +441,8 @@ header .lc svg{width:18px;height:18px}
     <div id="coursePhase1" style="flex:1;overflow-y:auto;display:flex;flex-direction:column">
       <p style="font-size:12px;color:var(--brown);margin-bottom:10px">코스에 포함할 장소를 선택하세요 (2개 이상)</p>
       <div id="coursePlaceList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:12px"></div>
-      <button class="btn btn-dark" id="courseMakeBtn" style="width:100%;display:none;flex-shrink:0" onclick="buildCourse()">코스 만들기</button>
     </div>
+    <button class="btn btn-dark" id="courseMakeBtn" style="width:100%;display:none;flex-shrink:0;margin-top:8px" onclick="buildCourse()">코스 만들기</button>
     <div id="coursePhase2" style="flex:1;overflow-y:auto;display:none;flex-direction:column">
       <p style="font-size:12px;color:var(--brown);margin-bottom:10px">순서를 조정하세요</p>
       <div id="courseRouteList" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px"></div>
@@ -2619,7 +2619,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 216;
+const APP_VERSION = 217;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
