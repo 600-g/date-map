@@ -99,6 +99,7 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 
 .photo-viewer .pv-del{color:#E74C3C;font-size:13px;cursor:pointer;padding:6px 14px;background:rgba(255,255,255,.15);border-radius:8px;border:1px solid rgba(255,255,255,.2)}
 /* 월드컵 폭죽 */
 @keyframes wcConfetti{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(calc(90vh)) rotate(720deg);opacity:0}}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .wc-confetti-wrap{position:fixed;inset:0;z-index:10001;pointer-events:none;overflow:hidden}
 .wc-confetti{position:absolute;top:-10px;width:8px;height:8px;border-radius:2px;animation:wcConfetti linear forwards}
 /* 월드컵 */
@@ -270,8 +271,7 @@ header .lc svg{width:18px;height:18px}
   <div class="panel">
     <div class="tabs">
       <button class="tab active" onclick="showTab('list')"><i data-lucide="map" class="lc lc-sm"></i> 지도</button>
-      <button class="tab" onclick="openLabDistrict()"><i data-lucide="map-pin" class="lc lc-sm"></i> 탐색<span style="font-size:8px;color:var(--accent);font-weight:700;vertical-align:super">β</span></button>
-      <button class="tab" onclick="openLabCourse()"><i data-lucide="route" class="lc lc-sm"></i> 코스</button>
+      <button class="tab" onclick="openPlanMenu()"><i data-lucide="compass" class="lc lc-sm"></i> 플랜<span style="font-size:8px;color:var(--accent);font-weight:700;vertical-align:super">β</span></button>
       <button class="tab" onclick="showTab('cfg')"><i data-lucide="settings" class="lc lc-sm"></i> 설정</button>
     </div>
 
@@ -415,15 +415,10 @@ header .lc svg{width:18px;height:18px}
     </div>
     <p style="font-size:12px;color:var(--brown);margin-bottom:14px;line-height:1.6">개발 중인 기능을 미리 체험해보세요.<br>불안정할 수 있어요.</p>
     <div id="labList">
-      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openLabDistrict()">
-        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="map" class="lc lc-sm" style="color:var(--accent)"></i> 지역별 탐색</div>
-        <div style="font-size:12px;color:var(--brown);line-height:1.5">서울 구별로 저장된 장소를 탐색하고 핫플레이스를 발견해보세요.</div>
-        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">베타</span></div>
-      </div>
-      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openLabCourse()">
-        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="route" class="lc lc-sm" style="color:var(--accent)"></i> 코스 짜기</div>
-        <div style="font-size:12px;color:var(--brown);line-height:1.5">저장된 장소로 데이트 코스를 만들어보세요. 이동 경로와 예상 시간을 확인할 수 있어요.</div>
-        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">베타</span></div>
+      <div style="text-align:center;padding:30px 20px;color:var(--brown);font-size:13px;line-height:1.6">
+        <div style="font-size:32px;margin-bottom:12px">🧪</div>
+        새로운 실험 기능이 준비되면<br>여기에 추가됩니다!
+        <div style="margin-top:16px;font-size:11px;color:#aaa">탐색/코스 → 플랜 탭에서 이용 가능</div>
       </div>
     </div>
   </div>
@@ -2648,7 +2643,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 248;
+const APP_VERSION = 249;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2838,6 +2833,8 @@ let _courseMarkers = [];
 let _courseLines = [];
 
 function openLabCourse() {
+  const pm=document.getElementById('planMenu');if(pm)pm.remove();
+  const po=document.getElementById('planMenuOverlay');if(po)po.remove();
   document.getElementById('labModal').classList.remove('open');
   if (places.length < 2) { toast('코스를 만들려면 장소가 2개 이상 필요해요'); return; }
   _courseSel = [];
@@ -3233,7 +3230,36 @@ const REGION_GROUPS = [
   {name:'경상', emoji:'🏯', areas:['경주','포항','통영','거제','창원','진주','안동','영주','울산']},
   {name:'제주', emoji:'🍊', areas:['제주시','서귀포','애월','성산','중문','한림','우도']},
 ];
+function openPlanMenu() {
+  const existing = document.getElementById('planMenu');
+  if (existing) { existing.remove(); return; }
+  const menu = document.createElement('div');
+  menu.id = 'planMenu';
+  menu.style.cssText = 'position:fixed;bottom:0;left:0;right:0;z-index:9999;background:white;border-radius:20px 20px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.15);padding:20px 16px calc(20px + env(safe-area-inset-bottom,0px));animation:slideUp .25s ease';
+  menu.innerHTML = `<div style="width:40px;height:4px;background:#ddd;border-radius:2px;margin:0 auto 16px"></div>
+    <div style="font-size:16px;font-weight:700;color:var(--dark);margin-bottom:14px">플랜 <span style="font-size:10px;color:var(--accent);font-weight:700;vertical-align:super">β</span></div>
+    <div style="display:flex;gap:10px">
+      <div onclick="document.getElementById('planMenu').remove();openLabDistrict()" style="flex:1;padding:16px 12px;border:1.5px solid var(--warm);border-radius:14px;cursor:pointer;background:white;text-align:center">
+        <div style="font-size:24px;margin-bottom:6px">🗺️</div>
+        <div style="font-size:14px;font-weight:600;color:var(--dark)">탐색 <span style="font-size:9px;color:var(--accent);font-weight:700">β</span></div>
+        <div style="font-size:11px;color:var(--brown);margin-top:4px">지역별 핫플 발견</div>
+      </div>
+      <div onclick="document.getElementById('planMenu').remove();openLabCourse()" style="flex:1;padding:16px 12px;border:1.5px solid var(--warm);border-radius:14px;cursor:pointer;background:white;text-align:center">
+        <div style="font-size:24px;margin-bottom:6px">📍</div>
+        <div style="font-size:14px;font-weight:600;color:var(--dark)">코스 <span style="font-size:9px;color:var(--accent);font-weight:700">β</span></div>
+        <div style="font-size:11px;color:var(--brown);margin-top:4px">데이트 코스 짜기</div>
+      </div>
+    </div>`;
+  const overlay = document.createElement('div');
+  overlay.id = 'planMenuOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,.3)';
+  overlay.onclick = () => { menu.remove(); overlay.remove(); };
+  document.body.appendChild(overlay);
+  document.body.appendChild(menu);
+}
 function openLabDistrict() {
+  const pm=document.getElementById('planMenu');if(pm)pm.remove();
+  const po=document.getElementById('planMenuOverlay');if(po)po.remove();
   document.getElementById('labModal').classList.remove('open');
   _showDistrictPage('region');
 }
