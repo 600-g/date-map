@@ -2623,7 +2623,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 238;
+const APP_VERSION = 239;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3404,6 +3404,8 @@ function _distBack() {
   _showDistrictPage('region');
 }
 function _openRegion(name) {
+  _distSearchState = {query:'',cats:[],sort:'accuracy',pages:{},hasMore:{},allItems:{}};
+  _distAreaContext = '';
   _showDistrictPage('area', null, name);
 }
 function _distSearch() {
@@ -3418,6 +3420,15 @@ function _distAreaTap(area) {
   _distAreaContext = area;
   si.value = '';
   si.placeholder = area + ' 내 검색 (예: 맛집, 파스타)';
+  // 지역 변경 시 검색 상태 완전 리셋
+  _distSearchState = {query:'',cats:[],sort:'accuracy',pages:{},hasMore:{},allItems:{}};
+  // 정렬 버튼도 추천순으로 리셋
+  document.querySelectorAll('.dist-sort-btn').forEach(b=>{
+    const on=b.dataset.sort==='accuracy';
+    b.style.background=on?'var(--accent)':'white';
+    b.style.color=on?'white':'var(--dark)';
+    b.style.borderColor=on?'var(--accent)':'var(--warm)';
+  });
   _distBackTarget = _distCurrentGu;
   _showDistrictPage('search', null, area);
 }
@@ -3436,7 +3447,7 @@ async function _distDoSearch(query,loadMore) {
   }
   const st=_distSearchState;
   const sortParam=st.sort;
-  if(sortParam==='distance'&&myLat===null){toast('거리순은 위치 허용이 필요해요');return;}
+  if(sortParam==='distance'&&myLat===null){toast('거리순은 위치 허용이 필요해요');const rl=document.getElementById('distResultList');if(rl)rl.innerHTML='<p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">위치를 허용한 후 다시 시도해주세요</p>';return;}
 
   // 모든 카테고리 병렬 호출 (렉 방지)
   const fetches=cats.filter(c=>st.hasMore[c]).map(async cat=>{
