@@ -358,14 +358,14 @@ header .lc svg{width:18px;height:18px}
         </div>
 
         <hr class="div">
-        <div class="s-title"><i data-lucide="refresh-cw" class="lc lc-sm"></i> 앱 업데이트</div>
-        <div class="s-desc">현재 버전: v<span id="appVer"></span></div>
-        <button class="btn btn-outline" id="updateBtn" style="width:100%;margin-bottom:12px;opacity:.5" onclick="forceUpdate()"> 최신 버전입니다</button>
-
-        <hr class="div">
         <div class="s-title"><i data-lucide="flask-conical" class="lc lc-sm"></i> 실험실</div>
         <div class="s-desc">새로운 기능을 미리 체험해보세요</div>
         <button class="btn btn-outline" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openLab()"><i data-lucide="beaker" class="lc lc-sm"></i> 실험실 입장</button>
+
+        <hr class="div">
+        <div class="s-title"><i data-lucide="refresh-cw" class="lc lc-sm"></i> 앱 업데이트</div>
+        <div class="s-desc">현재 버전: v<span id="appVer"></span></div>
+        <button class="btn btn-outline" id="updateBtn" style="width:100%;margin-bottom:12px;opacity:.5" onclick="forceUpdate()"> 최신 버전입니다</button>
 
         <hr class="div">
         <div class="s-title"><i data-lucide="trash-2" class="lc lc-sm"></i> 초기화</div>
@@ -2623,7 +2623,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 235;
+const APP_VERSION = 236;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
