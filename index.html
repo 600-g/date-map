@@ -817,22 +817,27 @@ function initMap() {
 }
 
 // ── 지도 확대/축소 (모바일) ──
+function _refreshMapSize() {
+  if (!map) return;
+  const el = document.getElementById('map');
+  if (el) map.setSize(new naver.maps.Size(el.offsetWidth, el.offsetHeight));
+}
 function expandMap() {
   if (window.innerWidth > 680) return;
   const m = document.querySelector('.main');
   m.classList.add('map-expanded');
-  // 검색바, 하단 탭바 숨기기
   const tb = document.querySelector('.list-top-bar'); if(tb) tb.style.display='none';
   const tabs = document.querySelector('.tabs'); if(tabs) tabs.style.display='none';
-  setTimeout(() => { if(map){const _el=document.getElementById('map');map.setSize(new naver.maps.Size(_el.offsetWidth,_el.offsetHeight));} }, 350);
+  setTimeout(_refreshMapSize, 50);
+  setTimeout(_refreshMapSize, 350);
 }
 function collapseMap() {
   const m = document.querySelector('.main');
   m.classList.remove('map-expanded');
-  // 검색바, 하단 탭바 복원
   const tb = document.querySelector('.list-top-bar'); if(tb) tb.style.display='';
   const tabs = document.querySelector('.tabs'); if(tabs) tabs.style.display='';
-  setTimeout(() => { if(map){const _el=document.getElementById('map');map.setSize(new naver.maps.Size(_el.offsetWidth,_el.offsetHeight));} }, 350);
+  setTimeout(_refreshMapSize, 50);
+  setTimeout(_refreshMapSize, 350);
   try{lucide.createIcons();}catch(e){}
 }
 function toggleMapExpand() {
@@ -3242,7 +3247,7 @@ function courseShowMap() {
   expandMap();
   toast(`코스 ${_courseSel.length}곳 표시 중...`);
   setTimeout(() => {
-    if(map){const _el=document.getElementById('map');map.setSize(new naver.maps.Size(_el.offsetWidth,_el.offsetHeight));}
+    _refreshMapSize();
     setTimeout(() => {
       try {
         const positions = [];
