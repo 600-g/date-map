@@ -1283,7 +1283,7 @@ function _randomGo(region) {
     const rp = pool[Math.floor(Math.random() * pool.length)];
     const c = getCat(rp.cat);
     body.innerHTML = `<div style="text-align:center;padding:20px;border:2px solid var(--warm);border-radius:16px;animation:pulse .3s">
-      <div style="font-size:28px;margin-bottom:8px">${c.emoji||'📍'}</div>
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:48px;height:48px;background:${c.color};border-radius:50%;margin-bottom:8px">${svgSized(getIcon(c.emoji),28)||c.emoji}</div>
       <div style="font-size:18px;font-weight:700;color:var(--dark)">${rp.name}</div>
       <div style="font-size:12px;color:var(--brown);margin-top:4px">${rp.addr||''}</div>
     </div>`;
@@ -1293,9 +1293,13 @@ function _randomGo(region) {
       const pick = pool[Math.floor(Math.random() * pool.length)];
       const pc = getCat(pick.cat);
       round.textContent = '🎉 오늘의 장소!';
+      const _avg = getAvgRating(pick);
+      let _stars = '';
+      if(_avg){const an=parseFloat(_avg);for(let i=1;i<=5;i++){_stars+=an>=i?`<svg width="14" height="14" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5"><path d="${_starPath}"/></svg>`:an>=i-.5?`<svg width="14" height="14" viewBox="0 0 24 24" fill="#e0e0e0" stroke="#ccc" stroke-width="1.5"><path d="${_starPath}"/></svg><svg width="14" height="14" viewBox="0 0 24 24" fill="#F1C40F" stroke="#E6B800" stroke-width="1.5" style="clip-path:inset(0 50% 0 0);margin-left:-14px"><path d="${_starPath}"/></svg>`:`<svg width="14" height="14" viewBox="0 0 24 24" fill="#e0e0e0" stroke="#ccc" stroke-width="1.5"><path d="${_starPath}"/></svg>`;}}
       body.innerHTML = `<div style="text-align:center;padding:24px;border:2.5px solid var(--accent);border-radius:16px;background:linear-gradient(135deg,#fff5f5,#fff0f6)">
-        <div style="font-size:36px;margin-bottom:10px">${pc.emoji||'📍'}</div>
+        <div style="display:inline-flex;align-items:center;justify-content:center;width:56px;height:56px;background:${pc.color};border-radius:50%;margin-bottom:10px">${svgSized(getIcon(pc.emoji),32)||pc.emoji}</div>
         <div style="font-size:20px;font-weight:800;color:var(--dark)">${pick.name}</div>
+        ${_avg?`<div style="display:flex;align-items:center;justify-content:center;gap:2px;margin-top:6px">${_stars}<span style="font-size:12px;color:#666;margin-left:4px;font-weight:500">${_avg}</span></div>`:''}
         <div style="font-size:12px;color:var(--brown);margin-top:6px">${pick.addr||''}</div>
         ${pick.memo?`<div style="font-size:11px;color:#888;margin-top:6px">${pick.memo}</div>`:''}
         <div style="display:flex;gap:8px;justify-content:center;margin-top:14px">
@@ -2716,7 +2720,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 252;
+const APP_VERSION = 253;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
