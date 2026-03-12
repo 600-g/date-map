@@ -2729,7 +2729,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 257;
+const APP_VERSION = 258;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2771,11 +2771,11 @@ const THEMES = {
   mocha: {name:'모카',accent:'#A0785C',dark:'#4A3328',darkLight:'#654840',brown:'#9A8577',warm:'#EDE5DC',cream:'#FAF7F3'},
 };
 const FONTS = {
-  pretendard: {name:'기본 (Pretendard)',val:'Pretendard Variable,Pretendard,-apple-system,sans-serif'},
-  jua: {name:'주아',val:'Jua,sans-serif'},
-  gaegu: {name:'개구',val:'Gaegu,cursive'},
-  penscript: {name:'나눔손글씨',val:'Nanum Pen Script,cursive'},
-  batang: {name:'고운바탕',val:'Gowun Batang,serif'},
+  pretendard: {name:'기본 (Pretendard)',val:'Pretendard Variable,Pretendard,-apple-system,sans-serif',scale:1},
+  jua: {name:'주아',val:'Jua,sans-serif',scale:1},
+  gaegu: {name:'개구',val:'Gaegu,cursive',scale:1.15},
+  penscript: {name:'나눔손글씨',val:'Nanum Pen Script,cursive',scale:1.2},
+  batang: {name:'고운바탕',val:'Gowun Batang,serif',scale:1},
 };
 function _loadTheme(){
   try{
@@ -2794,6 +2794,9 @@ function _applyColorTheme(id){
 function _applyFont(id){
   const f=FONTS[id];if(!f)return;
   document.body.style.fontFamily=f.val;
+  // 개구/손글씨 등 작은 폰트는 크기 보정
+  if(f.scale&&f.scale!==1){document.documentElement.style.fontSize=(f.scale*100)+'%';}
+  else{document.documentElement.style.fontSize='';}
 }
 function _saveTheme(colorId,fontId){
   const cur=JSON.parse(localStorage.getItem('datemap-theme')||'{}');
