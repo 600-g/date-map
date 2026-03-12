@@ -200,11 +200,11 @@ header .lc svg{width:18px;height:18px}
 .add-panel{border-bottom:1px solid var(--warm);background:#FAFAF7;display:none;max-height:50vh;overflow:hidden}
 .add-panel.open{display:flex;flex-direction:column}
 /* 주변 검색 */
-.nearby-bar{position:absolute;top:8px;left:8px;right:8px;z-index:10;display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;transition:opacity .2s,visibility .2s}
+.nearby-bar{position:absolute;top:6px;left:6px;right:6px;z-index:10;display:flex;gap:3px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;transition:opacity .2s,visibility .2s}
 .nearby-bar::-webkit-scrollbar{display:none}
 .nearby-bar.hidden{opacity:0;pointer-events:none;visibility:hidden}
-.nb-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:11px;padding:5px 9px;border-radius:18px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.1);white-space:nowrap}
-.nb-btn svg{width:15px;height:15px;flex-shrink:0;vertical-align:middle}
+.nb-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:11px;padding:4px 7px;border-radius:16px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap;flex-shrink:0}
+.nb-btn svg{width:14px;height:14px;flex-shrink:0;vertical-align:middle}
 .nb-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
 @media(hover:hover){.nb-btn:hover{background:var(--accent);color:white;border-color:var(--accent)}}
 /* 토스트 */
@@ -271,7 +271,7 @@ header .lc svg{width:18px;height:18px}
 <div class="main">
   <div class="panel">
     <div class="tabs">
-      <button class="tab active" onclick="showTab('list')"><i data-lucide="map" class="lc lc-sm"></i> 지도 <span id="cnt" style="font-size:10px;opacity:.7">0</span></button>
+      <button class="tab active" onclick="showTab('list')"><i data-lucide="map" class="lc lc-sm"></i> 지도</button>
       <button class="tab" onclick="openPlanMenu()"><i data-lucide="compass" class="lc lc-sm"></i> 플랜<span style="font-size:8px;color:var(--accent);font-weight:700;vertical-align:super">β</span></button>
       <button class="tab" onclick="showTab('cfg')"><i data-lucide="settings" class="lc lc-sm"></i> 설정</button>
     </div>
@@ -281,11 +281,12 @@ header .lc svg{width:18px;height:18px}
       <!-- 검색/추가 토글 영역 -->
       <div class="list-top-bar">
         <div class="list-search-row">
-          <div class="list-search-box collapsed" id="listSearchBox" onclick="expandListSearch()">
+          <div class="list-search-box expanded" id="listSearchBox">
             <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();toggleListSearch()"></i>
-            <input id="listSearchInput" type="search" placeholder="Ex) 매장명, 초성 (ㅅㅂㅅ)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0;-webkit-appearance:none">
+            <input id="listSearchInput" type="search" placeholder="매장명, 초성 검색" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0;-webkit-appearance:none">
           </div>
-          <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()"><i data-lucide="plus" class="lc lc-sm"></i> 추가</button>
+          <div class="badge" onclick="openPlaceListModal()" style="cursor:pointer;flex-shrink:0;background:var(--dark);font-size:11px;padding:4px 10px"><span id="cnt">0</span>곳</div>
+          <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()" style="flex-shrink:0"><i data-lucide="plus" class="lc lc-sm"></i></button>
         </div>
       </div>
       <!-- 장소 추가 패널 (접이식) -->
@@ -2735,7 +2736,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 260;
+const APP_VERSION = 261;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
