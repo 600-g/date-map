@@ -2647,7 +2647,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 244;
+const APP_VERSION = 245;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3512,14 +3512,23 @@ async function _distDoSearch(query,loadMore) {
           st.hasMore[cat]=d.items.length>=30&&startIdx+30<=(d.total||1000);
         }else{st.hasMore[cat]=false;}
       }else{
-        // 거리순: 지역 검색이면 accuracy(해당 지역 내), 자유 검색이면 distance(현 위치 기준)
+        // 카카오 거리순/기본
         const hasArea=!!_distAreaContext;
         const kakaoSort=hasArea?'accuracy':(myLat!==null?'distance':'accuracy');
         let locParam=(!hasArea&&myLat!==null)?`&x=${myLng}&y=${myLat}`:'';
-        const r=await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&category_group_code=${cat}&size=5&page=${pg}&sort=${kakaoSort}${locParam}`,{headers:{Authorization:'KakaoAK '+REST_KEY}});
+        const fetchSize=hasArea?15:5;
+        const r=await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&category_group_code=${cat}&size=${fetchSize}&page=${pg}&sort=${kakaoSort}${locParam}`,{headers:{Authorization:'KakaoAK '+REST_KEY}});
         const d=await r.json();
         if(d.documents&&d.documents.length){
-          st.allItems[cat]=(st.allItems[cat]||[]).concat(d.documents);
+          let filtered=d.documents;
+          if(hasArea){
+            const areaKey=_distAreaContext;
+            filtered=d.documents.filter(doc=>{
+              const addr=(doc.road_address_name||'')+(doc.address_name||'');
+              return addr.includes(areaKey);
+            }).slice(0,5);
+          }
+          st.allItems[cat]=(st.allItems[cat]||[]).concat(filtered);
           st.pages[cat]=pg+1;
           st.hasMore[cat]=!d.meta.is_end;
         }else{st.hasMore[cat]=false;}
