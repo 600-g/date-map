@@ -2792,8 +2792,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.0.0';
-const APP_VERSION_NUM = 100;
+const APP_VERSION = '1.0.1';
+const APP_VERSION_NUM = 101;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION_NUM) {
