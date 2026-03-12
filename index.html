@@ -2646,7 +2646,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 241;
+const APP_VERSION = 242;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3272,9 +3272,9 @@ function _showDistrictPage(view, geo, guName) {
           <button class="btn dist-cat-btn active" data-cat="AT4" onclick="_distCatSel(this)" style="font-size:12px;padding:4px 10px;border-radius:16px;background:var(--accent);color:white;border:1.5px solid var(--accent)">관광명소</button>
         </div>
         <div id="distSortBar" style="display:none;gap:6px;padding-top:10px">
-          <button class="btn dist-sort-btn" data-sort="accuracy" onclick="_distSetSort('accuracy')" style="font-size:11px;padding:4px 10px;border-radius:14px;background:var(--accent);color:white;border:1.5px solid var(--accent)">추천순</button>
+          <button class="btn dist-sort-btn" data-sort="distance" onclick="_distSetSort('distance')" style="font-size:11px;padding:4px 10px;border-radius:14px;background:var(--accent);color:white;border:1.5px solid var(--accent)">거리순</button>
           <button class="btn dist-sort-btn" data-sort="comment" onclick="_distSetSort('comment')" style="font-size:11px;padding:4px 10px;border-radius:14px;background:white;color:var(--dark);border:1.5px solid var(--warm)">리뷰순</button>
-          <button class="btn dist-sort-btn" data-sort="distance" onclick="_distSetSort('distance')" style="font-size:11px;padding:4px 10px;border-radius:14px;background:white;color:var(--dark);border:1.5px solid var(--warm)">거리순</button>
+          <button class="btn dist-sort-btn" data-sort="recommend" onclick="_distSetSort('recommend')" style="font-size:11px;padding:4px 10px;border-radius:14px;background:white;color:var(--dark);border:1.5px solid var(--warm)">추천순</button>
         </div>
       </div>
     </div>
@@ -3323,17 +3323,17 @@ function _showDistrictPage(view, geo, guName) {
       {name:'강원',path:`M${a2} Q${a3} ${b1} Q372,130 ${b2} L${b3} L${d1} L238,178 L210,112 Z`,tx:295,ty:112},
       {name:'충청',path:`M${c2} L180,244 L${d1} L${d2} L${d3} L${d4} L${c3} Z`,tx:140,ty:270},
       {name:'경상',path:`M${d1} L${b3} Q358,248 ${f1} Q382,320 ${f2} L${f3} Q330,458 ${e4} L${e3} L${d3} L${d2} Z`,tx:320,ty:355},
-      {name:'전라',path:`M${c3} L${d4} L${d3} L${e3} Q155,475 ${e2} Q42,455 ${e1} Q45,388 ${c4} Z`,tx:95,ty:420},
+      {name:'전라',path:`M${c3} L${d4} L${d3} L${e3} Q155,475 ${e2} Q42,455 ${e1} Q45,388 ${c4} Z`,tx:75,ty:450},
     ];
     // 광역시+제주 — 둥근 사각형 마커 (위에 오버레이)
     const cities=[
-      {name:'서울',cx:170,cy:128,w:66,h:40},
-      {name:'인천',cx:88,cy:150,w:58,h:36},
-      {name:'대전',cx:178,cy:298,w:56,h:34},
-      {name:'광주',cx:108,cy:395,w:56,h:34},
-      {name:'대구',cx:308,cy:295,w:56,h:34},
-      {name:'부산',cx:330,cy:435,w:58,h:36},
-      {name:'제주',cx:140,cy:530,w:94,h:44},
+      {name:'서울',cx:170,cy:128,w:70,h:42},
+      {name:'인천',cx:86,cy:150,w:62,h:38},
+      {name:'대전',cx:178,cy:298,w:60,h:36},
+      {name:'광주',cx:108,cy:400,w:60,h:36},
+      {name:'대구',cx:308,cy:295,w:60,h:36},
+      {name:'부산',cx:328,cy:435,w:62,h:38},
+      {name:'제주',cx:140,cy:530,w:96,h:46},
     ];
     let svg='';
     // 도 렌더
@@ -3428,7 +3428,7 @@ function _distBack() {
   _showDistrictPage('region');
 }
 function _openRegion(name) {
-  _distSearchState = {query:'',cats:[],sort:'accuracy',pages:{},hasMore:{},allItems:{}};
+  _distSearchState = {query:'',cats:[],sort:'distance',pages:{},hasMore:{},allItems:{}};
   _distAreaContext = '';
   _showDistrictPage('area', null, name);
 }
@@ -3445,10 +3445,10 @@ function _distAreaTap(area) {
   si.value = '';
   si.placeholder = area + ' 내 검색 (예: 맛집, 파스타)';
   // 지역 변경 시 검색 상태 완전 리셋
-  _distSearchState = {query:'',cats:[],sort:'accuracy',pages:{},hasMore:{},allItems:{}};
+  _distSearchState = {query:'',cats:[],sort:'distance',pages:{},hasMore:{},allItems:{}};
   // 정렬 버튼도 추천순으로 리셋
   document.querySelectorAll('.dist-sort-btn').forEach(b=>{
-    const on=b.dataset.sort==='accuracy';
+    const on=b.dataset.sort==='distance';
     b.style.background=on?'var(--accent)':'white';
     b.style.color=on?'white':'var(--dark)';
     b.style.borderColor=on?'var(--accent)':'var(--warm)';
@@ -3456,7 +3456,7 @@ function _distAreaTap(area) {
   _distBackTarget = _distCurrentGu;
   _showDistrictPage('search', null, area);
 }
-let _distSearchState = {query:'',cats:[],sort:'accuracy',pages:{},hasMore:{},allItems:{}};
+let _distSearchState = {query:'',cats:[],sort:'distance',pages:{},hasMore:{},allItems:{}};
 const _distCatNames={FD6:'음식점',CE7:'카페',CT1:'놀거리',AT4:'관광명소'};
 async function _distDoSearch(query,loadMore) {
   const cats=[];
@@ -3471,20 +3471,20 @@ async function _distDoSearch(query,loadMore) {
   }
   const st=_distSearchState;
   const sortParam=st.sort;
-  if(sortParam==='distance'&&myLat===null){toast('거리순은 위치 허용이 필요해요');const rl=document.getElementById('distResultList');if(rl)rl.innerHTML='<p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">위치를 허용한 후 다시 시도해주세요</p>';return;}
+  if(sortParam==='recommend'&&myLat===null){toast('추천순은 위치 허용이 필요해요');const rl=document.getElementById('distResultList');if(rl)rl.innerHTML='<p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">위치를 허용한 후 다시 시도해주세요</p>';return;}
 
   // 모든 카테고리 병렬 호출 (렉 방지)
   const fetches=cats.filter(c=>st.hasMore[c]).map(async cat=>{
     const pg=st.pages[cat]||1;
     try{
-      if(sortParam==='comment'){
+      if(sortParam==='comment'||sortParam==='recommend'){
+        // 네이버 리뷰순 (추천순도 네이버 기반 + 거리 재정렬)
         const startIdx=(pg-1)*15+1;
         const r=await fetch(`${NAVER_PROXY}?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&display=15&start=${startIdx}&sort=comment`);
         const d=await r.json();
         if(d.items&&d.items.length){
-          // 주소에 검색 지역명이 포함된 결과만 필터링
           const qWords=query.split(/\s+/).filter(w=>w.length>=2);
-          const docs=d.items.map(it=>({
+          let docs=d.items.map(it=>({
             place_name:it.title.replace(/<[^>]*>/g,''),
             road_address_name:it.roadAddress||it.address||'',
             address_name:it.address||'',
@@ -3498,15 +3498,22 @@ async function _distDoSearch(query,loadMore) {
           })).filter(doc=>{
             const addr=(doc.road_address_name+' '+doc.address_name).toLowerCase();
             return qWords.some(w=>addr.includes(w));
-          }).slice(0,5);
+          });
+          // 추천순: 리뷰 인기 + 거리 가까운 순 재정렬
+          if(sortParam==='recommend'&&myLat!==null){
+            docs.forEach(d=>{d._dist=getDistanceKm(myLat,myLng,parseFloat(d.y),parseFloat(d.x));});
+            docs.sort((a,b)=>a._dist-b._dist);
+          }
+          docs=docs.slice(0,5);
           st.allItems[cat]=(st.allItems[cat]||[]).concat(docs);
           st.pages[cat]=pg+1;
           st.hasMore[cat]=d.items.length>=15&&startIdx+15<=d.total;
         }else{st.hasMore[cat]=false;}
       }else{
-        let locParam='';
-        if(sortParam==='distance') locParam=`&x=${myLng}&y=${myLat}`;
-        const r=await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&category_group_code=${cat}&size=5&page=${pg}&sort=${sortParam}${locParam}`,{headers:{Authorization:'KakaoAK '+REST_KEY}});
+        // 카카오 거리순 (위치 있으면 distance, 없으면 accuracy)
+        let locParam=myLat!==null?`&x=${myLng}&y=${myLat}`:'';
+        const kakaoSort=myLat!==null?'distance':'accuracy';
+        const r=await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&category_group_code=${cat}&size=5&page=${pg}&sort=${kakaoSort}${locParam}`,{headers:{Authorization:'KakaoAK '+REST_KEY}});
         const d=await r.json();
         if(d.documents&&d.documents.length){
           st.allItems[cat]=(st.allItems[cat]||[]).concat(d.documents);
