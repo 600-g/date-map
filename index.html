@@ -15,10 +15,10 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 input,textarea,select,.pi-memo,.pi-addr,.code-box{-webkit-user-select:text;user-select:text}
-:root{--cream:#FAFAF7;--warm:#EEEBE5;--brown:#8B7E74;--dark:#3B4C6B;--green:#2D8659;--red:#E05252;--accent:#5B7DB8;--card-shadow:0 1px 4px rgba(0,0,0,.06)}
+:root{--cream:#FAFAF7;--warm:#EEEBE5;--brown:#8B7E74;--dark:#3B4C6B;--dark-light:#4E6490;--green:#2D8659;--red:#E05252;--accent:#5B7DB8;--card-shadow:0 1px 4px rgba(0,0,0,.06)}
 body{font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;font-weight:450;background:var(--dark);color:#333;height:100dvh;height:100vh;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top, 0px);padding-left:env(safe-area-inset-left, 0px);padding-right:env(safe-area-inset-right, 0px)}
 @supports(height:100dvh){body{height:100dvh}}
-header{background:linear-gradient(135deg,#3B4C6B,#4E6490);color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+header{background:linear-gradient(135deg,var(--dark),var(--dark-light,#4E6490));color:#fff;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
 header h1{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:17px;font-weight:700;letter-spacing:-.3px}
 .badge{font-size:12px;background:rgba(255,255,255,.15);backdrop-filter:blur(4px);color:white;padding:4px 12px;border-radius:20px;display:flex;align-items:center;gap:5px}
 .dot{width:6px;height:6px;background:#7FD49A;border-radius:50%;animation:pulse 2s infinite}
@@ -2716,7 +2716,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 251;
+const APP_VERSION = 252;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2750,12 +2750,12 @@ function openLab() {
 
 // ── 테마 변경 ──
 const THEMES = {
-  default: {name:'기본',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#5B7DB8',dark:'#3B4C6B',brown:'#8B7E74',warm:'#EEEBE5',cream:'#FAFAF7'},
-  rose: {name:'로즈',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#D4687A',dark:'#5C3347',brown:'#9C7B8B',warm:'#F3E5E9',cream:'#FFF8F9'},
-  forest: {name:'포레스트',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#5A9E6F',dark:'#2C4A38',brown:'#7A8E7D',warm:'#E4EDE6',cream:'#F5FAF6'},
-  ocean: {name:'오션',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#4A8EC2',dark:'#1E3A5F',brown:'#7B8FA0',warm:'#E0EBF3',cream:'#F4F8FB'},
-  lavender: {name:'라벤더',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#8B7EC8',dark:'#413565',brown:'#8E849A',warm:'#EBE6F3',cream:'#F8F5FC'},
-  mocha: {name:'모카',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#A0785C',dark:'#4A3328',brown:'#9A8577',warm:'#EDE5DC',cream:'#FAF7F3'},
+  default: {name:'기본',accent:'#5B7DB8',dark:'#3B4C6B',darkLight:'#4E6490',brown:'#8B7E74',warm:'#EEEBE5',cream:'#FAFAF7'},
+  rose: {name:'로즈',accent:'#D4687A',dark:'#5C3347',darkLight:'#7A4A60',brown:'#9C7B8B',warm:'#F3E5E9',cream:'#FFF8F9'},
+  forest: {name:'포레스트',accent:'#5A9E6F',dark:'#2C4A38',darkLight:'#3D6650',brown:'#7A8E7D',warm:'#E4EDE6',cream:'#F5FAF6'},
+  ocean: {name:'오션',accent:'#4A8EC2',dark:'#1E3A5F',darkLight:'#2D5580',brown:'#7B8FA0',warm:'#E0EBF3',cream:'#F4F8FB'},
+  lavender: {name:'라벤더',accent:'#8B7EC8',dark:'#413565',darkLight:'#5A4D82',brown:'#8E849A',warm:'#EBE6F3',cream:'#F8F5FC'},
+  mocha: {name:'모카',accent:'#A0785C',dark:'#4A3328',darkLight:'#654840',brown:'#9A8577',warm:'#EDE5DC',cream:'#FAF7F3'},
 };
 const FONTS = {
   pretendard: {name:'기본 (Pretendard)',val:'Pretendard Variable,Pretendard,-apple-system,sans-serif'},
@@ -2773,7 +2773,7 @@ function _loadTheme(){
 function _applyColorTheme(id){
   const t=THEMES[id];if(!t)return;
   const r=document.documentElement.style;
-  r.setProperty('--accent',t.accent);r.setProperty('--dark',t.dark);
+  r.setProperty('--accent',t.accent);r.setProperty('--dark',t.dark);r.setProperty('--dark-light',t.darkLight);
   r.setProperty('--brown',t.brown);r.setProperty('--warm',t.warm);r.setProperty('--cream',t.cream);
 }
 function _applyFont(id){
