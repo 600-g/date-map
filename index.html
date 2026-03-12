@@ -4067,7 +4067,7 @@ window.addEventListener('load', () => {
   if (_appIcon) { let _iconTapTime=0; _appIcon.addEventListener('click',e=>{const now=Date.now();if(now-_iconTapTime<400){e.preventDefault();startWorldCup();_iconTapTime=0;}else _iconTapTime=now;}); }
   // 네이버 지도 SDK 동적 로드
   const script = document.createElement('script');
-  script.src = 'https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=' + NAVER_CLIENT_ID;
+  script.src = 'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=' + NAVER_CLIENT_ID;
   script.onload = initMap;
   document.head.appendChild(script);
   renderAll();
