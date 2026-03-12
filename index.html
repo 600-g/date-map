@@ -541,6 +541,17 @@ header .lc svg{width:18px;height:18px}
   </div>
 </div>
 
+<div class="modal-overlay" id="promptModal" onclick="if(event.target===this){document.getElementById('promptModal').classList.remove('open');_promptCb=null;}">
+  <div class="modal" style="width:290px">
+    <h3 style="margin-bottom:10px" id="promptTitle">입력</h3>
+    <textarea id="promptInput" rows="3" style="width:100%;resize:vertical;font-size:14px;margin-bottom:12px" placeholder=""></textarea>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('promptModal').classList.remove('open');_promptCb=null;">취소</button>
+      <button class="btn btn-dark" style="flex:1" id="promptOkBtn" onclick="_promptSubmit()">확인</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="delModal">
   <div class="modal" style="text-align:center">
     <div style="margin-bottom:10px"><i data-lucide="trash-2" class="lc lc-lg" style="color:var(--red)"></i></div>
@@ -1467,13 +1478,29 @@ function renderWcWinner(p) {
   wcConfetti();
 }
 
+let _promptCb=null;
+function showPrompt(title,defaultVal,placeholder,onOk){
+  document.getElementById('promptTitle').textContent=title;
+  const inp=document.getElementById('promptInput');
+  inp.value=defaultVal||'';
+  inp.placeholder=placeholder||'';
+  _promptCb=onOk;
+  document.getElementById('promptModal').classList.add('open');
+  setTimeout(()=>inp.focus(),100);
+}
+function _promptSubmit(){
+  const val=document.getElementById('promptInput').value;
+  document.getElementById('promptModal').classList.remove('open');
+  if(_promptCb)_promptCb(val);
+  _promptCb=null;
+}
 function editMemo(id) {
   const p = places.find(x => x.id === id);
   if (!p) return;
-  const val = prompt('메모 수정', p.memo || '');
-  if (val === null) return;
-  p.memo = val.trim();
-  saveData(); renderAll();
+  showPrompt('메모 수정', p.memo||'', '메모를 입력하세요', (val)=>{
+    p.memo = val.trim();
+    saveData(); renderAll();
+  });
 }
 
 // ── 사진 기능 ──
@@ -2727,7 +2754,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 254;
+const APP_VERSION = 255;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2848,12 +2875,13 @@ function _getSavedCourses(){ try{return JSON.parse(localStorage.getItem('datemap
 function _setSavedCourses(c){ localStorage.setItem('datemap-courses',JSON.stringify(c)); }
 function saveCourse(){
   if(!_courseSel||_courseSel.length<2){toast('코스가 없어요');return;}
-  const name=prompt('코스 이름을 입력하세요','데이트 코스');
-  if(!name)return;
-  const courses=_getSavedCourses();
-  courses.push({id:Date.now(),name,placeIds:_courseSel.map(p=>p.id),createdAt:new Date().toISOString()});
-  _setSavedCourses(courses);
-  toast('코스가 저장되었어요');
+  showPrompt('코스 이름', '데이트 코스', '코스 이름을 입력하세요', (name)=>{
+    if(!name||!name.trim())return;
+    const courses=_getSavedCourses();
+    courses.push({id:Date.now(),name:name.trim(),placeIds:_courseSel.map(p=>p.id),createdAt:new Date().toISOString()});
+    _setSavedCourses(courses);
+    toast('코스가 저장되었어요');
+  });
 }
 let _savedCoursesFromCourse=false;
 function closeSavedCoursesModal(){
