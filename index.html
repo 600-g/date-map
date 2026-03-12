@@ -2612,7 +2612,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 229;
+const APP_VERSION = 230;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3267,15 +3267,39 @@ function _showDistrictPage(view, geo, guName) {
         if (keys.some(k => p.addr.includes(k))) counts[r.name] = (counts[r.name]||0) + 1;
       });
     });
-    content.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-      ${REGION_GROUPS.map(r => {
-        const cnt = counts[r.name] || 0;
-        return `<div class="reg-card" style="padding:16px 10px;border:1.5px solid var(--warm);border-radius:14px;text-align:center;cursor:pointer;background:white" onclick="_openRegion('${r.name}')">
-          <div style="font-size:22px;margin-bottom:2px">${r.emoji}</div>
-          <div style="font-size:13px;font-weight:700;color:var(--dark)">${r.name}</div>
-          ${cnt?`<div style="font-size:10px;color:var(--brown);margin-top:2px">${cnt}곳 저장됨</div>`:''}
-        </div>`;
-      }).join('')}
+    // 스타일화된 대한민국 SVG 지도
+    const RC={서울:'#FFD1DC',경기:'#C5E1A5',인천:'#B3E5FC',강원:'#E1BEE7',충청:'#FFE0B2',대전:'#FFCCBC',전라:'#DCEDC8',광주:'#F8BBD0',경상:'#D1C4E9',대구:'#FFE082',부산:'#B2DFDB',제주:'#FFF59D'};
+    const RP=[
+      {name:'강원',p:'M205,28 L310,20 L340,60 L350,120 L330,170 L280,190 L240,160 L210,100 Z'},
+      {name:'경기',p:'M120,80 L205,28 L240,160 L280,190 L240,220 L180,230 L130,200 L100,150 Z'},
+      {name:'서울',p:'M160,130 L200,120 L210,150 L190,170 L155,160 Z'},
+      {name:'인천',p:'M95,130 L130,120 L140,160 L120,190 L85,175 Z'},
+      {name:'충청',p:'M100,200 L180,230 L240,220 L260,260 L240,320 L170,330 L120,300 L90,250 Z'},
+      {name:'대전',p:'M155,280 L200,270 L210,310 L175,320 Z'},
+      {name:'전라',p:'M80,310 L170,330 L180,380 L160,440 L120,460 L70,430 L55,370 Z'},
+      {name:'광주',p:'M100,380 L140,370 L145,410 L115,420 Z'},
+      {name:'경상',p:'M240,220 L330,170 L360,240 L370,330 L340,400 L280,430 L220,400 L200,340 L240,320 Z'},
+      {name:'대구',p:'M260,270 L310,260 L320,310 L280,320 Z'},
+      {name:'부산',p:'M290,400 L340,390 L355,430 L310,445 Z'},
+      {name:'제주',p:'M100,510 L175,505 L180,540 L105,548 Z'},
+    ];
+    let svg='';
+    RP.forEach(r=>{
+      const cnt=counts[r.name]||0;
+      const has=cnt>0;
+      const col=has?RC[r.name]:'#EDEDED';
+      // 지역 영역
+      svg+=`<path d="${r.p}" fill="${col}" stroke="white" stroke-width="2.5" style="cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,.08))" onclick="_openRegion('${r.name}')"/>`;
+      // 중심점 계산
+      const nums=r.p.match(/[\d.]+/g).map(Number);
+      let cx=0,cy=0,n=0;
+      for(let i=0;i<nums.length;i+=2){cx+=nums[i];cy+=nums[i+1];n++;}
+      cx/=n;cy/=n;
+      svg+=`<text x="${cx}" y="${cy-6}" text-anchor="middle" font-size="13" font-weight="800" fill="${has?'#333':'#999'}" style="pointer-events:none">${r.name}</text>`;
+      if(cnt) svg+=`<text x="${cx}" y="${cy+9}" text-anchor="middle" font-size="10" font-weight="600" fill="var(--accent)" style="pointer-events:none">${cnt}곳</text>`;
+    });
+    content.innerHTML = `<div style="display:flex;justify-content:center;padding:0">
+      <svg viewBox="40 10 340 550" style="width:100%;max-width:360px;display:block">${svg}</svg>
     </div>`;
   } else if (view === 'map') {
     title.textContent = '서울';
