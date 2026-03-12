@@ -270,6 +270,7 @@ header .lc svg{width:18px;height:18px}
   <div class="panel">
     <div class="tabs">
       <button class="tab active" onclick="showTab('list')"><i data-lucide="list" class="lc lc-sm"></i> 목록</button>
+      <button class="tab" onclick="openLabDistrict()"><i data-lucide="map-pin" class="lc lc-sm"></i> 탐색 <span style="font-size:8px;color:var(--accent);font-weight:700;vertical-align:super">β</span></button>
       <button class="tab" onclick="showTab('cfg')"><i data-lucide="settings" class="lc lc-sm"></i> 설정</button>
     </div>
 
@@ -2646,7 +2647,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 242;
+const APP_VERSION = 243;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3323,7 +3324,7 @@ function _showDistrictPage(view, geo, guName) {
       {name:'강원',path:`M${a2} Q${a3} ${b1} Q372,130 ${b2} L${b3} L${d1} L238,178 L210,112 Z`,tx:295,ty:112},
       {name:'충청',path:`M${c2} L180,244 L${d1} L${d2} L${d3} L${d4} L${c3} Z`,tx:140,ty:270},
       {name:'경상',path:`M${d1} L${b3} Q358,248 ${f1} Q382,320 ${f2} L${f3} Q330,458 ${e4} L${e3} L${d3} L${d2} Z`,tx:320,ty:355},
-      {name:'전라',path:`M${c3} L${d4} L${d3} L${e3} Q155,475 ${e2} Q42,455 ${e1} Q45,388 ${c4} Z`,tx:75,ty:450},
+      {name:'전라',path:`M${c3} L${d4} L${d3} L${e3} Q155,475 ${e2} Q42,455 ${e1} Q45,388 ${c4} Z`,tx:90,ty:448},
     ];
     // 광역시+제주 — 둥근 사각형 마커 (위에 오버레이)
     const cities=[
