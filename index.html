@@ -1169,7 +1169,8 @@ function addPlace(p) {
   if (!p.id) p.id = Date.now() + Math.floor(Math.random()*999);
   places.push(p);
   saveData();
-  renderAll();
+  if(!document.getElementById('districtPage')) renderAll();
+  else setTimeout(()=>renderAll(),100);
   toast(`📍 ${p.name} 추가 완료!`);
   return true;
 }
@@ -2619,7 +2620,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 225;
+const APP_VERSION = 226;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3445,11 +3446,8 @@ function _distSetSort(sort){
 }
 function _distRecAdd(btn,name,lat,lng,catCode,addr){
   const catMap={FD6:'식사',CE7:'카페',CT1:'활동',AT4:'활동'};
-  addPlace({name,cat:catMap[catCode]||'기타',lat:parseFloat(lat),lng:parseFloat(lng),memo:'',addr:addr||''});
-  const wrap=btn.parentElement;
-  const esc=name.replace(/'/g,"\\'");
-  wrap.innerHTML=`<button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:var(--accent);border-color:var(--accent)" onclick="_distRecFocus('${lat}','${lng}','${esc}')">지도보기</button><button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:#e57373;border-color:#e57373" onclick="_distRecDel(this,'${lat}','${lng}','${esc}')">삭제</button>`;
-  toast(name+' 추가!');
+  const ok=addPlace({name,cat:catMap[catCode]||'기타',lat:parseFloat(lat),lng:parseFloat(lng),memo:'',addr:addr||''});
+  if(ok) _distRenderResults();
 }
 function _distRecFocus(lat,lng,name){
   const la=parseFloat(lat),lo=parseFloat(lng);
@@ -3473,9 +3471,9 @@ function _distRecDel(btn,lat,lng,name){
   if(markers[idx]){try{markers[idx].setMap(null);}catch(e){}}
   markers.splice(idx,1);
   if(iwMap[p.id]){try{iwMap[p.id].setMap(null);delete iwMap[p.id];}catch(e){}}
-  saveData();renderAll();
-  const wrap=btn.parentElement;
-  wrap.innerHTML=`<button class="btn btn-outline" style="font-size:11px;padding:3px 8px" onclick="_distRecAdd(this,'${name.replace(/'/g,"\\'")}','${p.lat}','${p.lng}','','${(p.addr||'').replace(/'/g,"\\'")}')">추가</button>`;
+  saveData();
+  setTimeout(()=>renderAll(),100);
+  _distRenderResults();
   toast(name+' 삭제됨');
 }
 function _renderIllustMap(body) {
