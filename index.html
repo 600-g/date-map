@@ -423,11 +423,6 @@ header .lc svg{width:18px;height:18px}
         <div style="font-size:12px;color:var(--brown);line-height:1.5">저장된 장소로 데이트 코스를 만들어보세요. 이동 경로와 예상 시간을 확인할 수 있어요.</div>
         <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">베타</span></div>
       </div>
-      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;cursor:pointer" onclick="openLabAiRec()">
-        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="search" class="lc lc-sm" style="color:var(--accent)"></i> 장소 추천</div>
-        <div style="font-size:12px;color:var(--brown);line-height:1.5">지역명으로 인기 맛집·카페·놀거리를 검색하고 바로 추가해보세요.</div>
-        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#FFF3E0;color:#E65100">NEW</span></div>
-      </div>
     </div>
   </div>
 </div>
@@ -740,14 +735,19 @@ function initMap() {
       renderList();
     } catch(e) {}
   }
-  // 위치 버튼 강제 활성화 (인라인 스타일로 확실하게)
-  const _lb = document.getElementById('locBtn');
-  _lb.classList.add('tracking');
-  _lb.style.background = '#4285F4';
-  _lb.style.color = 'white';
-  _lb.style.borderColor = '#4285F4';
-  // GPS 시도
-  handleLocClick();
+  // 이전에 위치 허용한 경우에만 자동 GPS 시작 (권한 요청 팝업 방지)
+  if (navigator.permissions) {
+    navigator.permissions.query({ name: 'geolocation' }).then(result => {
+      if (result.state === 'granted') {
+        const _lb = document.getElementById('locBtn');
+        _lb.classList.add('tracking');
+        _lb.style.background = '#4285F4';
+        _lb.style.color = 'white';
+        _lb.style.borderColor = '#4285F4';
+        handleLocClick();
+      }
+    }).catch(() => {});
+  }
 }
 
 // ── 지도 확대/축소 (모바일) ──
@@ -2622,7 +2622,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 219;
+const APP_VERSION = 220;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3193,7 +3193,7 @@ async function _loadSeoulGeo() {
 let _districtPage = null;
 let _districtDistMap = {};
 const REGION_GROUPS = [
-  {name:'서울', emoji:'🏙️', type:'map'},
+  {name:'서울', emoji:'🏙️', areas:['강남','강동','강북','강서','관악','광진','구로','금천','노원','도봉','동대문','동작','마포','서대문','서초','성동','성북','송파','양천','영등포','용산','은평','종로','중구','중랑']},
   {name:'경기', emoji:'🌳', areas:['수원','성남','고양','용인','부천','안산','안양','화성','평택','의정부','시흥','파주','김포','광명','하남','구리','남양주','양주','포천','이천','여주','동두천']},
   {name:'인천', emoji:'🌊', areas:['중구','미추홀구','연수구','남동구','부평구','계양구','서구','강화','옹진']},
   {name:'부산', emoji:'🏖️', areas:['해운대','서면','광안리','남포동','센텀시티','기장','영도','송도']},
@@ -3221,12 +3221,48 @@ const GU_LAYOUT = [
   ['강서구',5,0],['양천구',5,1],['영등포구',5,2],['동작구',5,3],['서초구',5,4],['강남구',5,5],
   ['구로구',6,1],['금천구',6,2],['관악구',6,3],
 ];
+let _distViewStack = [];
 function _showDistrictPage(view, geo, guName) {
-  if (_districtPage) _districtPage.remove();
-  _districtPage = document.createElement('div');
-  _districtPage.id = 'districtPage';
-  _districtPage.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#ffffff;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
+  const isNew = !_districtPage || !document.getElementById('districtPage');
+  if (isNew) {
+    if (_districtPage) _districtPage.remove();
+    _districtPage = document.createElement('div');
+    _districtPage.id = 'districtPage';
+    _districtPage.style.cssText = 'position:fixed;inset:0;z-index:9999;background:#ffffff;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)';
+    _districtPage.innerHTML = `<div style="flex-shrink:0;background:white;border-bottom:1px solid #eee">
+      <div style="padding:12px 16px;display:flex;align-items:center;gap:10px">
+        <button id="distBackBtn" onclick="_distBack()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px 8px">←</button>
+        <span id="distTitle" style="flex:1;font-size:17px;font-weight:700;color:var(--dark)">지역별 탐색</span>
+      </div>
+      <div style="padding:0 16px 10px">
+        <div style="display:flex;gap:6px;margin-bottom:10px">
+          <input id="distSearchInput" type="text" placeholder="장소 검색 (예: 강남 맛집, 홍대 카페)" style="flex:1;padding:10px 14px;border:1.5px solid var(--warm);border-radius:10px;font-size:13px;outline:none" onkeydown="if(event.key==='Enter')_distSearch()">
+          <button class="btn btn-dark" style="padding:8px 14px;white-space:nowrap;border-radius:10px" onclick="_distSearch()">검색</button>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap" id="distCats">
+          <button class="btn dist-cat-btn active" data-cat="FD6" onclick="_distCatSel(this)" style="font-size:12px;padding:4px 10px;border-radius:16px;background:var(--accent);color:white;border:1.5px solid var(--accent)">음식점</button>
+          <button class="btn dist-cat-btn active" data-cat="CE7" onclick="_distCatSel(this)" style="font-size:12px;padding:4px 10px;border-radius:16px;background:var(--accent);color:white;border:1.5px solid var(--accent)">카페</button>
+          <button class="btn dist-cat-btn active" data-cat="CT1" onclick="_distCatSel(this)" style="font-size:12px;padding:4px 10px;border-radius:16px;background:var(--accent);color:white;border:1.5px solid var(--accent)">놀거리</button>
+          <button class="btn dist-cat-btn active" data-cat="AT4" onclick="_distCatSel(this)" style="font-size:12px;padding:4px 10px;border-radius:16px;background:var(--accent);color:white;border:1.5px solid var(--accent)">관광명소</button>
+        </div>
+      </div>
+    </div>
+    <div id="distContent" style="flex:1;overflow:auto;padding:12px 16px"></div>`;
+    document.body.appendChild(_districtPage);
+    _distViewStack = [];
+  }
+  // 뷰 스택 관리
+  if (view === 'region') _distViewStack = ['region'];
+  else if (_distViewStack[_distViewStack.length-1] !== view+guName) _distViewStack.push(view+guName);
+
+  const content = document.getElementById('distContent');
+  const title = document.getElementById('distTitle');
+  const searchInput = document.getElementById('distSearchInput');
+  _distCurrentView = view;
+  _distCurrentGu = guName;
+
   if (view === 'region') {
+    title.textContent = '지역별 탐색';
     const counts = {};
     places.forEach(p => {
       if (!p.addr) return;
@@ -3235,94 +3271,71 @@ function _showDistrictPage(view, geo, guName) {
         if (keys.some(k => p.addr.includes(k))) counts[r.name] = (counts[r.name]||0) + 1;
       });
     });
-    _districtPage.innerHTML = `<div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #eee;flex-shrink:0;background:white">
-      <button onclick="_closeDistrictPage()" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px 8px">←</button>
-      <span style="font-size:17px;font-weight:700;color:var(--dark)">지역별 탐색</span>
-    </div>
-    <div style="flex:1;overflow:auto;padding:12px 16px">
-      <div style="display:flex;gap:6px;margin-bottom:14px">
-        <input id="distSearchInput" type="text" placeholder="지역명으로 장소 검색 (예: 강남, 홍대, 제주)" style="flex:1;padding:10px 14px;border:1.5px solid var(--warm);border-radius:10px;font-size:13px;outline:none" onkeydown="if(event.key==='Enter')_distSearch()">
-        <button class="btn btn-dark" style="padding:8px 14px;white-space:nowrap;border-radius:10px" onclick="_distSearch()">검색</button>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
-        ${REGION_GROUPS.map(r => {
-          const cnt = counts[r.name] || 0;
-          return `<div style="padding:16px 10px;border:1.5px solid var(--warm);border-radius:14px;text-align:center;cursor:pointer;background:white" onclick="_openRegion('${r.name}')" >
-            <div style="font-size:22px;margin-bottom:2px">${r.emoji}</div>
-            <div style="font-size:13px;font-weight:700;color:var(--dark)">${r.name}</div>
-            ${cnt?`<div style="font-size:10px;color:var(--brown);margin-top:2px">${cnt}곳 저장됨</div>`:''}
-          </div>`;
-        }).join('')}
-      </div>
+    content.innerHTML = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px">
+      ${REGION_GROUPS.map(r => {
+        const cnt = counts[r.name] || 0;
+        return `<div class="reg-card" style="padding:16px 10px;border:1.5px solid var(--warm);border-radius:14px;text-align:center;cursor:pointer;background:white" onclick="_openRegion('${r.name}')">
+          <div style="font-size:22px;margin-bottom:2px">${r.emoji}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--dark)">${r.name}</div>
+          ${cnt?`<div style="font-size:10px;color:var(--brown);margin-top:2px">${cnt}곳 저장됨</div>`:''}
+        </div>`;
+      }).join('')}
     </div>`;
-    document.body.appendChild(_districtPage);
   } else if (view === 'map') {
+    title.textContent = '서울';
     _districtDistMap = {};
     places.forEach(p => {
       if (!p.addr) return;
       const m = p.addr.match(/서울[^\s]*\s+(\S+구)/);
       if (m) { const d = m[1]; if (!_districtDistMap[d]) _districtDistMap[d]=[]; _districtDistMap[d].push(p); }
     });
-    _districtPage.innerHTML = `<div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #eee;flex-shrink:0;background:white">
-      <button onclick="_showDistrictPage('region')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px 8px">←</button>
-      <span style="font-size:17px;font-weight:700;color:var(--dark)">서울 지역별 탐색</span>
-    </div>
-    <div style="flex:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:16px" id="distMapBody"></div>`;
-    document.body.appendChild(_districtPage);
+    content.style.padding = '0';
+    content.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;padding:16px;height:100%" id="distMapBody"></div>';
     _renderIllustMap(document.getElementById('distMapBody'));
+    setTimeout(()=>{content.style.padding='';},0);
   } else if (view === 'area') {
-    // 서울 외 지역의 세부 지역 리스트
     const region = REGION_GROUPS.find(r => r.name === guName);
     if (!region) return;
+    _distBackTarget = guName;
+    title.textContent = `${region.emoji} ${guName}`;
+    searchInput.value = guName + ' ';
+    searchInput.placeholder = `${guName} 내 장소 검색`;
     const areaPlaces = {};
-    let totalCnt = 0;
     (region.areas||[]).forEach(a => { areaPlaces[a] = []; });
     places.forEach(p => {
       if (!p.addr) return;
       (region.areas||[]).forEach(a => {
-        if (p.addr.includes(a)) { areaPlaces[a].push(p); totalCnt++; }
+        if (p.addr.includes(a)) { areaPlaces[a].push(p); }
       });
     });
-    _districtPage.innerHTML = `<div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #eee;flex-shrink:0;background:white">
-      <button onclick="_showDistrictPage('region')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px 8px">←</button>
-      <span style="font-size:17px;font-weight:700;color:var(--dark)">${region.emoji} ${guName}</span>
-      <span style="font-size:13px;color:var(--accent);font-weight:600">${totalCnt}곳</span>
-    </div>
-    <div style="flex:1;overflow:auto;padding:12px">
-      <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px">
-        ${(region.areas||[]).map(a => {
-          const cnt = areaPlaces[a].length;
-          return `<div style="padding:14px;border:1.5px solid ${cnt?'var(--accent)':'var(--warm)'};border-radius:12px;cursor:pointer;background:${cnt?'#faf5f0':'#fafaf7'}" onclick="_showDistrictPage('list',null,'${a}')">
-            <div style="font-size:13px;font-weight:600;color:var(--dark)">${a}</div>
-            ${cnt?`<div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:2px">${cnt}곳</div>`:''}
-          </div>`;
-        }).join('')}
-      </div>
+    const cols = (region.areas||[]).length > 12 ? 3 : 2;
+    content.innerHTML = `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px">
+      ${(region.areas||[]).map(a => {
+        const cnt = areaPlaces[a].length;
+        return `<div class="reg-card" style="padding:14px;border:1.5px solid var(--warm);border-radius:12px;cursor:pointer;background:white" onclick="document.getElementById('distSearchInput').value='${a}';_distSearch()">
+          <div style="font-size:13px;font-weight:600;color:var(--dark)">${a}</div>
+          ${cnt?`<div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:2px">${cnt}곳 저장됨</div>`:''}
+        </div>`;
+      }).join('')}
     </div>`;
-    document.body.appendChild(_districtPage);
+  } else if (view === 'search') {
+    title.textContent = guName ? `${guName} 검색결과` : '검색결과';
+    content.innerHTML = '<p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">검색 중...</p>';
+    _distDoSearch(searchInput.value.trim());
   } else if (view === 'list') {
     let guPlaces = _districtDistMap[guName] || [];
     if (!guPlaces.length) guPlaces = places.filter(p => p.addr && p.addr.includes(guName));
-    const backView = _districtDistMap[guName] ? 'map' : 'region';
-    _districtPage.innerHTML = `<div style="padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #eee;flex-shrink:0;background:white">
-      <button onclick="_showDistrictPage('${backView}')" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--dark);padding:4px 8px">←</button>
-      <span style="font-size:17px;font-weight:700;color:var(--dark)">${guName}</span>
-      <span style="font-size:13px;color:var(--accent);font-weight:600">${guPlaces.length}곳</span>
-    </div>
-    <div style="flex:1;overflow:auto;padding:8px 12px" id="distListBody"></div>`;
-    document.body.appendChild(_districtPage);
-    const listBody = document.getElementById('distListBody');
+    title.textContent = guName + ' ' + guPlaces.length + '곳';
+    const content2 = content;
     if (!guPlaces.length) {
-      listBody.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#999;font-size:14px">저장된 장소가 없어요</div>';
+      content2.innerHTML = '<div style="text-align:center;padding:40px 20px;color:#999;font-size:14px">저장된 장소가 없어요</div>';
     } else {
-      listBody.innerHTML = guPlaces.map(p => {
+      content2.innerHTML = guPlaces.map(p => {
         const c = getCat(p.cat);
-        const stars = p.rating ? '⭐'.repeat(Math.round(p.rating)) : '';
         return `<div style="padding:12px 14px;margin:6px 0;background:white;border-radius:12px;cursor:pointer;border:1px solid #f0ede8;box-shadow:0 1px 3px rgba(0,0,0,.06)" onclick="_closeDistrictPage();setTimeout(()=>{focusPlace(${p.id});},300)">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
             <span style="font-size:15px;font-weight:600;color:var(--dark)">${p.name}</span>
             <span style="background:${c.color}20;color:${c.color};font-size:11px;padding:2px 7px;border-radius:6px;font-weight:600">${c.emoji||''} ${c.name}</span>
-            ${stars?`<span style="font-size:12px;letter-spacing:-1px">${stars}</span>`:''}
           </div>
           ${p.memo?`<div style="font-size:12px;color:#888;margin-top:4px">${p.memo}</div>`:''}
         </div>`;
@@ -3330,22 +3343,98 @@ function _showDistrictPage(view, geo, guName) {
     }
   }
 }
+function _distCatSel(btn){btn.classList.toggle('active');const on=btn.classList.contains('active');btn.style.background=on?'var(--accent)':'white';btn.style.color=on?'white':'var(--dark)';btn.style.borderColor=on?'var(--accent)':'var(--warm)';}
 function _closeDistrictPage() {
-  if (_districtPage) { _districtPage.remove(); _districtPage = null; }
+  if (_districtPage) { _districtPage.remove(); _districtPage = null; _distViewStack=[]; }
+}
+let _distBackTarget = null;
+function _distBack() {
+  if (_distCurrentView === 'region' || !_distCurrentView) { _closeDistrictPage(); return; }
+  if ((_distCurrentView === 'search' || _distCurrentView === 'list') && _distBackTarget) { _showDistrictPage('area', null, _distBackTarget); return; }
+  if (_distCurrentView === 'area') { _showDistrictPage('region'); return; }
+  _showDistrictPage('region');
 }
 function _openRegion(name) {
-  if (name === '서울') { _showDistrictPage('map'); }
-  else { _showDistrictPage('area', null, name); }
+  _showDistrictPage('area', null, name);
 }
 function _distSearch() {
   const q = document.getElementById('distSearchInput').value.trim();
   if (!q) { toast('지역명을 입력해주세요'); return; }
+  _showDistrictPage('search', null, q);
+}
+async function _distDoSearch(query) {
+  const cats=[];
+  document.querySelectorAll('.dist-cat-btn.active').forEach(b=>cats.push(b.dataset.cat));
+  if(!cats.length){toast('카테고리를 1개 이상 선택하세요');return;}
+  const content=document.getElementById('distContent');
+  const catNames={FD6:'음식점',CE7:'카페',CT1:'놀거리',AT4:'관광명소'};
+  let allResults={};
+  for(const cat of cats){
+    try{
+      const r=await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query+' '+catNames[cat])}&category_group_code=${cat}&size=5&sort=accuracy`,{headers:{Authorization:'KakaoAK '+REST_KEY}});
+      const d=await r.json();
+      if(d.documents&&d.documents.length)allResults[cat]=d.documents;
+    }catch(e){}
+  }
+  if(!Object.keys(allResults).length){content.innerHTML='<p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">결과가 없어요. 다른 지역명을 시도해보세요.</p>';return;}
+  let html='';
+  for(const[cat,items]of Object.entries(allResults)){
+    html+=`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px">${catNames[cat]||cat}</div>`;
+    items.forEach(item=>{
+      const ep=places.find(p=>Math.abs(p.lat-parseFloat(item.y))<0.0001&&Math.abs(p.lng-parseFloat(item.x))<0.0001)||places.find(p=>p.name===item.place_name);
+      const esc=item.place_name.replace(/'/g,"\\'");
+      const placeUrl=item.place_url||'';
+      html+=`<div style="padding:10px;border:1px solid var(--warm);border-radius:8px;margin-bottom:6px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${item.place_name}</div>
+            <div style="font-size:11px;color:var(--brown);margin-top:2px">${item.road_address_name||item.address_name||''}</div>
+          </div>
+          <div style="display:flex;gap:4px;align-items:center;flex-shrink:0" id="distBtn_${item.id||Math.random().toString(36).slice(2,8)}">
+          ${ep?`<button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:var(--accent);border-color:var(--accent)" onclick="_distRecFocus('${item.y}','${item.x}','${esc}')">지도보기</button><button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:#e57373;border-color:#e57373" onclick="_distRecDel(this,'${item.y}','${item.x}','${esc}')">삭제</button>`
+          :`<button class="btn btn-outline" style="font-size:11px;padding:3px 8px" onclick="_distRecAdd(this,'${esc}','${item.y}','${item.x}','${cat}','${(item.road_address_name||item.address_name||'').replace(/'/g,"\\'")}')">추가</button>`}
+          </div>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+  content.innerHTML=html;
+}
+function _distRecAdd(btn,name,lat,lng,catCode,addr){
+  const catMap={FD6:'식사',CE7:'카페',CT1:'활동',AT4:'활동'};
+  addPlace({name,cat:catMap[catCode]||'기타',lat:parseFloat(lat),lng:parseFloat(lng),memo:'',addr:addr||''});
+  const wrap=btn.parentElement;
+  const esc=name.replace(/'/g,"\\'");
+  wrap.innerHTML=`<button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:var(--accent);border-color:var(--accent)" onclick="_distRecFocus('${lat}','${lng}','${esc}')">지도보기</button><button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:#e57373;border-color:#e57373" onclick="_distRecDel(this,'${lat}','${lng}','${esc}')">삭제</button>`;
+  toast(name+' 추가!');
+}
+function _distRecFocus(lat,lng,name){
+  const la=parseFloat(lat),lo=parseFloat(lng);
+  const p=places.find(x=>Math.abs(x.lat-la)<0.0001&&Math.abs(x.lng-lo)<0.0001)||places.find(x=>x.name===name);
+  if(!p||!p.lat||!p.lng){toast('위치 정보가 없어요');return;}
   _closeDistrictPage();
-  // 장소 추천 모달 열고 검색어 자동 입력
-  document.getElementById('aiRecArea').value = q;
-  document.getElementById('aiRecModal').classList.add('open');
-  try{lucide.createIcons();}catch(e){}
-  aiRecSearch();
+  showTab('list');
+  setTimeout(()=>{
+    if(map){map.setCenter(new kakao.maps.LatLng(p.lat,p.lng));map.setLevel(3);}
+    focusedPlaceId=p.id;
+    if(iwMap[p.id])iwMap[p.id].setMap(map);
+  },300);
+}
+function _distRecDel(btn,lat,lng,name){
+  const la=parseFloat(lat),lo=parseFloat(lng);
+  let idx=places.findIndex(x=>Math.abs(x.lat-la)<0.0001&&Math.abs(x.lng-lo)<0.0001);
+  if(idx<0) idx=places.findIndex(x=>x.name===name);
+  if(idx<0){toast('이미 삭제됨');return;}
+  const p=places[idx];
+  places.splice(idx,1);
+  if(markers[idx]){try{markers[idx].setMap(null);}catch(e){}}
+  markers.splice(idx,1);
+  if(iwMap[p.id]){try{iwMap[p.id].setMap(null);delete iwMap[p.id];}catch(e){}}
+  saveData();renderAll();
+  const wrap=btn.parentElement;
+  wrap.innerHTML=`<button class="btn btn-outline" style="font-size:11px;padding:3px 8px" onclick="_distRecAdd(this,'${name.replace(/'/g,"\\'")}','${p.lat}','${p.lng}','','${(p.addr||'').replace(/'/g,"\\'")}')">추가</button>`;
+  toast(name+' 삭제됨');
 }
 function _renderIllustMap(body) {
   // 다이아몬드 실루엣 서울 지도 — 위/아래 좁고 중간 넓음
