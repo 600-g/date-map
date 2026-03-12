@@ -527,6 +527,18 @@ header .lc svg{width:18px;height:18px}
 </div>
 
 <!-- 장소 삭제 확인 모달 -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="text-align:center">
+    <div style="margin-bottom:10px"><i data-lucide="alert-triangle" class="lc" style="color:var(--red)"></i></div>
+    <h3 style="margin-bottom:8px" id="confirmTitle"></h3>
+    <p style="font-size:12px;color:var(--brown);margin-bottom:16px;line-height:1.6" id="confirmDesc"></p>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline" style="flex:1" onclick="document.getElementById('confirmModal').classList.remove('open')">취소</button>
+      <button class="btn btn-dark" style="flex:1;background:var(--red)" id="confirmOkBtn">확인</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="delModal">
   <div class="modal" style="text-align:center">
     <div style="margin-bottom:10px"><i data-lucide="trash-2" class="lc lc-lg" style="color:var(--red)"></i></div>
@@ -1723,13 +1735,23 @@ function setupCatDrag() {
 
 function delCat(idx) {
   if (cats.length <= 1) { toast('최소 1개는 있어야 해요'); return; }
-  if (!confirm(`"${cats[idx].name}" 카테고리를 삭제할까요?\n해당 장소들은 첫번째 카테고리로 이동됩니다.`)) return;
-  const catId = cats[idx].id;
-  places.forEach(p=>{ if(p.cat===catId) p.cat=cats[0].id; });
-  cats.splice(idx,1);
-  renderCatEditor();
-  autosaveCats();
-  toast('카테고리 삭제됨');
+  showConfirm(`"${cats[idx].name}" 삭제`, '해당 장소들은 첫번째 카테고리로 이동됩니다.', '삭제', () => {
+    const catId = cats[idx].id;
+    places.forEach(p=>{ if(p.cat===catId) p.cat=cats[0].id; });
+    cats.splice(idx,1);
+    renderCatEditor();
+    autosaveCats();
+    toast('카테고리 삭제됨');
+  });
+}
+function showConfirm(title, desc, okText, onOk) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmDesc').textContent = desc;
+  const btn = document.getElementById('confirmOkBtn');
+  btn.textContent = okText || '확인';
+  btn.onclick = () => { document.getElementById('confirmModal').classList.remove('open'); onOk(); };
+  document.getElementById('confirmModal').classList.add('open');
+  try{lucide.createIcons();}catch(e){}
 }
 
 let catEditorOpen = false;
@@ -2624,7 +2646,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 240;
+const APP_VERSION = 241;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2700,11 +2722,12 @@ function openLabSavedCourses(fromCourse){
   try{lucide.createIcons();}catch(e){}
 }
 function deleteSavedCourse(id){
-  if(!confirm('이 코스를 삭제할까요?'))return;
-  const courses=_getSavedCourses().filter(c=>c.id!==id);
-  _setSavedCourses(courses);
-  openLabSavedCourses();
-  toast('코스가 삭제되었어요');
+  showConfirm('코스 삭제', '이 코스를 삭제할까요?', '삭제', () => {
+    const courses=_getSavedCourses().filter(c=>c.id!==id);
+    _setSavedCourses(courses);
+    openLabSavedCourses();
+    toast('코스가 삭제되었어요');
+  });
 }
 function loadSavedCourse(id){
   const course=_getSavedCourses().find(c=>c.id===id);
@@ -3455,10 +3478,12 @@ async function _distDoSearch(query,loadMore) {
     const pg=st.pages[cat]||1;
     try{
       if(sortParam==='comment'){
-        const startIdx=(pg-1)*5+1;
-        const r=await fetch(`${NAVER_PROXY}?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&display=5&start=${startIdx}&sort=comment`);
+        const startIdx=(pg-1)*15+1;
+        const r=await fetch(`${NAVER_PROXY}?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&display=15&start=${startIdx}&sort=comment`);
         const d=await r.json();
         if(d.items&&d.items.length){
+          // 주소에 검색 지역명이 포함된 결과만 필터링
+          const qWords=query.split(/\s+/).filter(w=>w.length>=2);
           const docs=d.items.map(it=>({
             place_name:it.title.replace(/<[^>]*>/g,''),
             road_address_name:it.roadAddress||it.address||'',
@@ -3470,10 +3495,13 @@ async function _distDoSearch(query,loadMore) {
             _cat:it.category||'',
             _tel:it.telephone||'',
             _link:it.link||''
-          }));
+          })).filter(doc=>{
+            const addr=(doc.road_address_name+' '+doc.address_name).toLowerCase();
+            return qWords.some(w=>addr.includes(w));
+          }).slice(0,5);
           st.allItems[cat]=(st.allItems[cat]||[]).concat(docs);
           st.pages[cat]=pg+1;
-          st.hasMore[cat]=d.items.length>=5&&startIdx+5<=d.total;
+          st.hasMore[cat]=d.items.length>=15&&startIdx+15<=d.total;
         }else{st.hasMore[cat]=false;}
       }else{
         let locParam='';
