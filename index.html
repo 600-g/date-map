@@ -758,47 +758,37 @@ function initMap() {
     center: new naver.maps.LatLng(initLat, initLng), zoom: initLevel
   });
   naver.maps.Event.addListener(map, 'click', () => { closeAllIw(); toggleMapExpand(); if(addPanelOpen) closeAddPanel(); });
-  // 네이버 CustomOverlay 래퍼 (카카오 호환)
+  // 네이버 CustomOverlay 래퍼 (naver.maps.OverlayView 상속)
   window.NaverCustomOverlay = function(opts) {
     this._el = opts.content instanceof HTMLElement ? opts.content : (() => { const d = document.createElement('div'); d.innerHTML = opts.content; return d; })();
     this._position = opts.position;
     this._yAnchor = opts.yAnchor || 0;
     this._xAnchor = opts.xAnchor || 0.5;
     this._zIndex = opts.zIndex || 0;
-    this._map = null;
     this._el.style.position = 'absolute';
     this._el.style.zIndex = this._zIndex;
-    this._listener = null;
   };
-  NaverCustomOverlay.prototype.setMap = function(m) {
-    if (this._map) {
-      if (this._el.parentNode) this._el.parentNode.removeChild(this._el);
-      if (this._listener) { naver.maps.Event.removeListener(this._listener); this._listener = null; }
-      if (this._listener2) { naver.maps.Event.removeListener(this._listener2); this._listener2 = null; }
-    }
-    this._map = m;
-    if (m) {
-      const pane = m.getPanes().overlayLayer;
-      pane.appendChild(this._el);
-      this._draw();
-      this._listener = naver.maps.Event.addListener(m, 'zoom_changed', () => this._draw());
-      this._listener2 = naver.maps.Event.addListener(m, 'center_changed', () => this._draw());
-    }
+  NaverCustomOverlay.prototype = new naver.maps.OverlayView();
+  NaverCustomOverlay.prototype.constructor = NaverCustomOverlay;
+  NaverCustomOverlay.prototype.onAdd = function() {
+    this.getPanes().overlayLayer.appendChild(this._el);
   };
-  NaverCustomOverlay.prototype._draw = function() {
-    if (!this._map || !this._el.parentNode) return;
-    const proj = this._map.getProjection();
+  NaverCustomOverlay.prototype.draw = function() {
+    if (!this.getMap()) return;
+    const proj = this.getProjection();
     const pos = proj.fromCoordToOffset(this._position);
     const w = this._el.offsetWidth || 0;
     const h = this._el.offsetHeight || 0;
     this._el.style.left = (pos.x - w * this._xAnchor) + 'px';
     this._el.style.top = (pos.y - h * this._yAnchor) + 'px';
   };
+  NaverCustomOverlay.prototype.onRemove = function() {
+    if (this._el.parentNode) this._el.parentNode.removeChild(this._el);
+  };
   NaverCustomOverlay.prototype.setPosition = function(pos) {
     this._position = pos;
-    if (this._map) this._draw();
+    this.draw();
   };
-  NaverCustomOverlay.prototype.getMap = function() { return this._map; };
   renderAll();
   // 앱 시작 시: savedLoc 있으면 이전 위치 + 자동 GPS
   if (savedLoc) {
