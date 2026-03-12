@@ -239,7 +239,7 @@ header .lc svg{width:18px;height:18px}
   /* 지도 확대 모드 */
   .map-expanded .place-list{max-height:0;overflow:hidden;padding:0}
   .map-expanded #myLocStatus{display:none!important}
-  #listViewBtn{display:flex!important;position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:100;justify-content:center;align-items:center;padding:4px 10px;background:rgba(255,255,255,.9);backdrop-filter:blur(4px);border-radius:14px;cursor:pointer;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.15);border:1px solid rgba(0,0,0,.05)}
+  #listViewBtn{display:none!important}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
   .pi-wrap{margin-bottom:4px;padding-bottom:4px}
@@ -383,9 +383,7 @@ header .lc svg{width:18px;height:18px}
 
   <div id="mapWrap" style="position:relative;flex:1;display:flex;min-height:0">
     <div id="map" style="flex:1"></div>
-    <div id="listViewBtn" onclick="toggleMapExpand()" style="display:none">
-      <span id="listViewLabel" style="font-size:10px;font-weight:600;color:var(--dark);display:flex;align-items:center;gap:2px"><i data-lucide="list" class="lc" style="width:12px;height:12px"></i> 리스트</span>
-    </div>
+    <div id="listViewBtn" style="display:none!important"></div>
     <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
     <!-- 주변 검색 퀵버튼 -->
     <div class="nearby-bar" id="nearbyBar">
@@ -757,7 +755,7 @@ function initMap() {
   map = new kakao.maps.Map(document.getElementById('map'), {
     center: new kakao.maps.LatLng(initLat, initLng), level: initLevel
   });
-  kakao.maps.event.addListener(map, 'click', () => { closeAllIw(); expandMap(); if(addPanelOpen) closeAddPanel(); });
+  kakao.maps.event.addListener(map, 'click', () => { closeAllIw(); toggleMapExpand(); if(addPanelOpen) closeAddPanel(); });
   renderAll();
   // 앱 시작 시: savedLoc 있으면 이전 위치 + 자동 GPS
   if (savedLoc) {
@@ -788,35 +786,27 @@ function initMap() {
 // ── 지도 확대/축소 (모바일) ──
 function expandMap() {
   if (window.innerWidth > 680) return;
-  document.querySelector('.main').classList.add('map-expanded');
+  const m = document.querySelector('.main');
+  m.classList.add('map-expanded');
+  // 검색바, 하단 탭바 숨기기
+  const tb = document.querySelector('.list-top-bar'); if(tb) tb.style.display='none';
+  const tabs = document.querySelector('.tabs'); if(tabs) tabs.style.display='none';
   setTimeout(() => { if(map) map.relayout(); }, 350);
-  _updateListViewBtn();
 }
 function collapseMap() {
-  document.querySelector('.main').classList.remove('map-expanded');
+  const m = document.querySelector('.main');
+  m.classList.remove('map-expanded');
+  // 검색바, 하단 탭바 복원
+  const tb = document.querySelector('.list-top-bar'); if(tb) tb.style.display='';
+  const tabs = document.querySelector('.tabs'); if(tabs) tabs.style.display='';
   setTimeout(() => { if(map) map.relayout(); }, 350);
   try{lucide.createIcons();}catch(e){}
-  _updateListViewBtn();
 }
 function toggleMapExpand() {
   if (document.querySelector('.main').classList.contains('map-expanded')) collapseMap();
   else expandMap();
 }
 let _courseMode = false;
-function _updateListViewBtn() {
-  const label = document.getElementById('listViewLabel');
-  if (!label) return;
-  if (_courseMode) {
-    label.innerHTML = '<i data-lucide="route" class="lc lc-sm"></i> 경로보기';
-    try{lucide.createIcons();}catch(e){}
-    return;
-  }
-  const expanded = document.querySelector('.main').classList.contains('map-expanded');
-  label.innerHTML = expanded
-    ? '<i data-lucide="list" class="lc lc-sm"></i> 리스트 보기'
-    : '<i data-lucide="maximize-2" class="lc lc-sm"></i> 지도 확대';
-  try{lucide.createIcons();}catch(e){}
-}
 
 // ── 탭 ──
 function _closeAllModals(){
@@ -2736,7 +2726,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 261;
+const APP_VERSION = 262;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
