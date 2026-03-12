@@ -2647,7 +2647,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 243;
+const APP_VERSION = 244;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3480,11 +3480,11 @@ async function _distDoSearch(query,loadMore) {
     try{
       if(sortParam==='comment'||sortParam==='recommend'){
         // 네이버 리뷰순 (추천순도 네이버 기반 + 거리 재정렬)
-        const startIdx=(pg-1)*15+1;
-        const r=await fetch(`${NAVER_PROXY}?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&display=15&start=${startIdx}&sort=comment`);
+        const startIdx=(pg-1)*30+1;
+        const r=await fetch(`${NAVER_PROXY}?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&display=30&start=${startIdx}&sort=comment`);
         const d=await r.json();
         if(d.items&&d.items.length){
-          const qWords=query.split(/\s+/).filter(w=>w.length>=2);
+          const qFirst=query.split(/\s+/)[0];
           let docs=d.items.map(it=>({
             place_name:it.title.replace(/<[^>]*>/g,''),
             road_address_name:it.roadAddress||it.address||'',
@@ -3497,8 +3497,9 @@ async function _distDoSearch(query,loadMore) {
             _tel:it.telephone||'',
             _link:it.link||''
           })).filter(doc=>{
-            const addr=(doc.road_address_name+' '+doc.address_name).toLowerCase();
-            return qWords.some(w=>addr.includes(w));
+            if(!qFirst||qFirst.length<2) return true;
+            const addr=(doc.road_address_name+' '+doc.address_name+' '+doc.place_name);
+            return addr.includes(qFirst);
           });
           // 추천순: 리뷰 인기 + 거리 가까운 순 재정렬
           if(sortParam==='recommend'&&myLat!==null){
@@ -3508,12 +3509,13 @@ async function _distDoSearch(query,loadMore) {
           docs=docs.slice(0,5);
           st.allItems[cat]=(st.allItems[cat]||[]).concat(docs);
           st.pages[cat]=pg+1;
-          st.hasMore[cat]=d.items.length>=15&&startIdx+15<=d.total;
+          st.hasMore[cat]=d.items.length>=30&&startIdx+30<=(d.total||1000);
         }else{st.hasMore[cat]=false;}
       }else{
-        // 카카오 거리순 (위치 있으면 distance, 없으면 accuracy)
-        let locParam=myLat!==null?`&x=${myLng}&y=${myLat}`:'';
-        const kakaoSort=myLat!==null?'distance':'accuracy';
+        // 거리순: 지역 검색이면 accuracy(해당 지역 내), 자유 검색이면 distance(현 위치 기준)
+        const hasArea=!!_distAreaContext;
+        const kakaoSort=hasArea?'accuracy':(myLat!==null?'distance':'accuracy');
+        let locParam=(!hasArea&&myLat!==null)?`&x=${myLng}&y=${myLat}`:'';
         const r=await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&category_group_code=${cat}&size=5&page=${pg}&sort=${kakaoSort}${locParam}`,{headers:{Authorization:'KakaoAK '+REST_KEY}});
         const d=await r.json();
         if(d.documents&&d.documents.length){
