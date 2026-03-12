@@ -4022,21 +4022,8 @@ function checkUpdateBtn() {
 }
 
 function forceUpdate() {
-  const btn = document.getElementById('updateBtn');
-  if (btn.dataset.uptodate === 'true') { toast('✓ 최신 버전이에요 (v' + APP_VERSION + ')'); return; }
-  toast('🔄 업데이트 확인 중...');
-  fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
-    if (d.v && d.v > APP_VERSION_NUM) {
-      toast('🔄 새 버전 발견! 업데이트 중...');
-      doForceReload();
-    } else {
-      toast('🤖 최신 버전이에요 (v' + APP_VERSION + ')');
-    }
-  }).catch(() => {
-    // version.json 못 가져와도 강제 새로고침 시도
-    toast('🔄 강제 새로고침 중...');
-    doForceReload();
-  });
+  toast('🔄 업데이트 중...');
+  doForceReload();
 }
 function doForceReload() {
   if ('caches' in window) {
