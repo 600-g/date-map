@@ -2648,7 +2648,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 247;
+const APP_VERSION = 248;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3513,7 +3513,7 @@ async function _distDoSearch(query,loadMore) {
           docs=docs.slice(0,5);
           st.allItems[cat]=(st.allItems[cat]||[]).concat(docs);
           st.pages[cat]=pg+1;
-          st.hasMore[cat]=d.items.length>=30&&startIdx+30<=(d.total||1000);
+          st.hasMore[cat]=startIdx+d.items.length<=(d.total||0);
         }else{st.hasMore[cat]=false;}
       }else{
         // 카카오 거리순/기본
