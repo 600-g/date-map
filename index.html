@@ -1722,6 +1722,7 @@ function setupCatDrag() {
 
 function delCat(idx) {
   if (cats.length <= 1) { toast('최소 1개는 있어야 해요'); return; }
+  if (!confirm(`"${cats[idx].name}" 카테고리를 삭제할까요?\n해당 장소들은 첫번째 카테고리로 이동됩니다.`)) return;
   const catId = cats[idx].id;
   places.forEach(p=>{ if(p.cat===catId) p.cat=cats[0].id; });
   cats.splice(idx,1);
@@ -2622,7 +2623,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 234;
+const APP_VERSION = 235;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3293,21 +3294,21 @@ function _showDistrictPage(view, geo, guName) {
     const f1='370,278',f2='375,358',f3='352,432';
     // 도 (뒤에 — 전체 면적 채움)
     const provs=[
-      {name:'경기',path:`M${a1} L${a2} L210,112 L238,178 L${d1} L180,244 L${c2} L${c1} Z`,tx:145,ty:165},
-      {name:'강원',path:`M${a2} Q${a3} ${b1} Q372,130 ${b2} L${b3} L${d1} L238,178 L210,112 Z`,tx:288,ty:112},
-      {name:'충청',path:`M${c2} L180,244 L${d1} L${d2} L${d3} L${d4} L${c3} Z`,tx:158,ty:288},
-      {name:'경상',path:`M${d1} L${b3} Q358,248 ${f1} Q382,320 ${f2} L${f3} Q330,458 ${e4} L${e3} L${d3} L${d2} Z`,tx:312,ty:328},
-      {name:'전라',path:`M${c3} L${d4} L${d3} L${e3} Q155,475 ${e2} Q42,455 ${e1} Q45,388 ${c4} Z`,tx:118,ty:405},
+      {name:'경기',path:`M${a1} L${a2} L210,112 L238,178 L${d1} L180,244 L${c2} L${c1} Z`,tx:118,ty:100},
+      {name:'강원',path:`M${a2} Q${a3} ${b1} Q372,130 ${b2} L${b3} L${d1} L238,178 L210,112 Z`,tx:295,ty:112},
+      {name:'충청',path:`M${c2} L180,244 L${d1} L${d2} L${d3} L${d4} L${c3} Z`,tx:120,ty:265},
+      {name:'경상',path:`M${d1} L${b3} Q358,248 ${f1} Q382,320 ${f2} L${f3} Q330,458 ${e4} L${e3} L${d3} L${d2} Z`,tx:345,ty:368},
+      {name:'전라',path:`M${c3} L${d4} L${d3} L${e3} Q155,475 ${e2} Q42,455 ${e1} Q45,388 ${c4} Z`,tx:72,ty:438},
     ];
-    // 광역시+제주 — 원형 마커 (위에 오버레이)
+    // 광역시+제주 — 둥근 사각형 마커 (위에 오버레이)
     const cities=[
-      {name:'서울',cx:170,cy:130,rx:26,ry:18},
-      {name:'인천',cx:92,cy:152,rx:24,ry:16},
-      {name:'대전',cx:178,cy:298,rx:22,ry:15},
-      {name:'광주',cx:108,cy:395,rx:22,ry:15},
-      {name:'대구',cx:308,cy:295,rx:22,ry:15},
-      {name:'부산',cx:340,cy:440,rx:24,ry:16},
-      {name:'제주',cx:140,cy:530,rx:42,ry:22},
+      {name:'서울',cx:170,cy:128,w:60,h:38},
+      {name:'인천',cx:88,cy:150,w:54,h:34},
+      {name:'대전',cx:178,cy:298,w:50,h:32},
+      {name:'광주',cx:105,cy:395,w:50,h:32},
+      {name:'대구',cx:310,cy:295,w:50,h:32},
+      {name:'부산',cx:342,cy:440,w:54,h:34},
+      {name:'제주',cx:140,cy:530,w:90,h:42},
     ];
     let svg='';
     // 도 렌더
@@ -3317,11 +3318,11 @@ function _showDistrictPage(view, geo, guName) {
       svg+=`<text x="${r.tx}" y="${r.ty-(cnt?7:0)}" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="800" fill="${has?'#333':'#999'}" style="pointer-events:none">${r.name}</text>`;
       if(cnt) svg+=`<text x="${r.tx}" y="${r.ty+9}" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="600" fill="var(--accent)" style="pointer-events:none">${cnt}곳</text>`;
     });
-    // 광역시 렌더 (타원 마커)
+    // 광역시 렌더 (둥근 사각형 마커)
     cities.forEach(ct=>{
       const cnt=counts[ct.name]||0;const has=cnt>0;
-      svg+=`<ellipse cx="${ct.cx}" cy="${ct.cy}" rx="${ct.rx}" ry="${ct.ry}" fill="${has?RC[ct.name]:'#F5F5F5'}" stroke="white" stroke-width="1.5" style="cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,.12))" onclick="_openRegion('${ct.name}')"/>`;
-      svg+=`<text x="${ct.cx}" y="${ct.cy-(cnt?5:0)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="${has?'#333':'#999'}" style="pointer-events:none">${ct.name}</text>`;
+      svg+=`<rect x="${ct.cx-ct.w/2}" y="${ct.cy-ct.h/2}" width="${ct.w}" height="${ct.h}" rx="8" ry="8" fill="${has?RC[ct.name]:'#F5F5F5'}" stroke="white" stroke-width="1.5" style="cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,.12))" onclick="_openRegion('${ct.name}')"/>`;
+      svg+=`<text x="${ct.cx}" y="${ct.cy-(cnt?5:0)}" text-anchor="middle" dominant-baseline="central" font-size="11" font-weight="700" fill="${has?'#333':'#999'}" style="pointer-events:none">${ct.name}</text>`;
       if(cnt) svg+=`<text x="${ct.cx}" y="${ct.cy+9}" text-anchor="middle" dominant-baseline="central" font-size="8" font-weight="600" fill="var(--accent)" style="pointer-events:none">${cnt}곳</text>`;
     });
     content.innerHTML = `<div style="display:flex;justify-content:center;padding:0">
@@ -3411,6 +3412,8 @@ function _distSearch() {
 function _distAreaTap(area) {
   const si = document.getElementById('distSearchInput');
   si.value = area + ' ';
+  si.placeholder = area + ' 내 검색 (예: ' + area + ' 맛집)';
+  _distBackTarget = _distCurrentGu;
   _showDistrictPage('search', null, area);
 }
 let _distSearchState = {query:'',cats:[],sort:'accuracy',pages:{},hasMore:{},allItems:{}};
@@ -3421,7 +3424,7 @@ async function _distDoSearch(query,loadMore) {
   if(!cats.length){toast('카테고리를 1개 이상 선택하세요');return;}
   const content=document.getElementById('distContent');
   if(!loadMore){
-    _distSearchState={query,cats,sort:'accuracy',pages:{},hasMore:{},allItems:{}};
+    _distSearchState={query,cats,sort:_distSearchState.sort||'accuracy',pages:{},hasMore:{},allItems:{}};
     cats.forEach(c=>{_distSearchState.pages[c]=1;_distSearchState.hasMore[c]=true;_distSearchState.allItems[c]=[];});
     const sb=document.getElementById('distSortBar');if(sb)sb.style.display='flex';
     content.innerHTML='<div id="distResultList"><p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">검색 중...</p></div>';
@@ -3447,7 +3450,8 @@ async function _distDoSearch(query,loadMore) {
             y:it.mapy?(parseInt(it.mapy)/1e7).toString():'',
             x:it.mapx?(parseInt(it.mapx)/1e7).toString():'',
             id:'nv_'+Math.random().toString(36).slice(2,8),
-            _naver:true
+            _naver:true,
+            _desc:it.description?it.description.replace(/<[^>]*>/g,''):''
           }));
           st.allItems[cat]=(st.allItems[cat]||[]).concat(docs);
           st.pages[cat]=pg+1;
@@ -3494,8 +3498,9 @@ function _distRenderResults(){
       html+=`<div style="padding:10px;border:1px solid var(--warm);border-radius:8px;margin-bottom:6px">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${item.place_name}${distText?` <span style="font-size:11px;color:var(--brown);font-weight:400">${distText}</span>`:''}</div>
+            <div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${item.place_name}${distText?` <span style="font-size:11px;color:var(--brown);font-weight:400">${distText}</span>`:''}${item._naver?` <span style="font-size:9px;color:#03C75A;font-weight:700;border:1px solid #03C75A;padding:0 3px;border-radius:3px;vertical-align:middle">N</span>`:''}</div>
             <div style="font-size:11px;color:var(--brown);margin-top:2px">${item.road_address_name||item.address_name||''}</div>
+            ${item._desc?`<div style="font-size:10px;color:#888;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${item._desc}</div>`:''}
           </div>
           <div style="display:flex;gap:4px;align-items:center;flex-shrink:0" id="distBtn_${item.id||Math.random().toString(36).slice(2,8)}">
           ${ep?`<button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:var(--accent);border-color:var(--accent)" onclick="_distRecFocus('${item.y}','${item.x}','${esc}')">지도보기</button><button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:#e57373;border-color:#e57373" onclick="_distRecDel(this,'${item.y}','${item.x}','${esc}')">삭제</button>`
