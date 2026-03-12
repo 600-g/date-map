@@ -2456,8 +2456,10 @@ function confirmDelPlace() {
 
 // ── 공유 ──
 function updateExport() {
+  const el = document.getElementById('exportCode');
+  if (!el) return;
   const payload = { places, cats };
-  document.getElementById('exportCode').textContent = places.length
+  el.textContent = places.length
     ? btoa(encodeURIComponent(JSON.stringify(payload)))
     : '장소를 추가하면 코드가 생성돼요';
 }
