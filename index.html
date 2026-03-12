@@ -399,7 +399,7 @@ header .lc svg{width:18px;height:18px}
       <button class="nb-btn" data-nb="kw" data-kw="CGV OR 메가박스 OR 롯데시네마" data-label="영화관" data-icon="movie" data-filter="영화관,극장" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3B4C6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg> 영화관</button>
       <button class="nb-btn" data-nb="cat" data-code="CS2" data-label="편의점" data-icon="conv" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg> 편의점</button>
       <button class="nb-btn" data-nb="cat" data-code="PM9" data-label="약국" data-icon="pharmacy" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="9" y="3" width="6" height="18" rx="1" fill="#E74C3C"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#E74C3C"/></svg> 약국</button>
-      <button class="nb-btn" data-nb="kw" data-kw="공중화장실 OR 화장실" data-label="화장실" data-icon="toilet" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="6.5" cy="5" r="2.2" fill="#3498DB"/><polygon points="2.5,9 10.5,9 8.5,18 4.5,18" fill="#3498DB"/><line x1="12" y1="2" x2="12" y2="20" stroke="#ddd" stroke-width=".6"/><circle cx="17.5" cy="5" r="2.2" fill="#E74C3C"/><polygon points="13.5,18 21.5,18 17.5,9" fill="#E74C3C"/></svg> 화장실</button>
+      <button class="nb-btn" data-nb="kw" data-kw="공중화장실" data-label="화장실" data-icon="toilet" data-filter="화장실,공중,위생,공공" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="6.5" cy="5" r="2.2" fill="#3498DB"/><polygon points="2.5,9 10.5,9 8.5,18 4.5,18" fill="#3498DB"/><line x1="12" y1="2" x2="12" y2="20" stroke="#ddd" stroke-width=".6"/><circle cx="17.5" cy="5" r="2.2" fill="#E74C3C"/><polygon points="13.5,18 21.5,18 17.5,9" fill="#E74C3C"/></svg> 화장실</button>
     </div>
   </div>
 </div>
@@ -815,6 +815,17 @@ function expandMap() {
   const m = document.querySelector('.main');
   if (m.classList.contains('map-expanded')) return;
   m.classList.add('map-expanded');
+  // 닫기 버튼 표시
+  let cb = document.getElementById('mapCollapseBtn');
+  if (!cb) {
+    cb = document.createElement('button');
+    cb.id = 'mapCollapseBtn';
+    cb.style.cssText = 'position:absolute;top:10px;left:10px;z-index:100;background:white;border:1.5px solid #e0ddd8;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:600;color:#333;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);font-family:inherit';
+    cb.textContent = '✕ 지도 닫기';
+    cb.onclick = collapseMap;
+    document.getElementById('mapWrap').appendChild(cb);
+  }
+  cb.style.display = 'block';
   requestAnimationFrame(() => {
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
@@ -825,6 +836,8 @@ function collapseMap() {
   const m = document.querySelector('.main');
   if (!m.classList.contains('map-expanded')) return;
   m.classList.remove('map-expanded');
+  const cb = document.getElementById('mapCollapseBtn');
+  if (cb) cb.style.display = 'none';
   requestAnimationFrame(() => {
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
@@ -833,8 +846,8 @@ function collapseMap() {
   try{lucide.createIcons();}catch(e){}
 }
 function toggleMapExpand() {
-  if (document.querySelector('.main').classList.contains('map-expanded')) collapseMap();
-  else expandMap();
+  // 확대 상태에서 맵 탭으로 축소하지 않음 (닫기 버튼 사용)
+  if (!document.querySelector('.main').classList.contains('map-expanded')) expandMap();
 }
 let _courseMode = false;
 
@@ -2317,7 +2330,11 @@ async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
     allDocs = allDocs.filter(d => { if (seen.has(d.id)) return false; seen.add(d.id); return true; });
     if (catFilter) {
       const filters = catFilter.split(',');
-      allDocs = allDocs.filter(d => filters.some(f => (d.category_name||'').includes(f) || (d.category_group_name||'').includes(f)));
+      allDocs = allDocs.filter(d => {
+        const name = d.place_name || '';
+        const cat = (d.category_name||'') + (d.category_group_name||'');
+        return filters.some(f => cat.includes(f) || name.includes(f));
+      });
     }
     allDocs.sort((a, b) => (parseInt(a.distance)||99999) - (parseInt(b.distance)||99999));
     allDocs = allDocs.filter(d => d.y && d.x && (parseInt(d.distance)||0) < 5000);
@@ -2375,6 +2392,20 @@ async function searchNearby(categoryCode, label, btnEl, icon) {
       category_name: it.category||'',
       category_group_name: it.category?it.category.split('>')[0]:''
     })) };
+    // 카테고리 필터: 관련 없는 결과 제외
+    const catNameFilter = {
+      CS2: /CU|GS25|세븐일레븐|이마트24|편의점|미니스톱/i,
+      PM9: /약국|팜|pharmacy/i,
+      CE7: /카페|커피|coffee|cafe|tea/i,
+      FD6: /음식|식당|맛집|레스토랑|분식|치킨|피자|한식|중식|일식/i,
+      CT1: /CGV|메가박스|롯데시네마|영화|극장|cinema/i
+    };
+    const nameRe = catNameFilter[categoryCode];
+    if (nameRe) {
+      data.documents = data.documents.filter(d =>
+        nameRe.test(d.place_name) || nameRe.test(d.category_name||'')
+      );
+    }
     // 거리순 정렬 + 5km 이내만
     data.documents.sort((a,b) => (parseInt(a.distance)||99999) - (parseInt(b.distance)||99999));
     data.documents = data.documents.filter(d => d.y && d.x && (parseInt(d.distance)||0) < 5000);
@@ -2883,8 +2914,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.0.9';
-const APP_VERSION_NUM = 109;
+const APP_VERSION = '1.1.0';
+const APP_VERSION_NUM = 110;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4112,10 +4143,32 @@ function checkUpdateBtn() {
 }
 
 function forceUpdate() {
-  toast('🔄 캐시 초기화 중...');
-  doForceReload();
+  toast('🔄 업데이트 중...');
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (!reg) { window.location.reload(); return; }
+      reg.update().then(() => {
+        if (reg.waiting) {
+          // 새 SW가 대기 중이면 즉시 활성화
+          reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+        } else if (reg.installing) {
+          reg.installing.addEventListener('statechange', function() {
+            if (this.state === 'installed') {
+              this.postMessage({ type: 'SKIP_WAITING' });
+            }
+          });
+        } else {
+          // 새 SW 없으면 단순 새로고침
+          window.location.reload();
+        }
+      });
+    });
+  } else {
+    window.location.reload();
+  }
 }
 function doForceReload() {
+  // 최후 수단: 캐시 전체 삭제
   if ('caches' in window) {
     caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k)))).then(() => {
       if ('serviceWorker' in navigator) {
