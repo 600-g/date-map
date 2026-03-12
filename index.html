@@ -801,7 +801,14 @@ function _updateListViewBtn() {
 }
 
 // ── 탭 ──
+function _closeAllModals(){
+  document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
+  if(_districtPage){_districtPage.remove();_districtPage=null;_distViewStack=[];}
+  const pm=document.getElementById('planMenu');if(pm)pm.remove();
+  const po=document.getElementById('planMenuOverlay');if(po)po.remove();
+}
 function showTab(name) {
+  _closeAllModals();
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
@@ -2720,7 +2727,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 253;
+const APP_VERSION = 254;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3392,6 +3399,8 @@ const REGION_GROUPS = [
   {name:'제주', emoji:'🍊', areas:['제주시','서귀포','애월','성산','중문','한림','우도']},
 ];
 function openPlanMenu() {
+  document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
+  if(_districtPage){_districtPage.remove();_districtPage=null;_distViewStack=[];}
   const existing = document.getElementById('planMenu');
   if (existing) { existing.remove(); return; }
   const menu = document.createElement('div');
