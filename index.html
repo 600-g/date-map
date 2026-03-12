@@ -2612,7 +2612,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 231;
+const APP_VERSION = 232;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3267,39 +3267,44 @@ function _showDistrictPage(view, geo, guName) {
         if (keys.some(k => p.addr.includes(k))) counts[r.name] = (counts[r.name]||0) + 1;
       });
     });
-    // 대한민국 SVG 일러스트 지도 — 지역 맞닿게, 한 화면
+    // 대한민국 SVG — 꼭짓점 완전 공유, 빈틈 없음
     const RC={서울:'#FFD1DC',경기:'#C5E1A5',인천:'#B3E5FC',강원:'#E1BEE7',충청:'#FFE0B2',대전:'#FFCCBC',전라:'#DCEDC8',광주:'#F8BBD0',경상:'#D1C4E9',대구:'#FFE082',부산:'#B2DFDB',제주:'#FFF59D'};
-    // 꼭짓점 공유로 빈틈 없는 배치
+    // 공유 꼭짓점 정의 (인접 지역이 동일 좌표 사용)
+    // A=경기NW B=경기강원N C=강원NE D=강원E1 E=강원E2 F=강원경상 G=사거리(경기강원충청경상)
+    // H=경기충청W I=경기W J=경기NW해안 K=충청W L=충청경상1 M=삼거리(충청전라경상)
+    // N=충청전라W O=전라W1 P=전라W2 Q=전라S R=전라경상 S=경상E1 T=경상E2 U=경상부산 V=경상S
+    const A='100,28',B='200,20',C='330,12',D='358,78',E='362,155',F='340,195',G='248,208',
+          H='82,208',I='72,155',J='100,28',K='70,262',L='258,268',M='238,335',
+          N='120,315',O='55,330',P='48,400',Q='115,468',R='165,450',S='368,258',T='372,345',U='345,415',V='285,448';
     const RP=[
-      {name:'강원',p:'M195,30 L310,18 L345,70 L350,140 L325,185 L270,200 L230,168 L200,105 Z',tx:270,ty:100},
-      {name:'경기',p:'M110,75 L195,30 L200,105 L230,168 L270,200 L230,230 L170,240 L125,210 L95,155 Z',tx:165,ty:165},
-      {name:'서울',p:'M152,118 L192,108 L198,142 L182,158 L148,148 Z',tx:170,ty:135},
-      {name:'인천',p:'M88,125 L125,115 L130,155 L118,185 L80,170 Z',tx:104,ty:150},
-      {name:'충청',p:'M80,210 L125,210 L170,240 L230,230 L255,268 L235,330 L165,342 L115,310 L75,260 Z',tx:155,ty:278},
-      {name:'대전',p:'M150,290 L195,280 L205,315 L168,325 Z',tx:178,ty:302},
-      {name:'전라',p:'M65,320 L115,310 L165,342 L175,395 L155,445 L115,462 L62,435 L48,375 Z',tx:108,ty:390},
-      {name:'광주',p:'M90,385 L135,375 L140,415 L105,425 Z',tx:116,ty:400},
-      {name:'경상',p:'M230,230 L325,185 L358,250 L365,340 L335,410 L275,440 L215,408 L195,348 L235,330 L255,268 Z',tx:295,ty:310},
-      {name:'대구',p:'M255,278 L305,268 L315,315 L272,325 Z',tx:286,ty:296},
-      {name:'부산',p:'M285,410 L335,400 L350,438 L305,450 Z',tx:318,ty:424},
-      {name:'제주',p:'M105,495 L185,490 L190,528 L110,535 Z',tx:148,ty:512},
+      // 큰 도 (먼저 그려서 뒤에)
+      {name:'강원', p:`M${B} L${C} L${D} L${E} L${F} L${G} L238,170 L208,105 Z`, tx:280,ty:105},
+      {name:'경기', p:`M${A} L${B} L208,105 L238,170 L${G} L178,238 L135,215 L${H} L${I} Z`, tx:168,ty:155},
+      {name:'충청', p:`M${H} L135,215 L178,238 L${G} L${L} L${M} L${N} L${K} Z`, tx:162,ty:280},
+      {name:'경상', p:`M${G} L${F} L${S} L${T} L${U} L${V} L205,408 L${M} L${L} Z`, tx:305,ty:305},
+      {name:'전라', p:`M${K} L${N} L${M} L205,408 L${R} L${Q} L${P} L${O} Z`, tx:115,ty:392},
+      // 작은 도시 (위에 그려서 앞에)
+      {name:'서울',  p:'M140,108 L198,95 L205,140 L188,162 L132,155 Z', tx:168,ty:130},
+      {name:'인천',  p:'M75,118 L120,108 L128,155 L112,188 L65,172 Z', tx:96,ty:148},
+      {name:'대전',  p:'M145,278 L205,265 L215,312 L162,322 Z', tx:182,ty:294},
+      {name:'광주',  p:'M78,370 L138,358 L145,408 L92,418 Z', tx:112,ty:388},
+      {name:'대구',  p:'M265,268 L325,255 L335,305 L282,315 Z', tx:302,ty:286},
+      {name:'부산',  p:'M290,415 L350,405 L365,450 L310,462 Z', tx:328,ty:434},
+      {name:'제주',  p:'M95,502 L195,495 L202,540 L102,548 Z', tx:150,ty:520},
     ];
-    let svg=`<defs><filter id="ms" x="-2%" y="-2%" width="104%" height="108%"><feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="rgba(0,0,0,.06)"/></filter></defs>`;
-    // 큰 지역 먼저 (경기,강원,충청,전라,경상), 작은 지역 위에
-    const order=['경기','강원','충청','전라','경상','인천','서울','대전','광주','대구','부산','제주'];
-    order.forEach(name=>{
-      const r=RP.find(x=>x.name===name);
+    let svg='';
+    RP.forEach(r=>{
       const cnt=counts[r.name]||0;
       const has=cnt>0;
       const col=has?RC[r.name]:'#EDEDED';
-      const small=['서울','인천','대전','광주','대구','부산'].includes(name);
-      svg+=`<path d="${r.p}" fill="${col}" stroke="white" stroke-width="${small?1.5:2}" filter="url(#ms)" style="cursor:pointer" onclick="_openRegion('${r.name}')"/>`;
-      const fs=small?10:13;
-      svg+=`<text x="${r.tx}" y="${r.ty-(cnt?5:0)}" text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="800" fill="${has?'#333':'#999'}" style="pointer-events:none">${r.name}</text>`;
+      const small=['서울','인천','대전','광주','대구','부산','제주'].includes(r.name);
+      svg+=`<path d="${r.p}" fill="${col}" stroke="rgba(255,255,255,0.7)" stroke-width="${small?1:0.8}" stroke-linejoin="round" style="cursor:pointer" onclick="_openRegion('${r.name}')"/>`;
+      const fs=small?11:14;
+      svg+=`<text x="${r.tx}" y="${r.ty-(cnt?6:0)}" text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="800" fill="${has?'#333':'#999'}" style="pointer-events:none">${r.name}</text>`;
       if(cnt) svg+=`<text x="${r.tx}" y="${r.ty+10}" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="600" fill="var(--accent)" style="pointer-events:none">${cnt}곳</text>`;
     });
     content.innerHTML = `<div style="display:flex;justify-content:center;padding:0">
-      <svg viewBox="35 10 340 540" style="width:100%;max-width:380px;display:block">${svg}</svg>
+      <svg viewBox="30 5 355 555" style="width:100%;max-width:380px;display:block">${svg}</svg>
     </div>`;
   } else if (view === 'map') {
     title.textContent = '서울';
