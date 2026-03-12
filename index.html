@@ -1169,11 +1169,7 @@ function addPlace(p) {
   if (!p.id) p.id = Date.now() + Math.floor(Math.random()*999);
   places.push(p);
   saveData();
-  // 추가된 장소로 지도 포커스
-  if (map && p.lat && p.lng) {
-    map.setCenter(new kakao.maps.LatLng(p.lat, p.lng));
-    map.setLevel(4);
-  }
+  renderAll();
   toast(`📍 ${p.name} 추가 완료!`);
   return true;
 }
@@ -1366,7 +1362,7 @@ function renderWcWinner(p) {
       <div style="font-size:18px;font-weight:700;margin-bottom:4px">🏆 ${p.name}</div>
       <div style="font-size:13px;color:var(--brown)">${c.name}</div>
       ${avg ? `<div style="margin-top:4px;color:#F1C40F;font-size:14px">⭐ ${avg}</div>` : ''}
-      ${p.memo ? `<div style="margin-top:4px;font-size:12px;color:#999;font-style:italic">${p.memo}</div>` : ''}
+      ${p.memo ? `<div style="margin-top:4px;font-size:12px;color:#999;font-style:italic">${linkify(p.memo)}</div>` : ''}
       <button class="btn btn-dark btn-sm" onclick="startWorldCup()" style="margin-top:12px">다시 하기</button>
       <button class="btn btn-outline btn-sm" onclick="closeWorldCup()" style="margin-top:12px">닫기</button>
     </div>
@@ -1788,6 +1784,7 @@ function autosaveCats() {
   renderAll();
 }
 
+function linkify(text){if(!text)return text;return text.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:underline;word-break:break-all">$1</a>');}
 function getCat(id) {
   return cats.find(c=>c.id===id) || cats[cats.length-1] || DEFAULT_CATS[0];
 }
@@ -1864,7 +1861,7 @@ function renderList() {
       </div>
       <div id="rating-${p.id}" style="display:none">${renderRatingBlock(p)}</div>
       ${p.addr?`<div class="pi-addr">${p.addr} <span class="addr-search" onclick="event.stopPropagation();window.open('https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}','_blank')"><i data-lucide="external-link" class="lc" style="width:10px;height:10px"></i></span></div>`:''}
-      <div class="pi-memo">${p.memo||'<span style="color:#bbb">메모 없음</span>'} <span onclick="event.stopPropagation();editMemo(${p.id})" style="cursor:pointer;display:inline-flex;align-items:center;padding:4px;border-radius:4px;vertical-align:middle;margin-left:1px" title="메모 수정"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></span></div>
+      <div class="pi-memo">${p.memo?linkify(p.memo):'<span style="color:#bbb">메모 없음</span>'} <span onclick="event.stopPropagation();editMemo(${p.id})" style="cursor:pointer;display:inline-flex;align-items:center;padding:4px;border-radius:4px;vertical-align:middle;margin-left:1px" title="메모 수정"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#aaa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></span></div>
       ${renderPhotos(p)}
       <div class="pi-acts">
         <button class="bx${p.visited?' vis':''}" style="min-width:62px;justify-content:center" onclick="event.stopPropagation();toggleV(${p.id})">${p.visited?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg> 방문':'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg> 미방문'}</button>
@@ -1958,7 +1955,7 @@ function renderMarkers() {
       <div style="font-size:12px;margin-top:2px"><span data-action="cat" style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:11px;display:inline-flex;align-items:center;gap:2px;max-width:80px;overflow:hidden;white-space:nowrap;cursor:pointer">${svgSized(getIcon(c.emoji),12)||c.emoji} ${c.name}</span></div>
       ${avg?`<div style="font-size:12px;margin-top:3px;color:var(--dark);font-weight:500;display:flex;align-items:center;gap:2px"><span style="color:#F1C40F">★</span>${avg}</div>`:''}
       ${p.addr?`<div style="font-size:11px;color:#8B6F5E;margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;display:inline-flex;align-items:center;padding:1px 4px;border:1px solid #ddd;border-radius:3px;background:#fafafa;margin-left:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B6F5E" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></span></div>`:''}
-      ${p.memo?`<div style="font-size:11px;color:#999;margin-top:3px;font-style:italic">${p.memo}</div>`:''}
+      ${p.memo?`<div style="font-size:11px;color:#999;margin-top:3px;font-style:italic">${linkify(p.memo)}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
         <button class="iw-btn" data-action="visit" style="${p.visited?'background:#4A7C59;border-color:#4A7C59':''}">
           ${p.visited
@@ -2622,7 +2619,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 221;
+const APP_VERSION = 222;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3337,7 +3334,7 @@ function _showDistrictPage(view, geo, guName) {
             <span style="font-size:15px;font-weight:600;color:var(--dark)">${p.name}</span>
             <span style="background:${c.color}20;color:${c.color};font-size:11px;padding:2px 7px;border-radius:6px;font-weight:600">${c.emoji||''} ${c.name}</span>
           </div>
-          ${p.memo?`<div style="font-size:12px;color:#888;margin-top:4px">${p.memo}</div>`:''}
+          ${p.memo?`<div style="font-size:12px;color:#888;margin-top:4px">${linkify(p.memo)}</div>`:''}
         </div>`;
       }).join('');
     }
