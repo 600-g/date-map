@@ -282,11 +282,11 @@ header .lc svg{width:18px;height:18px}
       <div class="list-top-bar">
         <div class="list-search-row">
           <div class="list-search-box expanded" id="listSearchBox">
-            <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0;cursor:pointer" onclick="event.stopPropagation();toggleListSearch()"></i>
+            <i data-lucide="search" class="lc lc-sm" style="color:var(--brown);flex-shrink:0"></i>
             <input id="listSearchInput" type="search" placeholder="매장명, 초성 검색" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search" oninput="filterListSearch()" onclick="event.stopPropagation()" style="border:none;padding:4px 0;margin:0;background:none;flex:1;min-width:0;-webkit-appearance:none">
           </div>
-          <div class="badge" onclick="openPlaceListModal()" style="cursor:pointer;flex-shrink:0;background:var(--dark);font-size:11px;padding:4px 10px"><span id="cnt">0</span>곳</div>
           <button class="btn btn-dark btn-sm add-toggle-btn" id="addToggleBtn" onclick="toggleAddPanel()" style="flex-shrink:0"><i data-lucide="plus" class="lc lc-sm"></i></button>
+          <div class="badge" onclick="openPlaceListModal()" style="cursor:pointer;flex-shrink:0;background:var(--dark);font-size:11px;padding:4px 10px"><span id="cnt">0</span>곳</div>
         </div>
       </div>
       <!-- 장소 추가 패널 (접이식) -->
@@ -512,10 +512,11 @@ header .lc svg{width:18px;height:18px}
       <h3 style="margin:0;font-size:15px">전체 장소 (<span id="plmCnt">0</span>)</h3>
       <span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1" onclick="document.getElementById('placeListModal').classList.remove('open')">&times;</span>
     </div>
-    <div style="display:flex;gap:6px;margin-bottom:10px">
-      <button class="btn btn-sm btn-outline plm-sort" data-sort="name" onclick="sortPlaceList('name')" style="font-size:11px;padding:4px 10px">이름순</button>
-      <button class="btn btn-sm btn-outline plm-sort" data-sort="rating-desc" onclick="sortPlaceList('rating-desc')" style="font-size:11px;padding:4px 10px">평점높은순</button>
-      <button class="btn btn-sm btn-outline plm-sort" data-sort="rating-asc" onclick="sortPlaceList('rating-asc')" style="font-size:11px;padding:4px 10px">평점낮은순</button>
+    <div style="display:flex;gap:4px;margin-bottom:10px;flex-wrap:wrap">
+      <button class="btn btn-sm btn-outline plm-sort" data-sort="name" onclick="sortPlaceList('name')" style="font-size:11px;padding:4px 8px">이름순</button>
+      <button class="btn btn-sm btn-outline plm-sort" data-sort="distance" onclick="sortPlaceList('distance')" style="font-size:11px;padding:4px 8px">거리순</button>
+      <button class="btn btn-sm btn-outline plm-sort" data-sort="rating-desc" onclick="sortPlaceList('rating-desc')" style="font-size:11px;padding:4px 8px">평점높은순</button>
+      <button class="btn btn-sm btn-outline plm-sort" data-sort="rating-asc" onclick="sortPlaceList('rating-asc')" style="font-size:11px;padding:4px 8px">평점낮은순</button>
     </div>
     <div id="plmList" style="overflow-y:auto;max-height:calc(85vh - 100px)"></div>
   </div>
@@ -1224,6 +1225,7 @@ function sortPlaceList(sort) {
 function renderPlaceListModal() {
   let list = [...places];
   if (_plmSort === 'name') list.sort((a,b) => a.name.localeCompare(b.name, 'ko'));
+  else if (_plmSort === 'distance') { if(myLat!==null) list.sort((a,b) => getDistanceKm(myLat,myLng,a.lat,a.lng) - getDistanceKm(myLat,myLng,b.lat,b.lng)); else toast('위치를 허용해주세요'); }
   else if (_plmSort === 'rating-desc') list.sort((a,b) => (getAvgRating(b)||0) - (getAvgRating(a)||0));
   else if (_plmSort === 'rating-asc') list.sort((a,b) => (getAvgRating(a)||0) - (getAvgRating(b)||0));
   document.getElementById('plmCnt').textContent = list.length;
@@ -2726,7 +2728,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 262;
+const APP_VERSION = 263;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
