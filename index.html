@@ -2619,7 +2619,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 222;
+const APP_VERSION = 223;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3359,32 +3359,61 @@ function _distSearch() {
   if (!q) { toast('지역명을 입력해주세요'); return; }
   _showDistrictPage('search', null, q);
 }
-async function _distDoSearch(query) {
+let _distSearchState = {query:'',cats:[],sort:'accuracy',pages:{},hasMore:{},allItems:{}};
+const _distCatNames={FD6:'음식점',CE7:'카페',CT1:'놀거리',AT4:'관광명소'};
+async function _distDoSearch(query,loadMore) {
   const cats=[];
   document.querySelectorAll('.dist-cat-btn.active').forEach(b=>cats.push(b.dataset.cat));
   if(!cats.length){toast('카테고리를 1개 이상 선택하세요');return;}
   const content=document.getElementById('distContent');
-  const catNames={FD6:'음식점',CE7:'카페',CT1:'놀거리',AT4:'관광명소'};
-  let allResults={};
-  for(const cat of cats){
-    try{
-      const r=await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query+' '+catNames[cat])}&category_group_code=${cat}&size=5&sort=accuracy`,{headers:{Authorization:'KakaoAK '+REST_KEY}});
-      const d=await r.json();
-      if(d.documents&&d.documents.length)allResults[cat]=d.documents;
-    }catch(e){}
+  if(!loadMore){
+    _distSearchState={query,cats,sort:'accuracy',pages:{},hasMore:{},allItems:{}};
+    cats.forEach(c=>{_distSearchState.pages[c]=1;_distSearchState.hasMore[c]=true;_distSearchState.allItems[c]=[];});
+    content.innerHTML=`<div style="display:flex;gap:6px;margin-bottom:12px">
+      <button class="btn dist-sort-btn" data-sort="accuracy" onclick="_distSetSort('accuracy')" style="font-size:11px;padding:4px 10px;border-radius:14px;background:var(--accent);color:white;border:1.5px solid var(--accent)">추천순</button>
+      <button class="btn dist-sort-btn" data-sort="distance" onclick="_distSetSort('distance')" style="font-size:11px;padding:4px 10px;border-radius:14px;background:white;color:var(--dark);border:1.5px solid var(--warm)">거리순</button>
+    </div><div id="distResultList"><p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">검색 중...</p></div>`;
   }
-  if(!Object.keys(allResults).length){content.innerHTML='<p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">결과가 없어요. 다른 지역명을 시도해보세요.</p>';return;}
+  const st=_distSearchState;
+  const sortParam=st.sort;
+  let locParam='';
+  if(sortParam==='distance'&&myLat!==null) locParam=`&x=${myLng}&y=${myLat}`;
+  else if(sortParam==='distance') {toast('거리순은 위치 허용이 필요해요');return;}
+  for(const cat of cats){
+    if(!st.hasMore[cat]) continue;
+    const pg=st.pages[cat]||1;
+    try{
+      const r=await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&category_group_code=${cat}&size=5&page=${pg}&sort=${sortParam}${locParam}`,{headers:{Authorization:'KakaoAK '+REST_KEY}});
+      const d=await r.json();
+      if(d.documents&&d.documents.length){
+        st.allItems[cat]=(st.allItems[cat]||[]).concat(d.documents);
+        st.pages[cat]=pg+1;
+        st.hasMore[cat]=!d.meta.is_end;
+      }else{st.hasMore[cat]=false;}
+    }catch(e){st.hasMore[cat]=false;}
+  }
+  _distRenderResults();
+}
+function _distRenderResults(){
+  const st=_distSearchState;
+  const list=document.getElementById('distResultList');
+  if(!list) return;
+  const anyResults=Object.values(st.allItems).some(a=>a.length);
+  if(!anyResults){list.innerHTML='<p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">결과가 없어요. 다른 지역명을 시도해보세요.</p>';return;}
   let html='';
-  for(const[cat,items]of Object.entries(allResults)){
-    html+=`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px">${catNames[cat]||cat}</div>`;
+  for(const cat of st.cats){
+    const items=st.allItems[cat]||[];
+    if(!items.length) continue;
+    html+=`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px">${_distCatNames[cat]||cat}</div>`;
     items.forEach(item=>{
       const ep=places.find(p=>Math.abs(p.lat-parseFloat(item.y))<0.0001&&Math.abs(p.lng-parseFloat(item.x))<0.0001)||places.find(p=>p.name===item.place_name);
       const esc=item.place_name.replace(/'/g,"\\'");
-      const placeUrl=item.place_url||'';
+      let distText='';
+      if(myLat!==null){const dk=getDistanceKm(myLat,myLng,parseFloat(item.y),parseFloat(item.x));distText=dk<1?`${Math.round(dk*1000)}m`:`${dk.toFixed(1)}km`;}
       html+=`<div style="padding:10px;border:1px solid var(--warm);border-radius:8px;margin-bottom:6px">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${item.place_name}</div>
+            <div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${item.place_name}${distText?` <span style="font-size:11px;color:var(--brown);font-weight:400">${distText}</span>`:''}</div>
             <div style="font-size:11px;color:var(--brown);margin-top:2px">${item.road_address_name||item.address_name||''}</div>
           </div>
           <div style="display:flex;gap:4px;align-items:center;flex-shrink:0" id="distBtn_${item.id||Math.random().toString(36).slice(2,8)}">
@@ -3396,7 +3425,19 @@ async function _distDoSearch(query) {
     });
     html+=`</div>`;
   }
-  content.innerHTML=html;
+  const anyMore=Object.values(st.hasMore).some(v=>v);
+  if(anyMore) html+=`<button class="btn btn-outline" style="width:100%;padding:10px;border-radius:10px;font-size:13px;margin-top:4px" onclick="_distDoSearch('${st.query.replace(/'/g,"\\'")}',true)">더보기</button>`;
+  list.innerHTML=html;
+}
+function _distSetSort(sort){
+  _distSearchState.sort=sort;
+  document.querySelectorAll('.dist-sort-btn').forEach(b=>{
+    const on=b.dataset.sort===sort;
+    b.style.background=on?'var(--accent)':'white';
+    b.style.color=on?'white':'var(--dark)';
+    b.style.borderColor=on?'var(--accent)':'var(--warm)';
+  });
+  _distDoSearch(_distSearchState.query,false);
 }
 function _distRecAdd(btn,name,lat,lng,catCode,addr){
   const catMap={FD6:'식사',CE7:'카페',CT1:'활동',AT4:'활동'};
