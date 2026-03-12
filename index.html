@@ -2623,7 +2623,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 237;
+const APP_VERSION = 238;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3270,6 +3270,7 @@ function _showDistrictPage(view, geo, guName) {
   const sortBar=document.getElementById('distSortBar');if(sortBar)sortBar.style.display=view==='search'?'flex':'none';
 
   if (view === 'region') {
+    _distAreaContext = '';
     title.textContent = '지역별 탐색';
     const counts = {};
     places.forEach(p => {
@@ -3344,8 +3345,9 @@ function _showDistrictPage(view, geo, guName) {
     const region = REGION_GROUPS.find(r => r.name === guName);
     if (!region) return;
     _distBackTarget = guName;
+    _distAreaContext = '';
     title.textContent = `${region.emoji} ${guName}`;
-    searchInput.value = guName + ' ';
+    searchInput.value = '';
     searchInput.placeholder = `${guName} 내 장소 검색`;
     const areaPlaces = {};
     (region.areas||[]).forEach(a => { areaPlaces[a] = []; });
@@ -3406,13 +3408,16 @@ function _openRegion(name) {
 }
 function _distSearch() {
   const q = document.getElementById('distSearchInput').value.trim();
-  if (!q) { toast('지역명을 입력해주세요'); return; }
-  _showDistrictPage('search', null, q);
+  const searchQuery = _distAreaContext ? (_distAreaContext + ' ' + q).trim() : q;
+  if (!searchQuery) { toast('검색어를 입력해주세요'); return; }
+  _showDistrictPage('search', null, searchQuery);
 }
+let _distAreaContext = '';
 function _distAreaTap(area) {
   const si = document.getElementById('distSearchInput');
-  si.value = area + ' ';
-  si.placeholder = area + ' 내 검색 (예: ' + area + ' 맛집)';
+  _distAreaContext = area;
+  si.value = '';
+  si.placeholder = area + ' 내 검색 (예: 맛집, 파스타)';
   _distBackTarget = _distCurrentGu;
   _showDistrictPage('search', null, area);
 }
@@ -3433,13 +3438,12 @@ async function _distDoSearch(query,loadMore) {
   const sortParam=st.sort;
   if(sortParam==='distance'&&myLat===null){toast('거리순은 위치 허용이 필요해요');return;}
 
-  if(sortParam==='comment'){
-    // 네이버 리뷰순 검색
-    for(const cat of cats){
-      if(!st.hasMore[cat]) continue;
-      const pg=st.pages[cat]||1;
-      const startIdx=(pg-1)*5+1;
-      try{
+  // 모든 카테고리 병렬 호출 (렉 방지)
+  const fetches=cats.filter(c=>st.hasMore[c]).map(async cat=>{
+    const pg=st.pages[cat]||1;
+    try{
+      if(sortParam==='comment'){
+        const startIdx=(pg-1)*5+1;
         const r=await fetch(`${NAVER_PROXY}?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&display=5&start=${startIdx}&sort=comment`);
         const d=await r.json();
         if(d.items&&d.items.length){
@@ -3451,22 +3455,17 @@ async function _distDoSearch(query,loadMore) {
             x:it.mapx?(parseInt(it.mapx)/1e7).toString():'',
             id:'nv_'+Math.random().toString(36).slice(2,8),
             _naver:true,
-            _desc:it.description?it.description.replace(/<[^>]*>/g,''):''
+            _cat:it.category||'',
+            _tel:it.telephone||'',
+            _link:it.link||''
           }));
           st.allItems[cat]=(st.allItems[cat]||[]).concat(docs);
           st.pages[cat]=pg+1;
           st.hasMore[cat]=d.items.length>=5&&startIdx+5<=d.total;
         }else{st.hasMore[cat]=false;}
-      }catch(e){st.hasMore[cat]=false;}
-    }
-  } else {
-    // 카카오 추천순/거리순
-    let locParam='';
-    if(sortParam==='distance') locParam=`&x=${myLng}&y=${myLat}`;
-    for(const cat of cats){
-      if(!st.hasMore[cat]) continue;
-      const pg=st.pages[cat]||1;
-      try{
+      }else{
+        let locParam='';
+        if(sortParam==='distance') locParam=`&x=${myLng}&y=${myLat}`;
         const r=await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&category_group_code=${cat}&size=5&page=${pg}&sort=${sortParam}${locParam}`,{headers:{Authorization:'KakaoAK '+REST_KEY}});
         const d=await r.json();
         if(d.documents&&d.documents.length){
@@ -3474,9 +3473,10 @@ async function _distDoSearch(query,loadMore) {
           st.pages[cat]=pg+1;
           st.hasMore[cat]=!d.meta.is_end;
         }else{st.hasMore[cat]=false;}
-      }catch(e){st.hasMore[cat]=false;}
-    }
-  }
+      }
+    }catch(e){st.hasMore[cat]=false;}
+  });
+  await Promise.all(fetches);
   _distRenderResults();
 }
 function _distRenderResults(){
@@ -3499,8 +3499,7 @@ function _distRenderResults(){
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div style="flex:1;min-width:0">
             <div style="font-size:13px;font-weight:600;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${item.place_name}${distText?` <span style="font-size:11px;color:var(--brown);font-weight:400">${distText}</span>`:''}${item._naver?` <span style="font-size:9px;color:#03C75A;font-weight:700;border:1px solid #03C75A;padding:0 3px;border-radius:3px;vertical-align:middle">N</span>`:''}</div>
-            <div style="font-size:11px;color:var(--brown);margin-top:2px">${item.road_address_name||item.address_name||''}</div>
-            ${item._desc?`<div style="font-size:10px;color:#888;margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${item._desc}</div>`:''}
+            <div style="font-size:11px;color:var(--brown);margin-top:2px">${item.road_address_name||item.address_name||''}${item._cat?` <span style="font-size:9px;color:#999">${item._cat.split('>').pop()}</span>`:item.category_name?` <span style="font-size:9px;color:#999">${item.category_name.split('>').pop()}</span>`:''}</div>
           </div>
           <div style="display:flex;gap:4px;align-items:center;flex-shrink:0" id="distBtn_${item.id||Math.random().toString(36).slice(2,8)}">
           ${ep?`<button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:var(--accent);border-color:var(--accent)" onclick="_distRecFocus('${item.y}','${item.x}','${esc}')">지도보기</button><button class="btn btn-outline" style="font-size:10px;padding:2px 6px;color:#e57373;border-color:#e57373" onclick="_distRecDel(this,'${item.y}','${item.x}','${esc}')">삭제</button>`
