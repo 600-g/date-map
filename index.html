@@ -726,12 +726,11 @@ function initMap() {
   });
   kakao.maps.event.addListener(map, 'click', () => { closeAllIw(); expandMap(); if(addPanelOpen) closeAddPanel(); });
   renderAll();
-  // 앱 시작 시: savedLoc으로 즉시 마커+거리 표시
+  // 앱 시작 시: savedLoc으로 거리 계산용만 (마커 표시 안 함)
   if (savedLoc) {
     try {
       const loc = JSON.parse(savedLoc);
       myLat = loc.lat; myLng = loc.lng;
-      updateMyLocMarker();
       renderList();
     } catch(e) {}
   }
@@ -2620,7 +2619,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 226;
+const APP_VERSION = 227;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
