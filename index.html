@@ -415,10 +415,15 @@ header .lc svg{width:18px;height:18px}
     </div>
     <p style="font-size:12px;color:var(--brown);margin-bottom:14px;line-height:1.6">개발 중인 기능을 미리 체험해보세요.<br>불안정할 수 있어요.</p>
     <div id="labList">
-      <div style="text-align:center;padding:30px 20px;color:var(--brown);font-size:13px;line-height:1.6">
-        <div style="font-size:32px;margin-bottom:12px">🧪</div>
-        새로운 실험 기능이 준비되면<br>여기에 추가됩니다!
-        <div style="margin-top:16px;font-size:11px;color:#aaa">탐색/코스 → 플랜 탭에서 이용 가능</div>
+      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openRandomPick()">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="dice-3" class="lc lc-sm" style="color:var(--accent)"></i> 랜덤 픽</div>
+        <div style="font-size:12px;color:var(--brown);line-height:1.5">지역을 고르면 저장된 장소 중 랜덤으로 추천해드려요.</div>
+        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">실험</span></div>
+      </div>
+      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openThemePicker()">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="palette" class="lc lc-sm" style="color:var(--accent)"></i> 테마 변경</div>
+        <div style="font-size:12px;color:var(--brown);line-height:1.5">폰트와 색상 컨셉을 바꿔보세요.</div>
+        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">실험</span></div>
       </div>
     </div>
   </div>
@@ -1232,6 +1237,74 @@ function renderPlaceListModal() {
       <span style="font-size:11px;color:${p.visited?'#4A7C59':'#ccc'};flex-shrink:0">${p.visited?'✓':''}</span>
     </div>`;
   }).join('');
+}
+
+// ── 랜덤 픽 ──
+function openRandomPick() {
+  document.getElementById('labModal').classList.remove('open');
+  if (places.length < 1) { toast('저장된 장소가 없어요'); return; }
+  // 지역별 장소 수 계산
+  const regionMap = {};
+  REGION_GROUPS.forEach(r => {
+    const keys = r.name === '충청' ? ['충남','충북','세종','대전','천안','청주'] : r.name === '전라' ? ['전남','전북','광주','전주','여수'] : r.name === '경상' ? ['경남','경북','울산','경주','포항','창원'] : [r.name];
+    const cnt = places.filter(p => p.addr && keys.some(k => p.addr.includes(k))).length;
+    if (cnt > 0) regionMap[r.name] = cnt;
+  });
+  if (!Object.keys(regionMap).length) { toast('주소가 있는 장소가 없어요'); return; }
+  const modal = document.getElementById('wcModal');
+  document.getElementById('wcTitle').textContent = '🎲 랜덤 픽';
+  document.getElementById('wcRound').textContent = '지역을 선택하세요';
+  const body = document.getElementById('wcBody');
+  let html = '<div style="display:flex;flex-direction:column;gap:6px">';
+  html += `<button class="btn btn-dark btn-sm" style="width:100%;padding:10px" onclick="_randomGo('all')">🎲 전체 (${places.length}곳)</button>`;
+  Object.entries(regionMap).sort((a,b)=>b[1]-a[1]).forEach(([name,cnt])=>{
+    const r=REGION_GROUPS.find(g=>g.name===name);
+    html+=`<button class="btn btn-outline btn-sm" style="width:100%;padding:10px" onclick="_randomGo('${name}')">${r?r.emoji:''} ${name} (${cnt}곳)</button>`;
+  });
+  html += '</div>';
+  body.innerHTML = html;
+  modal.classList.add('open');
+}
+function _randomGo(region) {
+  let pool = [...places];
+  if (region !== 'all') {
+    const r = REGION_GROUPS.find(g => g.name === region);
+    const keys = r.name === '충청' ? ['충남','충북','세종','대전','천안','청주'] : r.name === '전라' ? ['전남','전북','광주','전주','여수'] : r.name === '경상' ? ['경남','경북','울산','경주','포항','창원'] : [r.name];
+    pool = places.filter(p => p.addr && keys.some(k => p.addr.includes(k)));
+  }
+  if (!pool.length) { toast('해당 지역에 장소가 없어요'); return; }
+  const body = document.getElementById('wcBody');
+  const round = document.getElementById('wcRound');
+  // 슬롯머신 애니메이션
+  round.textContent = '돌리는 중...';
+  let tick = 0;
+  const maxTick = 20;
+  const interval = setInterval(() => {
+    const rp = pool[Math.floor(Math.random() * pool.length)];
+    const c = getCat(rp.cat);
+    body.innerHTML = `<div style="text-align:center;padding:20px;border:2px solid var(--warm);border-radius:16px;animation:pulse .3s">
+      <div style="font-size:28px;margin-bottom:8px">${c.emoji||'📍'}</div>
+      <div style="font-size:18px;font-weight:700;color:var(--dark)">${rp.name}</div>
+      <div style="font-size:12px;color:var(--brown);margin-top:4px">${rp.addr||''}</div>
+    </div>`;
+    tick++;
+    if (tick >= maxTick) {
+      clearInterval(interval);
+      const pick = pool[Math.floor(Math.random() * pool.length)];
+      const pc = getCat(pick.cat);
+      round.textContent = '🎉 오늘의 장소!';
+      body.innerHTML = `<div style="text-align:center;padding:24px;border:2.5px solid var(--accent);border-radius:16px;background:linear-gradient(135deg,#fff5f5,#fff0f6)">
+        <div style="font-size:36px;margin-bottom:10px">${pc.emoji||'📍'}</div>
+        <div style="font-size:20px;font-weight:800;color:var(--dark)">${pick.name}</div>
+        <div style="font-size:12px;color:var(--brown);margin-top:6px">${pick.addr||''}</div>
+        ${pick.memo?`<div style="font-size:11px;color:#888;margin-top:6px">${pick.memo}</div>`:''}
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:14px">
+          <button class="btn btn-outline" style="font-size:12px;padding:6px 14px" onclick="closeWorldCup();setTimeout(()=>focusPlace(${pick.id}),300)">지도보기</button>
+          <button class="btn btn-dark" style="font-size:12px;padding:6px 14px" onclick="_randomGo('${region}')">다시 돌리기</button>
+        </div>
+      </div>`;
+    }
+  }, 80);
 }
 
 // ── 장소 월드컵 ──
@@ -2643,7 +2716,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 249;
+const APP_VERSION = 251;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -2674,6 +2747,90 @@ function openLab() {
   document.getElementById('labModal').classList.add('open');
   try{lucide.createIcons();}catch(e){}
 }
+
+// ── 테마 변경 ──
+const THEMES = {
+  default: {name:'기본',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#5B7DB8',dark:'#3B4C6B',brown:'#8B7E74',warm:'#EEEBE5',cream:'#FAFAF7'},
+  rose: {name:'로즈',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#D4687A',dark:'#5C3347',brown:'#9C7B8B',warm:'#F3E5E9',cream:'#FFF8F9'},
+  forest: {name:'포레스트',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#5A9E6F',dark:'#2C4A38',brown:'#7A8E7D',warm:'#E4EDE6',cream:'#F5FAF6'},
+  ocean: {name:'오션',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#4A8EC2',dark:'#1E3A5F',brown:'#7B8FA0',warm:'#E0EBF3',cream:'#F4F8FB'},
+  lavender: {name:'라벤더',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#8B7EC8',dark:'#413565',brown:'#8E849A',warm:'#EBE6F3',cream:'#F8F5FC'},
+  mocha: {name:'모카',font:'Pretendard Variable,Pretendard,-apple-system,sans-serif',accent:'#A0785C',dark:'#4A3328',brown:'#9A8577',warm:'#EDE5DC',cream:'#FAF7F3'},
+};
+const FONTS = {
+  pretendard: {name:'기본 (Pretendard)',val:'Pretendard Variable,Pretendard,-apple-system,sans-serif'},
+  gothic: {name:'고딕 (System)',val:'-apple-system,BlinkMacSystemFont,sans-serif'},
+  serif: {name:'명조 (Serif)',val:'Georgia,Noto Serif KR,serif'},
+  mono: {name:'모노 (Mono)',val:'SF Mono,Menlo,monospace'},
+};
+function _loadTheme(){
+  try{
+    const saved=JSON.parse(localStorage.getItem('datemap-theme')||'{}');
+    if(saved.color) _applyColorTheme(saved.color);
+    if(saved.font) _applyFont(saved.font);
+  }catch(e){}
+}
+function _applyColorTheme(id){
+  const t=THEMES[id];if(!t)return;
+  const r=document.documentElement.style;
+  r.setProperty('--accent',t.accent);r.setProperty('--dark',t.dark);
+  r.setProperty('--brown',t.brown);r.setProperty('--warm',t.warm);r.setProperty('--cream',t.cream);
+}
+function _applyFont(id){
+  const f=FONTS[id];if(!f)return;
+  document.body.style.fontFamily=f.val;
+}
+function _saveTheme(colorId,fontId){
+  const cur=JSON.parse(localStorage.getItem('datemap-theme')||'{}');
+  if(colorId!==undefined) cur.color=colorId;
+  if(fontId!==undefined) cur.font=fontId;
+  localStorage.setItem('datemap-theme',JSON.stringify(cur));
+}
+function openThemePicker(){
+  document.getElementById('labModal').classList.remove('open');
+  const cur=JSON.parse(localStorage.getItem('datemap-theme')||'{}');
+  const curColor=cur.color||'default';
+  const curFont=cur.font||'pretendard';
+  const modal=document.getElementById('wcModal');
+  document.getElementById('wcTitle').textContent='🎨 테마 변경';
+  document.getElementById('wcRound').textContent='색상과 폰트를 선택하세요';
+  const body=document.getElementById('wcBody');
+  let html='<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px">색상 컨셉</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px">';
+  Object.entries(THEMES).forEach(([id,t])=>{
+    const sel=id===curColor;
+    html+=`<div onclick="_pickColor('${id}')" style="padding:10px 8px;border:2px solid ${sel?t.accent:'#eee'};border-radius:10px;cursor:pointer;text-align:center;background:${sel?t.cream:'white'}">
+      <div style="display:flex;gap:3px;justify-content:center;margin-bottom:4px">
+        <span style="width:14px;height:14px;border-radius:50%;background:${t.accent};display:inline-block"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:${t.dark};display:inline-block"></span>
+        <span style="width:14px;height:14px;border-radius:50%;background:${t.warm};display:inline-block"></span>
+      </div>
+      <div style="font-size:11px;font-weight:600;color:${sel?t.accent:'#666'}">${t.name}</div>
+    </div>`;
+  });
+  html+='</div></div>';
+  html+='<div><div style="font-size:13px;font-weight:700;color:var(--dark);margin-bottom:8px">폰트</div>';
+  html+='<div style="display:flex;flex-direction:column;gap:6px">';
+  Object.entries(FONTS).forEach(([id,f])=>{
+    const sel=id===curFont;
+    html+=`<div onclick="_pickFont('${id}')" style="padding:10px 12px;border:2px solid ${sel?'var(--accent)':'#eee'};border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;background:${sel?'var(--cream)':'white'}">
+      <span style="font-family:${f.val};font-size:13px;font-weight:600">${f.name}</span>
+      <span style="font-family:${f.val};font-size:12px;color:var(--brown)">가나다 ABC 123</span>
+    </div>`;
+  });
+  html+='</div></div>';
+  html+=`<button class="btn btn-outline" style="width:100%;margin-top:14px;font-size:12px" onclick="_pickColor('default');_pickFont('pretendard')">기본값으로 초기화</button>`;
+  body.innerHTML=html;
+  modal.classList.add('open');
+}
+function _pickColor(id){
+  _applyColorTheme(id);_saveTheme(id,undefined);openThemePicker();
+}
+function _pickFont(id){
+  _applyFont(id);_saveTheme(undefined,id);openThemePicker();
+}
+// 앱 시작 시 저장된 테마 적용
+_loadTheme();
 
 // ── 코스 저장/불러오기 ──
 function _getSavedCourses(){ try{return JSON.parse(localStorage.getItem('datemap-courses'))||[];}catch(e){return[];} }
@@ -2895,7 +3052,7 @@ function renderCourseRoute() {
     }
     return `${distHtml}<div class="cr-item" data-idx="${i}">
       <div style="width:26px;height:26px;background:var(--dark);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0">${i+1}</div>
-      <span style="font-size:17px;flex-shrink:0">${c.emoji}</span>
+      <span style="width:24px;height:24px;background:${c.color};border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0">${svgSized(getIcon(c.emoji),14)||c.emoji}</span>
       <div style="flex:1;min-width:0;font-size:14px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
       <span class="cr-handle">☰</span>
     </div>`;
@@ -3022,7 +3179,7 @@ function courseShowMap() {
           const c = getCat(p.cat);
           const el = document.createElement('div');
           el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
-            <div style="background:white;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;color:${color};border:1.5px solid ${color};margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);display:flex;align-items:center;gap:3px"><span style="font-size:12px">${c.emoji}</span> ${p.name}</div>
+            <div style="background:white;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;color:${color};border:1.5px solid ${color};margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);display:flex;align-items:center;gap:3px"><span style="width:16px;height:16px;background:${c.color};border-radius:50%;display:inline-flex;align-items:center;justify-content:center">${svgSized(getIcon(c.emoji),10)||c.emoji}</span> ${p.name}</div>
             <div style="width:${isFirst||isLast?36:30}px;height:${isFirst||isLast?36:30}px;background:${color};border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);color:white;font-weight:700;font-size:${isFirst||isLast?11:13}px">${label}</div>
           </div>`;
           const marker = new kakao.maps.CustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:5+i });
@@ -3424,7 +3581,8 @@ function _showDistrictPage(view, geo, guName) {
     content.innerHTML = '<p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">검색 중...</p>';
     // 검색 쿼리: area context + 사용자 입력, 또는 guName
     const userInput = searchInput.value.trim();
-    const searchQ = _distAreaContext ? (_distAreaContext + ' ' + userInput).trim() : (userInput || guName || '');
+    const regionCtx = _distAreaContext || _distBackTarget || '';
+    const searchQ = regionCtx ? (regionCtx + ' ' + userInput).trim() : (userInput || guName || '');
     _distDoSearch(searchQ);
   } else if (view === 'list') {
     let guPlaces = _districtDistMap[guName] || [];
@@ -3465,7 +3623,8 @@ function _openRegion(name) {
 }
 function _distSearch() {
   const q = document.getElementById('distSearchInput').value.trim();
-  const searchQuery = _distAreaContext ? (_distAreaContext + ' ' + q).trim() : q;
+  const regionCtx = _distAreaContext || _distBackTarget || '';
+  const searchQuery = regionCtx ? (regionCtx + ' ' + q).trim() : q;
   if (!searchQuery) { toast('검색어를 입력해주세요'); return; }
   _showDistrictPage('search', null, searchQuery);
 }
@@ -3514,7 +3673,7 @@ async function _distDoSearch(query,loadMore) {
         const r=await fetch(`${NAVER_PROXY}?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&display=30&start=${startIdx}&sort=comment`);
         const d=await r.json();
         if(d.items&&d.items.length){
-          const qFirst=query.split(/\s+/)[0];
+          const filterKey=_distAreaContext||_distBackTarget||query.split(/\s+/)[0];
           let docs=d.items.map(it=>({
             place_name:it.title.replace(/<[^>]*>/g,''),
             road_address_name:it.roadAddress||it.address||'',
@@ -3527,9 +3686,9 @@ async function _distDoSearch(query,loadMore) {
             _tel:it.telephone||'',
             _link:it.link||''
           })).filter(doc=>{
-            if(!qFirst||qFirst.length<2) return true;
+            if(!filterKey||filterKey.length<2) return true;
             const addr=(doc.road_address_name+' '+doc.address_name+' '+doc.place_name);
-            return addr.includes(qFirst);
+            return addr.includes(filterKey);
           });
           // 추천순: 리뷰 인기 + 거리 가까운 순 재정렬
           if(sortParam==='recommend'&&myLat!==null){
@@ -3543,7 +3702,8 @@ async function _distDoSearch(query,loadMore) {
         }else{st.hasMore[cat]=false;}
       }else{
         // 카카오 거리순/기본
-        const hasArea=!!_distAreaContext;
+        const areaCtx=_distAreaContext||_distBackTarget||'';
+        const hasArea=!!areaCtx;
         const kakaoSort=hasArea?'accuracy':(myLat!==null?'distance':'accuracy');
         let locParam=(!hasArea&&myLat!==null)?`&x=${myLng}&y=${myLat}`:'';
         const fetchSize=hasArea?15:5;
@@ -3552,7 +3712,7 @@ async function _distDoSearch(query,loadMore) {
         if(d.documents&&d.documents.length){
           let filtered=d.documents;
           if(hasArea){
-            const areaKey=_distAreaContext;
+            const areaKey=areaCtx;
             filtered=d.documents.filter(doc=>{
               const addr=(doc.road_address_name||'')+(doc.address_name||'');
               return addr.includes(areaKey);
@@ -3613,7 +3773,8 @@ function _distSetSort(sort){
   });
   // area context + 사용자 입력으로 query 재구성
   const userInput=document.getElementById('distSearchInput').value.trim();
-  const q=_distAreaContext?(_distAreaContext+' '+userInput).trim():(_distSearchState.query||userInput);
+  const regionCtx=_distAreaContext||_distBackTarget||'';
+  const q=regionCtx?(regionCtx+' '+userInput).trim():(_distSearchState.query||userInput);
   _distDoSearch(q,false);
 }
 function _distRecAdd(btn,name,lat,lng,catCode,addr){
