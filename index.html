@@ -232,7 +232,7 @@ header .lc svg{width:18px;height:18px}
   .fb{flex-shrink:0}
   #myLocStatus{order:5;width:100%}
   /* 카드 리스트 */
-  .place-list{order:6;overflow-y:auto;width:100%;max-height:20vh;flex-shrink:0;-webkit-overflow-scrolling:touch;scroll-snap-type:y proximity;scroll-padding-top:2px;scroll-padding-bottom:2px}
+  .place-list{order:6;overflow-y:auto;width:100%;min-height:60px;max-height:20vh;flex-shrink:0;-webkit-overflow-scrolling:touch;scroll-snap-type:y proximity;scroll-padding-top:2px;scroll-padding-bottom:2px}
   .pi-wrap{scroll-snap-align:start;scroll-margin-top:2px}
   /* 설정탭 */
   #tab-cfg{order:6;width:100%;flex:1;overflow-y:auto}
@@ -242,7 +242,7 @@ header .lc svg{width:18px;height:18px}
   .map-expanded .list-top-bar{display:none!important}
   .map-expanded #mapWrap{flex:999!important;min-height:100%!important}
   .map-expanded .filter-bar{display:none!important}
-  .map-expanded .place-list{max-height:0;overflow:hidden;padding:0}
+  .map-expanded .place-list{max-height:0!important;min-height:0!important;overflow:hidden;padding:0}
   .map-expanded #myLocStatus{display:none!important}
   .map-expanded #addPanel{display:none!important}
   #listViewBtn{display:none!important}
@@ -392,8 +392,7 @@ header .lc svg{width:18px;height:18px}
     <div id="listViewBtn" style="display:none!important"></div>
     <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
     <button class="my-loc-btn" id="compassBtn" title="북쪽 정렬" style="top:auto;bottom:56px;right:10px;width:32px;height:32px" onclick="resetNorth()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="#E05252" stroke="#E05252"/></svg></button>
-    <button class="my-loc-btn" id="tiltBtn" title="3D 보기" style="top:auto;bottom:96px;right:10px;width:32px;height:32px" onclick="toggle3D()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20L12 4l10 16"/><path d="M6 16h12"/></svg></button>
-    <button class="my-loc-btn" id="streetViewBtn" title="거리뷰" style="top:auto;bottom:136px;right:10px;width:32px;height:32px" onclick="toggleStreetView()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M12 8v4"/><path d="M6.5 20c.9-3.3 3-5 5.5-5s4.6 1.7 5.5 5"/></svg></button>
+    <button class="my-loc-btn" id="streetViewBtn" title="거리뷰" style="top:auto;bottom:96px;right:10px;width:32px;height:32px" onclick="toggleStreetView()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M12 8v4"/><path d="M6.5 20c.9-3.3 3-5 5.5-5s4.6 1.7 5.5 5"/></svg></button>
     <!-- 주변 검색 퀵버튼 -->
     <div class="nearby-bar" id="nearbyBar">
       <button class="nb-btn" data-nb="cat" data-code="CE7" data-label="카페" data-icon="cafe" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6F4E37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg> 카페</button>
@@ -852,7 +851,7 @@ function showTab(name) {
   document.querySelectorAll('.tab')[['list','cfg'].indexOf(name)].classList.add('active');
   const mw = document.getElementById('mapWrap');
   if (name==='cfg') { mw.style.display='none'; catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; try{lucide.createIcons();}catch(e){} document.getElementById('appVer').textContent = APP_VERSION; checkUpdateBtn(); }
-  else { mw.style.display=''; collapseMap(); }
+  else { mw.style.display=''; if (!window._skipCollapse) collapseMap(); window._skipCollapse = false; }
   if (name==='list') populateCatSelect();
 }
 
@@ -2835,8 +2834,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.0.5';
-const APP_VERSION_NUM = 105;
+const APP_VERSION = '1.0.6';
+const APP_VERSION_NUM = 106;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3286,6 +3285,7 @@ function courseShowMap() {
   clearNearbyMarkers();
   closeAllIw();
   _courseSel = selCopy;
+  window._skipCollapse = true;
   showTab('list');
   expandMap();
   toast(`코스 ${_courseSel.length}곳 표시 중...`);
@@ -4097,30 +4097,9 @@ function resetNorth() {
   map.setOptions({ heading: 0, tilt: 0 });
 }
 
-// ── 네이버 전용: 3D 틸트/회전 ──
-let _3dMode = false;
-function toggle3D() {
-  _3dMode = !_3dMode;
-  const btn = document.getElementById('tiltBtn');
-  if (_3dMode) {
-    map.setOptions({ tilt: 45 });
-    btn.style.background = '#4285F4';
-    btn.style.color = 'white';
-    btn.style.borderColor = '#4285F4';
-    toast('3D 모드 ON — 두 손가락으로 회전/기울기 조절');
-  } else {
-    map.setOptions({ tilt: 0, heading: 0 });
-    btn.style.background = 'white';
-    btn.style.color = '';
-    btn.style.borderColor = '';
-    toast('3D 모드 OFF');
-  }
-}
-
 // ── 네이버 전용: 거리뷰 ──
 let _streetViewMode = false;
 let _streetViewListener = null;
-let _panoLayer = null;
 function toggleStreetView() {
   if (_streetViewMode) {
     closeStreetView();
@@ -4131,26 +4110,21 @@ function toggleStreetView() {
   btn.style.background = '#4285F4';
   btn.style.color = 'white';
   btn.style.borderColor = '#4285F4';
-  // 파란색 커버리지 레이어 표시
-  if (!_panoLayer) _panoLayer = new naver.maps.PanoramaLayer();
-  _panoLayer.setMap(map);
-  toast('파란 도로를 탭하면 거리뷰가 열려요');
+  toast('거리뷰: 도로 근처를 탭하세요');
   _streetViewListener = naver.maps.Event.addListener(map, 'click', function(e) {
-    checkAndOpenStreetView(e.coord.y, e.coord.x);
+    window._overlayClicked = Date.now();
+    const pos = new naver.maps.LatLng(e.coord.y, e.coord.x);
+    toast('거리뷰 확인 중...');
+    new naver.maps.PanoramaClient().getNearestPanoId(pos, 100, function(id) {
+      if (id) {
+        openStreetView(id);
+      } else {
+        toast('이 위치에는 거리뷰가 없어요 — 도로 근처를 탭하세요');
+      }
+    });
   });
 }
-function checkAndOpenStreetView(lat, lng) {
-  const pos = new naver.maps.LatLng(lat, lng);
-  // 가장 가까운 파노라마 위치 찾기 (반경 50m)
-  new naver.maps.PanoramaClient().getNearestPanoId(pos, 50, function(id) {
-    if (id) {
-      openStreetView(lat, lng, id);
-    } else {
-      toast('이 위치에는 거리뷰가 없어요. 파란 도로를 탭하세요');
-    }
-  });
-}
-function openStreetView(lat, lng, panoId) {
+function openStreetView(panoId) {
   let sv = document.getElementById('streetViewModal');
   if (sv) sv.remove();
   sv = document.createElement('div');
@@ -4164,17 +4138,16 @@ function openStreetView(lat, lng, panoId) {
     <div id="streetViewPano" style="flex:1"></div>
   `;
   document.body.appendChild(sv);
-  const opts = { pov: { pan: 0, tilt: 0, fov: 100 } };
-  if (panoId) opts.panoId = panoId;
-  else opts.position = new naver.maps.LatLng(lat, lng);
-  new naver.maps.StreetView('streetViewPano', opts);
+  new naver.maps.StreetView('streetViewPano', {
+    panoId: panoId,
+    pov: { pan: 0, tilt: 0, fov: 100 }
+  });
 }
 function closeStreetView() {
   _streetViewMode = false;
   const btn = document.getElementById('streetViewBtn');
   if (btn) { btn.style.background = 'white'; btn.style.color = ''; btn.style.borderColor = ''; }
   if (_streetViewListener) { naver.maps.Event.removeListener(_streetViewListener); _streetViewListener = null; }
-  if (_panoLayer) { _panoLayer.setMap(null); }
   const sv = document.getElementById('streetViewModal');
   if (sv) sv.remove();
 }
@@ -4202,10 +4175,17 @@ window.addEventListener('load', () => {
       this._zIndex = opts.zIndex || 0;
       this._el.style.position = 'absolute';
       this._el.style.zIndex = this._zIndex;
+      this._el.style.pointerEvents = 'auto';
+      this._el.style.cursor = 'pointer';
     };
     NaverCustomOverlay.prototype = new naver.maps.OverlayView();
     NaverCustomOverlay.prototype.constructor = NaverCustomOverlay;
-    NaverCustomOverlay.prototype.onAdd = function() { this.getPanes().overlayLayer.appendChild(this._el); };
+    NaverCustomOverlay.prototype.onAdd = function() {
+      var pane = this.getPanes().overlayLayer;
+      pane.appendChild(this._el);
+      // overlayLayer가 pointer-events:none일 수 있으므로 강제 설정
+      pane.style.pointerEvents = 'auto';
+    };
     NaverCustomOverlay.prototype.draw = function() {
       if (!this.getMap()) return;
       var proj = this.getProjection();
