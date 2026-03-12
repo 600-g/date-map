@@ -2335,17 +2335,33 @@ async function searchNearby(categoryCode, label, btnEl, icon) {
   toast(`🔍 주변 ${label} 검색 중...`);
   try {
     const areaName = await getNearbyAreaName(lat, lng);
-    const catKeywords = {CE7:'카페',FD6:'음식점',CS2:'편의점',PM9:'약국',CT1:'영화관'};
-    const kw = catKeywords[categoryCode] || categoryCode;
-    let q = areaName ? areaName + ' ' + kw : kw;
-    let res = await fetch(`${NAVER_PROXY}?query=${encodeURIComponent(q)}&display=15&sort=comment`);
-    let raw = await res.json();
-    // 결과 부족하면 지역명 없이 재검색
-    if ((!raw.items || raw.items.length < 3) && areaName) {
-      res = await fetch(`${NAVER_PROXY}?query=${encodeURIComponent(kw)}&display=15&sort=comment`);
-      raw = await res.json();
+    // 편의점/약국은 브랜드별 검색으로 커버리지 확대
+    const catMultiKw = {
+      CS2: ['CU','GS25','세븐일레븐','이마트24','편의점'],
+      PM9: ['약국'],
+      CE7: ['카페'],
+      FD6: ['음식점','맛집'],
+      CT1: ['CGV','메가박스','롯데시네마']
+    };
+    const keywords = catMultiKw[categoryCode] || [categoryCode];
+    let allItems = [];
+    for (const kw of keywords) {
+      const q = areaName ? areaName + ' ' + kw : kw;
+      try {
+        const r = await fetch(`${NAVER_PROXY}?query=${encodeURIComponent(q)}&display=10&sort=comment`);
+        const j = await r.json();
+        if (j.items) allItems = allItems.concat(j.items);
+      } catch(e) {}
     }
-    const data = { documents: (raw.items||[]).map(it => ({
+    // 중복 제거 (주소 기준)
+    const seen = new Set();
+    allItems = allItems.filter(it => {
+      const key = (it.roadAddress||it.address||'') + it.title;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    const data = { documents: allItems.map(it => ({
       place_name: it.title.replace(/<[^>]*>/g,''),
       road_address_name: it.roadAddress||'',
       address_name: it.address||'',
@@ -2834,8 +2850,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.0.6';
-const APP_VERSION_NUM = 106;
+const APP_VERSION = '1.0.7';
+const APP_VERSION_NUM = 107;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4051,27 +4067,19 @@ function checkUpdateBtn() {
   const btn = document.getElementById('updateBtn');
   fetch('version.json?t='+Date.now()).then(r=>r.json()).then(d=>{
     if (d.v && d.v !== APP_VERSION_NUM) {
-      btn.textContent = '새 버전 업데이트 (v'+d.v+')';
+      btn.textContent = '🔄 새 버전 업데이트 (v'+d.v+')';
       btn.className = 'btn btn-dark';
       btn.style.opacity = '1';
-      btn.style.pointerEvents = 'auto';
     } else {
-      btn.textContent = '✓ 최신 버전입니다 (v' + APP_VERSION + ')';
+      btn.textContent = '✓ 최신 버전 (v' + APP_VERSION + ')';
       btn.className = 'btn btn-outline';
-      btn.style.opacity = '.5';
-      btn.style.pointerEvents = 'auto';
-      btn.dataset.uptodate = 'true';
+      btn.style.opacity = '.6';
     }
   }).catch(()=>{});
 }
 
 function forceUpdate() {
-  const btn = document.getElementById('updateBtn');
-  if (btn && btn.dataset.uptodate === 'true') {
-    toast('✓ 이미 최신 버전이에요 (v' + APP_VERSION + ')');
-    return;
-  }
-  toast('🔄 업데이트 중...');
+  toast('🔄 캐시 초기화 중...');
   doForceReload();
 }
 function doForceReload() {
@@ -4115,13 +4123,21 @@ function toggleStreetView() {
     window._overlayClicked = Date.now();
     const pos = new naver.maps.LatLng(e.coord.y, e.coord.x);
     toast('거리뷰 확인 중...');
-    new naver.maps.PanoramaClient().getNearestPanoId(pos, 100, function(id) {
-      if (id) {
-        openStreetView(id);
-      } else {
-        toast('이 위치에는 거리뷰가 없어요 — 도로 근처를 탭하세요');
-      }
-    });
+    try {
+      var client = new naver.maps.PanoramaClient();
+      var _svTimeout = setTimeout(function(){ toast('거리뷰 응답 없음 — 이 위치에서는 지원되지 않을 수 있어요'); }, 5000);
+      client.getNearestPanoId(pos, 200, function(id) {
+        clearTimeout(_svTimeout);
+        if (id) {
+          openStreetView(id);
+        } else {
+          toast('이 위치에는 거리뷰가 없어요 — 도로 위를 탭하세요');
+        }
+      });
+    } catch(e) {
+      toast('거리뷰 오류: ' + e.message);
+      console.error('StreetView error:', e);
+    }
   });
 }
 function openStreetView(panoId) {
@@ -4181,10 +4197,8 @@ window.addEventListener('load', () => {
     NaverCustomOverlay.prototype = new naver.maps.OverlayView();
     NaverCustomOverlay.prototype.constructor = NaverCustomOverlay;
     NaverCustomOverlay.prototype.onAdd = function() {
-      var pane = this.getPanes().overlayLayer;
+      var pane = this.getPanes().floatPane;
       pane.appendChild(this._el);
-      // overlayLayer가 pointer-events:none일 수 있으므로 강제 설정
-      pane.style.pointerEvents = 'auto';
     };
     NaverCustomOverlay.prototype.draw = function() {
       if (!this.getMap()) return;
