@@ -2623,7 +2623,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 236;
+const APP_VERSION = 237;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3294,21 +3294,21 @@ function _showDistrictPage(view, geo, guName) {
     const f1='370,278',f2='375,358',f3='352,432';
     // 도 (뒤에 — 전체 면적 채움)
     const provs=[
-      {name:'경기',path:`M${a1} L${a2} L210,112 L238,178 L${d1} L180,244 L${c2} L${c1} Z`,tx:118,ty:100},
+      {name:'경기',path:`M${a1} L${a2} L210,112 L238,178 L${d1} L180,244 L${c2} L${c1} Z`,tx:130,ty:195},
       {name:'강원',path:`M${a2} Q${a3} ${b1} Q372,130 ${b2} L${b3} L${d1} L238,178 L210,112 Z`,tx:295,ty:112},
-      {name:'충청',path:`M${c2} L180,244 L${d1} L${d2} L${d3} L${d4} L${c3} Z`,tx:120,ty:265},
-      {name:'경상',path:`M${d1} L${b3} Q358,248 ${f1} Q382,320 ${f2} L${f3} Q330,458 ${e4} L${e3} L${d3} L${d2} Z`,tx:345,ty:368},
-      {name:'전라',path:`M${c3} L${d4} L${d3} L${e3} Q155,475 ${e2} Q42,455 ${e1} Q45,388 ${c4} Z`,tx:72,ty:438},
+      {name:'충청',path:`M${c2} L180,244 L${d1} L${d2} L${d3} L${d4} L${c3} Z`,tx:140,ty:270},
+      {name:'경상',path:`M${d1} L${b3} Q358,248 ${f1} Q382,320 ${f2} L${f3} Q330,458 ${e4} L${e3} L${d3} L${d2} Z`,tx:320,ty:355},
+      {name:'전라',path:`M${c3} L${d4} L${d3} L${e3} Q155,475 ${e2} Q42,455 ${e1} Q45,388 ${c4} Z`,tx:95,ty:420},
     ];
     // 광역시+제주 — 둥근 사각형 마커 (위에 오버레이)
     const cities=[
-      {name:'서울',cx:170,cy:128,w:60,h:38},
-      {name:'인천',cx:88,cy:150,w:54,h:34},
-      {name:'대전',cx:178,cy:298,w:50,h:32},
-      {name:'광주',cx:105,cy:395,w:50,h:32},
-      {name:'대구',cx:310,cy:295,w:50,h:32},
-      {name:'부산',cx:342,cy:440,w:54,h:34},
-      {name:'제주',cx:140,cy:530,w:90,h:42},
+      {name:'서울',cx:170,cy:128,w:66,h:40},
+      {name:'인천',cx:88,cy:150,w:58,h:36},
+      {name:'대전',cx:178,cy:298,w:56,h:34},
+      {name:'광주',cx:108,cy:395,w:56,h:34},
+      {name:'대구',cx:308,cy:295,w:56,h:34},
+      {name:'부산',cx:330,cy:435,w:58,h:36},
+      {name:'제주',cx:140,cy:530,w:94,h:44},
     ];
     let svg='';
     // 도 렌더
