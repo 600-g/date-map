@@ -203,8 +203,8 @@ header .lc svg{width:18px;height:18px}
 .nearby-bar{position:absolute;top:8px;left:8px;right:8px;z-index:10;display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;transition:opacity .2s,visibility .2s}
 .nearby-bar::-webkit-scrollbar{display:none}
 .nearby-bar.hidden{opacity:0;pointer-events:none;visibility:hidden}
-.nb-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:10px;padding:4px 8px;border-radius:16px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.9);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap}
-.nb-btn svg{width:14px;height:14px;flex-shrink:0;vertical-align:middle}
+.nb-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:11px;padding:5px 9px;border-radius:18px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 5px rgba(0,0,0,.1);white-space:nowrap}
+.nb-btn svg{width:15px;height:15px;flex-shrink:0;vertical-align:middle}
 .nb-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
 @media(hover:hover){.nb-btn:hover{background:var(--accent);color:white;border-color:var(--accent)}}
 /* 토스트 */
@@ -216,20 +216,20 @@ header .lc svg{width:18px;height:18px}
   #tab-list.active{display:contents}
   /* 탭 → 하단 네비바 */
   .tabs{position:fixed;bottom:0;left:0;right:0;z-index:9999;border-bottom:none;border-top:1px solid rgba(255,255,255,.15);background:var(--dark);padding-bottom:env(safe-area-inset-bottom,0px);-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);-webkit-backface-visibility:hidden;backface-visibility:hidden}
-  .main{padding-bottom:calc(48px + env(safe-area-inset-bottom,0px));padding-top:env(safe-area-inset-top,0px)}
+  .main{padding-bottom:calc(48px + env(safe-area-inset-bottom,0px));padding-top:0}
   .tab{border-bottom:none;border-top:2.5px solid transparent;padding:8px 2px 4px;font-size:11px;color:rgba(255,255,255,.6)}
   .tab.active{border-bottom:none;border-top-color:var(--accent);color:white}
   /* 검색바 최상단 */
-  .list-top-bar{order:1;width:100%;padding:4px 10px 2px;background:white}
+  .list-top-bar{order:1;width:100%;padding:1px 10px 0;background:white}
   #addPanel{order:2;width:100%;max-height:40vh}
-  /* 필터바 검색바 바로 아래 */
-  .filter-bar{order:3;width:100%;padding:4px 8px 4px;flex-wrap:nowrap;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;min-height:32px;flex-shrink:0}
-  .filter-bar::-webkit-scrollbar{display:none}
-  .fb{flex-shrink:0}
   /* 지도 */
-  #mapWrap{order:4;flex:1;min-height:0;transition:flex .3s}
+  #mapWrap{order:3;flex:1;min-height:0;transition:flex .3s}
   #map{height:100%}
   .my-loc-btn{bottom:14px;right:10px;top:auto;width:32px;height:32px}
+  /* 필터바 지도 아래 */
+  .filter-bar{order:4;width:100%;padding:6px 8px 4px;flex-wrap:nowrap;overflow-x:auto;overflow-y:visible;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;min-height:34px;flex-shrink:0}
+  .filter-bar::-webkit-scrollbar{display:none}
+  .fb{flex-shrink:0}
   #myLocStatus{order:5;width:100%}
   /* 카드 리스트 */
   .place-list{order:6;overflow-y:auto;width:100%;max-height:20vh;flex-shrink:0;-webkit-overflow-scrolling:touch;scroll-snap-type:y proximity;scroll-padding-top:2px;scroll-padding-bottom:2px}
@@ -424,6 +424,11 @@ header .lc svg{width:18px;height:18px}
       <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openThemePicker()">
         <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="palette" class="lc lc-sm" style="color:var(--accent)"></i> 테마 변경</div>
         <div style="font-size:12px;color:var(--brown);line-height:1.5">폰트와 색상 컨셉을 바꿔보세요.</div>
+        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">실험</span></div>
+      </div>
+      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="startWorldCup()">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="trophy" class="lc lc-sm" style="color:var(--accent)"></i> 장소 월드컵</div>
+        <div style="font-size:12px;color:var(--brown);line-height:1.5">저장된 장소끼리 토너먼트! 최애 장소를 뽑아보세요.</div>
         <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">실험</span></div>
       </div>
     </div>
@@ -1334,6 +1339,7 @@ function _randomGo(region) {
 let _wc = { candidates:[], round:[], roundIdx:0, winners:[], totalLabel:'' };
 
 function startWorldCup() {
+  document.getElementById('labModal').classList.remove('open');
   const visited = places.filter(p => p.visited);
   if (visited.length < 2) { toast('다녀온 장소가 2개 이상이어야 해요'); return; }
   document.getElementById('wcModal').classList.add('open');
@@ -2729,7 +2735,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 258;
+const APP_VERSION = 259;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3999,13 +4005,9 @@ window.addEventListener('load', () => {
   checkNick();
   startRealtimeSync();
   setupLocBtn();
-  // 앱 아이콘 더블탭 → 월드컵
-  let _iconTapTime = 0;
-  document.getElementById('appIcon').addEventListener('click', e => {
-    const now = Date.now();
-    if (now - _iconTapTime < 400) { e.preventDefault(); startWorldCup(); _iconTapTime = 0; }
-    else _iconTapTime = now;
-  });
+  // 앱 아이콘 더블탭 → 월드컵 (헤더 제거 후 비활성)
+  const _appIcon = document.getElementById('appIcon');
+  if (_appIcon) { let _iconTapTime=0; _appIcon.addEventListener('click',e=>{const now=Date.now();if(now-_iconTapTime<400){e.preventDefault();startWorldCup();_iconTapTime=0;}else _iconTapTime=now;}); }
   // 카카오 지도 SDK 동적 로드
   const script = document.createElement('script');
   script.src = 'https://dapi.kakao.com/v2/maps/sdk.js?appkey=fc85da8522a1e81f1e19c6777c002a55&autoload=false';
