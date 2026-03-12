@@ -32,6 +32,7 @@ self.addEventListener('message', e => {
 
 // 네트워크 우선, 실패 시 캐시 (항상 최신 버전 시도)
 self.addEventListener('fetch', e => {
+  if (e.request.method !== 'GET') return;
   e.respondWith(
     fetch(e.request)
       .then(res => {
