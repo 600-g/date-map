@@ -2647,7 +2647,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 245;
+const APP_VERSION = 246;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3395,7 +3395,10 @@ function _showDistrictPage(view, geo, guName) {
   } else if (view === 'search') {
     title.textContent = guName ? `${guName} 검색결과` : '검색결과';
     content.innerHTML = '<p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">검색 중...</p>';
-    _distDoSearch(searchInput.value.trim());
+    // 검색 쿼리: area context + 사용자 입력, 또는 guName
+    const userInput = searchInput.value.trim();
+    const searchQ = _distAreaContext ? (_distAreaContext + ' ' + userInput).trim() : (userInput || guName || '');
+    _distDoSearch(searchQ);
   } else if (view === 'list') {
     let guPlaces = _districtDistMap[guName] || [];
     if (!guPlaces.length) guPlaces = places.filter(p => p.addr && p.addr.includes(guName));
@@ -3581,7 +3584,10 @@ function _distSetSort(sort){
     b.style.color=on?'white':'var(--dark)';
     b.style.borderColor=on?'var(--accent)':'var(--warm)';
   });
-  _distDoSearch(_distSearchState.query,false);
+  // area context + 사용자 입력으로 query 재구성
+  const userInput=document.getElementById('distSearchInput').value.trim();
+  const q=_distAreaContext?(_distAreaContext+' '+userInput).trim():(_distSearchState.query||userInput);
+  _distDoSearch(q,false);
 }
 function _distRecAdd(btn,name,lat,lng,catCode,addr){
   const catMap={FD6:'식사',CE7:'카페',CT1:'활동',AT4:'활동'};
