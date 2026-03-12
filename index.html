@@ -582,6 +582,7 @@ let myLocMarker = null, myLocOverlay = null, watchId = null, myLat = null, myLng
 let firestoreReady = false;
 
 const REST_KEY = 'f05925b16ad652c4bb02b5aac5e56b06';
+const NAVER_PROXY = 'https://date-map.enoq001.workers.dev';
 
 // ── 이모지→SVG키 마이그레이션 ──
 const EMOJI_TO_SVG = {
@@ -1777,7 +1778,7 @@ function autosaveCats() {
   renderAll();
 }
 
-function linkify(text){if(!text)return text;return text.replace(/(https?:\/\/[^\s<]+)/g,'<a href="$1" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:underline;word-break:break-all">$1</a>');}
+function linkify(text){if(!text)return text;return text.replace(/(https?:\/\/[^\s<]+|(?:[\w-]+\.)+(?:com|co\.kr|kr|net|org|io|me|app|dev|xyz|page|store|shop)(?:\/[^\s<]*)?)/gi,function(m){const url=m.match(/^https?:\/\//i)?m:'https://'+m;return '<a href="'+url+'" target="_blank" rel="noopener" onclick="event.stopPropagation()" style="color:var(--accent);text-decoration:underline;word-break:break-all">'+m+'</a>';});}
 function getCat(id) {
   return cats.find(c=>c.id===id) || cats[cats.length-1] || DEFAULT_CATS[0];
 }
@@ -2612,7 +2613,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 232;
+const APP_VERSION = 233;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3238,6 +3239,7 @@ function _showDistrictPage(view, geo, guName) {
         </div>
         <div id="distSortBar" style="display:none;gap:6px;padding-top:10px">
           <button class="btn dist-sort-btn" data-sort="accuracy" onclick="_distSetSort('accuracy')" style="font-size:11px;padding:4px 10px;border-radius:14px;background:var(--accent);color:white;border:1.5px solid var(--accent)">추천순</button>
+          <button class="btn dist-sort-btn" data-sort="comment" onclick="_distSetSort('comment')" style="font-size:11px;padding:4px 10px;border-radius:14px;background:white;color:var(--dark);border:1.5px solid var(--warm)">리뷰순</button>
           <button class="btn dist-sort-btn" data-sort="distance" onclick="_distSetSort('distance')" style="font-size:11px;padding:4px 10px;border-radius:14px;background:white;color:var(--dark);border:1.5px solid var(--warm)">거리순</button>
         </div>
       </div>
@@ -3267,44 +3269,54 @@ function _showDistrictPage(view, geo, guName) {
         if (keys.some(k => p.addr.includes(k))) counts[r.name] = (counts[r.name]||0) + 1;
       });
     });
-    // 대한민국 SVG — 꼭짓점 완전 공유, 빈틈 없음
+    // 대한민국 SVG — 곡선 해안선, 빈틈 없음, 광역시 원형 마커
     const RC={서울:'#FFD1DC',경기:'#C5E1A5',인천:'#B3E5FC',강원:'#E1BEE7',충청:'#FFE0B2',대전:'#FFCCBC',전라:'#DCEDC8',광주:'#F8BBD0',경상:'#D1C4E9',대구:'#FFE082',부산:'#B2DFDB',제주:'#FFF59D'};
-    // 공유 꼭짓점 정의 (인접 지역이 동일 좌표 사용)
-    // A=경기NW B=경기강원N C=강원NE D=강원E1 E=강원E2 F=강원경상 G=사거리(경기강원충청경상)
-    // H=경기충청W I=경기W J=경기NW해안 K=충청W L=충청경상1 M=삼거리(충청전라경상)
-    // N=충청전라W O=전라W1 P=전라W2 Q=전라S R=전라경상 S=경상E1 T=경상E2 U=경상부산 V=경상S
-    const A='100,28',B='200,20',C='330,12',D='358,78',E='362,155',F='340,195',G='248,208',
-          H='82,208',I='72,155',J='100,28',K='70,262',L='258,268',M='238,335',
-          N='120,315',O='55,330',P='48,400',Q='115,468',R='165,450',S='368,258',T='372,345',U='345,415',V='285,448';
-    const RP=[
-      // 큰 도 (먼저 그려서 뒤에)
-      {name:'강원', p:`M${B} L${C} L${D} L${E} L${F} L${G} L238,170 L208,105 Z`, tx:280,ty:105},
-      {name:'경기', p:`M${A} L${B} L208,105 L238,170 L${G} L178,238 L135,215 L${H} L${I} Z`, tx:168,ty:155},
-      {name:'충청', p:`M${H} L135,215 L178,238 L${G} L${L} L${M} L${N} L${K} Z`, tx:162,ty:280},
-      {name:'경상', p:`M${G} L${F} L${S} L${T} L${U} L${V} L205,408 L${M} L${L} Z`, tx:305,ty:305},
-      {name:'전라', p:`M${K} L${N} L${M} L205,408 L${R} L${Q} L${P} L${O} Z`, tx:115,ty:392},
-      // 작은 도시 (위에 그려서 앞에)
-      {name:'서울',  p:'M140,108 L198,95 L205,140 L188,162 L132,155 Z', tx:168,ty:130},
-      {name:'인천',  p:'M75,118 L120,108 L128,155 L112,188 L65,172 Z', tx:96,ty:148},
-      {name:'대전',  p:'M145,278 L205,265 L215,312 L162,322 Z', tx:182,ty:294},
-      {name:'광주',  p:'M78,370 L138,358 L145,408 L92,418 Z', tx:112,ty:388},
-      {name:'대구',  p:'M265,268 L325,255 L335,305 L282,315 Z', tx:302,ty:286},
-      {name:'부산',  p:'M290,415 L350,405 L365,450 L310,462 Z', tx:328,ty:434},
-      {name:'제주',  p:'M95,502 L195,495 L202,540 L102,548 Z', tx:150,ty:520},
+    // 공유 경계점 (인접 지역이 정확히 같은 좌표 사용)
+    // 상단(DMZ): a1(NW)-a2(N)-a3(NE)
+    // 동해안: b1-b2-b3  서해안: c1-c2-c3-c4
+    // 내륙: d1(중앙교차) d2(충경동) d3(전경경계) d4(충전서)
+    // 남해안: e1-e2-e3-e4
+    const a1='85,48',a2='200,22',a3='338,18';
+    const b1='365,85',b2='360,170',b3='342,218';
+    const c1='72,160',c2='76,220',c3='65,282',c4='52,355';
+    const d1='245,220',d2='248,282',d3='215,358',d4='112,338';
+    const e1='48,422',e2='128,472',e3='188,458',e4='292,468';
+    const f1='370,278',f2='375,358',f3='352,432';
+    // 도 (뒤에 — 전체 면적 채움)
+    const provs=[
+      {name:'경기',path:`M${a1} L${a2} L210,112 L238,178 L${d1} L180,244 L${c2} L${c1} Z`,tx:145,ty:165},
+      {name:'강원',path:`M${a2} Q${a3} ${b1} Q372,130 ${b2} L${b3} L${d1} L238,178 L210,112 Z`,tx:288,ty:112},
+      {name:'충청',path:`M${c2} L180,244 L${d1} L${d2} L${d3} L${d4} L${c3} Z`,tx:158,ty:288},
+      {name:'경상',path:`M${d1} L${b3} Q358,248 ${f1} Q382,320 ${f2} L${f3} Q330,458 ${e4} L${e3} L${d3} L${d2} Z`,tx:312,ty:328},
+      {name:'전라',path:`M${c3} L${d4} L${d3} L${e3} Q155,475 ${e2} Q42,455 ${e1} Q45,388 ${c4} Z`,tx:118,ty:405},
+    ];
+    // 광역시+제주 — 원형 마커 (위에 오버레이)
+    const cities=[
+      {name:'서울',cx:170,cy:130,rx:26,ry:18},
+      {name:'인천',cx:92,cy:152,rx:24,ry:16},
+      {name:'대전',cx:178,cy:298,rx:22,ry:15},
+      {name:'광주',cx:108,cy:395,rx:22,ry:15},
+      {name:'대구',cx:308,cy:295,rx:22,ry:15},
+      {name:'부산',cx:340,cy:440,rx:24,ry:16},
+      {name:'제주',cx:140,cy:530,rx:42,ry:22},
     ];
     let svg='';
-    RP.forEach(r=>{
-      const cnt=counts[r.name]||0;
-      const has=cnt>0;
-      const col=has?RC[r.name]:'#EDEDED';
-      const small=['서울','인천','대전','광주','대구','부산','제주'].includes(r.name);
-      svg+=`<path d="${r.p}" fill="${col}" stroke="rgba(255,255,255,0.7)" stroke-width="${small?1:0.8}" stroke-linejoin="round" style="cursor:pointer" onclick="_openRegion('${r.name}')"/>`;
-      const fs=small?11:14;
-      svg+=`<text x="${r.tx}" y="${r.ty-(cnt?6:0)}" text-anchor="middle" dominant-baseline="central" font-size="${fs}" font-weight="800" fill="${has?'#333':'#999'}" style="pointer-events:none">${r.name}</text>`;
-      if(cnt) svg+=`<text x="${r.tx}" y="${r.ty+10}" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="600" fill="var(--accent)" style="pointer-events:none">${cnt}곳</text>`;
+    // 도 렌더
+    provs.forEach(r=>{
+      const cnt=counts[r.name]||0;const has=cnt>0;
+      svg+=`<path d="${r.path}" fill="${has?RC[r.name]:'#EDEDED'}" stroke="white" stroke-width="1.5" stroke-linejoin="round" style="cursor:pointer" onclick="_openRegion('${r.name}')"/>`;
+      svg+=`<text x="${r.tx}" y="${r.ty-(cnt?7:0)}" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="800" fill="${has?'#333':'#999'}" style="pointer-events:none">${r.name}</text>`;
+      if(cnt) svg+=`<text x="${r.tx}" y="${r.ty+9}" text-anchor="middle" dominant-baseline="central" font-size="9" font-weight="600" fill="var(--accent)" style="pointer-events:none">${cnt}곳</text>`;
+    });
+    // 광역시 렌더 (타원 마커)
+    cities.forEach(ct=>{
+      const cnt=counts[ct.name]||0;const has=cnt>0;
+      svg+=`<ellipse cx="${ct.cx}" cy="${ct.cy}" rx="${ct.rx}" ry="${ct.ry}" fill="${has?RC[ct.name]:'#F5F5F5'}" stroke="white" stroke-width="1.5" style="cursor:pointer;filter:drop-shadow(0 1px 2px rgba(0,0,0,.12))" onclick="_openRegion('${ct.name}')"/>`;
+      svg+=`<text x="${ct.cx}" y="${ct.cy-(cnt?5:0)}" text-anchor="middle" dominant-baseline="central" font-size="10" font-weight="700" fill="${has?'#333':'#999'}" style="pointer-events:none">${ct.name}</text>`;
+      if(cnt) svg+=`<text x="${ct.cx}" y="${ct.cy+9}" text-anchor="middle" dominant-baseline="central" font-size="8" font-weight="600" fill="var(--accent)" style="pointer-events:none">${cnt}곳</text>`;
     });
     content.innerHTML = `<div style="display:flex;justify-content:center;padding:0">
-      <svg viewBox="30 5 355 555" style="width:100%;max-width:380px;display:block">${svg}</svg>
+      <svg viewBox="25 5 375 560" style="width:100%;max-width:380px;display:block">${svg}</svg>
     </div>`;
   } else if (view === 'map') {
     title.textContent = '서울';
@@ -3390,8 +3402,7 @@ function _distSearch() {
 function _distAreaTap(area) {
   const si = document.getElementById('distSearchInput');
   si.value = area + ' ';
-  si.focus();
-  si.setSelectionRange(si.value.length, si.value.length);
+  _showDistrictPage('search', null, area);
 }
 let _distSearchState = {query:'',cats:[],sort:'accuracy',pages:{},hasMore:{},allItems:{}};
 const _distCatNames={FD6:'음식점',CE7:'카페',CT1:'놀거리',AT4:'관광명소'};
@@ -3408,21 +3419,50 @@ async function _distDoSearch(query,loadMore) {
   }
   const st=_distSearchState;
   const sortParam=st.sort;
-  let locParam='';
-  if(sortParam==='distance'&&myLat!==null) locParam=`&x=${myLng}&y=${myLat}`;
-  else if(sortParam==='distance') {toast('거리순은 위치 허용이 필요해요');return;}
-  for(const cat of cats){
-    if(!st.hasMore[cat]) continue;
-    const pg=st.pages[cat]||1;
-    try{
-      const r=await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&category_group_code=${cat}&size=5&page=${pg}&sort=${sortParam}${locParam}`,{headers:{Authorization:'KakaoAK '+REST_KEY}});
-      const d=await r.json();
-      if(d.documents&&d.documents.length){
-        st.allItems[cat]=(st.allItems[cat]||[]).concat(d.documents);
-        st.pages[cat]=pg+1;
-        st.hasMore[cat]=!d.meta.is_end;
-      }else{st.hasMore[cat]=false;}
-    }catch(e){st.hasMore[cat]=false;}
+  if(sortParam==='distance'&&myLat===null){toast('거리순은 위치 허용이 필요해요');return;}
+
+  if(sortParam==='comment'){
+    // 네이버 리뷰순 검색
+    for(const cat of cats){
+      if(!st.hasMore[cat]) continue;
+      const pg=st.pages[cat]||1;
+      const startIdx=(pg-1)*5+1;
+      try{
+        const r=await fetch(`${NAVER_PROXY}?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&display=5&start=${startIdx}&sort=comment`);
+        const d=await r.json();
+        if(d.items&&d.items.length){
+          const docs=d.items.map(it=>({
+            place_name:it.title.replace(/<[^>]*>/g,''),
+            road_address_name:it.roadAddress||it.address||'',
+            address_name:it.address||'',
+            y:it.mapy?(parseInt(it.mapy)/1e7).toString():'',
+            x:it.mapx?(parseInt(it.mapx)/1e7).toString():'',
+            id:'nv_'+Math.random().toString(36).slice(2,8),
+            _naver:true
+          }));
+          st.allItems[cat]=(st.allItems[cat]||[]).concat(docs);
+          st.pages[cat]=pg+1;
+          st.hasMore[cat]=d.items.length>=5&&startIdx+5<=d.total;
+        }else{st.hasMore[cat]=false;}
+      }catch(e){st.hasMore[cat]=false;}
+    }
+  } else {
+    // 카카오 추천순/거리순
+    let locParam='';
+    if(sortParam==='distance') locParam=`&x=${myLng}&y=${myLat}`;
+    for(const cat of cats){
+      if(!st.hasMore[cat]) continue;
+      const pg=st.pages[cat]||1;
+      try{
+        const r=await fetch(`https://dapi.kakao.com/v2/local/search/keyword.json?query=${encodeURIComponent(query+' '+_distCatNames[cat])}&category_group_code=${cat}&size=5&page=${pg}&sort=${sortParam}${locParam}`,{headers:{Authorization:'KakaoAK '+REST_KEY}});
+        const d=await r.json();
+        if(d.documents&&d.documents.length){
+          st.allItems[cat]=(st.allItems[cat]||[]).concat(d.documents);
+          st.pages[cat]=pg+1;
+          st.hasMore[cat]=!d.meta.is_end;
+        }else{st.hasMore[cat]=false;}
+      }catch(e){st.hasMore[cat]=false;}
+    }
   }
   _distRenderResults();
 }
