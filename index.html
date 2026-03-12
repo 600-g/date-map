@@ -727,11 +727,13 @@ function initMap() {
   });
   kakao.maps.event.addListener(map, 'click', () => { closeAllIw(); expandMap(); if(addPanelOpen) closeAddPanel(); });
   renderAll();
-  // 앱 시작 시: savedLoc 있으면 이전에 위치 허용한 적 있음 → 자동 GPS
+  // 앱 시작 시: savedLoc 있으면 이전 위치 표시 + 첫 터치에 실제 GPS 시작
+  // (iOS PWA는 사용자 제스처 없이 geolocation 호출 불가)
   if (savedLoc) {
     try {
       const loc = JSON.parse(savedLoc);
       myLat = loc.lat; myLng = loc.lng;
+      updateMyLocMarker();
       renderList();
     } catch(e) {}
     const _lb = document.getElementById('locBtn');
@@ -739,7 +741,14 @@ function initMap() {
     _lb.style.background = '#4285F4';
     _lb.style.color = 'white';
     _lb.style.borderColor = '#4285F4';
-    handleLocClick();
+    // 첫 터치/클릭 시 실제 GPS 시작 (iOS 제스처 요구 우회)
+    const _startGpsOnce = () => {
+      document.removeEventListener('touchstart', _startGpsOnce, true);
+      document.removeEventListener('click', _startGpsOnce, true);
+      handleLocClick();
+    };
+    document.addEventListener('touchstart', _startGpsOnce, {capture:true, once:true});
+    document.addEventListener('click', _startGpsOnce, {capture:true, once:true});
   }
 }
 
@@ -2613,7 +2622,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 233;
+const APP_VERSION = 234;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
