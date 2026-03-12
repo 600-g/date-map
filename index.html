@@ -2622,7 +2622,7 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = 220;
+const APP_VERSION = 221;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v > APP_VERSION) {
@@ -3193,7 +3193,7 @@ async function _loadSeoulGeo() {
 let _districtPage = null;
 let _districtDistMap = {};
 const REGION_GROUPS = [
-  {name:'서울', emoji:'🏙️', areas:['강남','강동','강북','강서','관악','광진','구로','금천','노원','도봉','동대문','동작','마포','서대문','서초','성동','성북','송파','양천','영등포','용산','은평','종로','중구','중랑']},
+  {name:'서울', emoji:'🏙️', areas:['도봉','노원','강북','성북','은평','종로','동대문','중랑','서대문','중구','성동','광진','마포','용산','강서','양천','영등포','동작','서초','강남','송파','강동','구로','금천','관악']},
   {name:'경기', emoji:'🌳', areas:['수원','성남','고양','용인','부천','안산','안양','화성','평택','의정부','시흥','파주','김포','광명','하남','구리','남양주','양주','포천','이천','여주','동두천']},
   {name:'인천', emoji:'🌊', areas:['중구','미추홀구','연수구','남동구','부평구','계양구','서구','강화','옹진']},
   {name:'부산', emoji:'🏖️', areas:['해운대','서면','광안리','남포동','센텀시티','기장','영도','송도']},
@@ -3312,9 +3312,9 @@ function _showDistrictPage(view, geo, guName) {
     content.innerHTML = `<div style="display:grid;grid-template-columns:repeat(${cols},1fr);gap:8px">
       ${(region.areas||[]).map(a => {
         const cnt = areaPlaces[a].length;
-        return `<div class="reg-card" style="padding:14px;border:1.5px solid var(--warm);border-radius:12px;cursor:pointer;background:white" onclick="document.getElementById('distSearchInput').value='${a}';_distSearch()">
-          <div style="font-size:13px;font-weight:600;color:var(--dark)">${a}</div>
-          ${cnt?`<div style="font-size:11px;color:var(--accent);font-weight:600;margin-top:2px">${cnt}곳 저장됨</div>`:''}
+        return `<div class="reg-card" style="padding:10px 12px;border:1.5px solid var(--warm);border-radius:12px;cursor:pointer;background:white;display:flex;align-items:center;justify-content:space-between" onclick="document.getElementById('distSearchInput').value='${a}';_distSearch()">
+          <span style="font-size:13px;font-weight:600;color:var(--dark)">${a}</span>
+          ${cnt?`<span style="font-size:11px;color:var(--accent);font-weight:600">${cnt}곳</span>`:''}
         </div>`;
       }).join('')}
     </div>`;
