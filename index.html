@@ -769,8 +769,6 @@ function initMap() {
     closeAllIw();
     nearbyMarkers.forEach(m => { if(m.iw) try{m.iw.setMap(null);m.open=false;}catch(e){} });
     if (addPanelOpen) { closeAddPanel(); return; }
-    if (hadIw) return;
-    toggleMapExpand();
   });
   _initBottomSheet();
   renderAll();
@@ -802,7 +800,7 @@ function initMap() {
 
 // ── 바텀시트 (모바일) ──
 let _bsState = 'half'; // 'peek' | 'half' | 'full'
-const BS_PEEK = 44;
+const BS_PEEK = 60;
 const BS_HALF_VH = 35;
 const BS_FULL_VH = 65;
 function _bsHeight(state) {
@@ -2961,8 +2959,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.3.0';
-const APP_VERSION_NUM = 130;
+const APP_VERSION = '1.3.1';
+const APP_VERSION_NUM = 131;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
