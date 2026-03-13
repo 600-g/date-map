@@ -2959,8 +2959,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.3.3';
-const APP_VERSION_NUM = 133;
+const APP_VERSION = '1.3.4';
+const APP_VERSION_NUM = 134;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3410,85 +3410,77 @@ function courseShowMap() {
   clearNearbyMarkers();
   closeAllIw();
   _courseSel = selCopy;
-  window._skipCollapse = true;
   showTab('list');
-  expandMap();
+  _setBsState('peek');
   toast(`코스 ${_courseSel.length}곳 표시 중...`);
   setTimeout(() => {
-    _refreshMapSize();
-    setTimeout(() => {
-      try {
-        const positions = [];
-        const colors = ['#FF6B6B','#5B7DB8','#2D8659','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB'];
-        _courseSel.forEach((p, i) => {
-          if (!p.lat || !p.lng) return;
-          const pos = new naver.maps.LatLng(p.lat, p.lng);
-          positions.push(pos);
+    try {
+      const positions = [];
+      const colors = ['#FF6B6B','#5B7DB8','#2D8659','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB'];
+      _courseSel.forEach((p, i) => {
+        if (!p.lat || !p.lng) return;
+        const pos = new naver.maps.LatLng(p.lat, p.lng);
+        positions.push(pos);
+        const color = colors[i % colors.length];
+        const isFirst = i === 0, isLast = i === _courseSel.length - 1;
+        const label = isFirst ? '출발' : isLast ? '도착' : (i+1);
+        const c = getCat(p.cat);
+        const el = document.createElement('div');
+        el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
+          <div style="background:white;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;color:${color};border:1.5px solid ${color};margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);display:flex;align-items:center;gap:3px"><span style="width:16px;height:16px;background:${c.color};border-radius:50%;display:inline-flex;align-items:center;justify-content:center">${svgSized(getIcon(c.emoji),10)||c.emoji}</span> ${p.name}</div>
+          <div style="width:${isFirst||isLast?36:30}px;height:${isFirst||isLast?36:30}px;background:${color};border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);color:white;font-weight:700;font-size:${isFirst||isLast?11:13}px">${label}</div>
+        </div>`;
+        const marker = new NaverCustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:5+i });
+        marker.setMap(map);
+        _courseMarkers.push(marker);
+      });
+      // 구간별 폴리라인 + 화살표 + 시간 + 경로버튼
+      if (positions.length >= 2) {
+        for (let i = 0; i < positions.length - 1; i++) {
+          const from = positions[i], to = positions[i+1];
           const color = colors[i % colors.length];
-          const isFirst = i === 0, isLast = i === _courseSel.length - 1;
-          const label = isFirst ? '출발' : isLast ? '도착' : (i+1);
-          const c = getCat(p.cat);
-          const el = document.createElement('div');
-          el.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center">
-            <div style="background:white;border-radius:12px;padding:2px 8px;font-size:10px;font-weight:600;color:${color};border:1.5px solid ${color};margin-bottom:2px;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);display:flex;align-items:center;gap:3px"><span style="width:16px;height:16px;background:${c.color};border-radius:50%;display:inline-flex;align-items:center;justify-content:center">${svgSized(getIcon(c.emoji),10)||c.emoji}</span> ${p.name}</div>
-            <div style="width:${isFirst||isLast?36:30}px;height:${isFirst||isLast?36:30}px;background:${color};border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.3);color:white;font-weight:700;font-size:${isFirst||isLast?11:13}px">${label}</div>
+          const lineBg = new naver.maps.Polyline({ path: [from, to], strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: 0.9, strokeStyle: 'solid' });
+          lineBg.setMap(map);
+          _courseLines.push(lineBg);
+          const line = new naver.maps.Polyline({ path: [from, to], strokeWeight: 5, strokeColor: color, strokeOpacity: 1, strokeStyle: 'solid' });
+          line.setMap(map);
+          _courseLines.push(line);
+          const midLat = (from.y + to.y) / 2;
+          const midLng = (from.x + to.x) / 2;
+          const angle = Math.atan2(to.x - from.x, to.y - from.y) * 180 / Math.PI;
+          const km = getDistanceKm(_courseSel[i].lat, _courseSel[i].lng, _courseSel[i+1].lat, _courseSel[i+1].lng);
+          const walkMin = Math.round(km / 4 * 60);
+          const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
+          const segIdx = i;
+          const infoEl = document.createElement('div');
+          infoEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+            <div style="transform:rotate(${angle-90}deg);color:${color};font-size:22px;text-shadow:0 0 4px white,0 0 4px white;line-height:1">➤</div>
+            <div style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid ${color};border-radius:12px;padding:2px 8px;font-size:10px;color:#333;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);font-weight:600;cursor:pointer" id="navInfo${i}">
+              ${distTxt} · 🚶${walkMin}분
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
+            </div>
           </div>`;
-          const marker = new NaverCustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:5+i });
-          marker.setMap(map);
-          _courseMarkers.push(marker);
-        });
-        // 구간별 폴리라인 + 화살표 + 시간 + 경로버튼
-        if (positions.length >= 2) {
-          for (let i = 0; i < positions.length - 1; i++) {
-            const from = positions[i], to = positions[i+1];
-            const color = colors[i % colors.length];
-            // 폴리라인 (굵고 잘 보이게)
-            const lineBg = new naver.maps.Polyline({ path: [from, to], strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: 0.9, strokeStyle: 'solid' });
-            lineBg.setMap(map);
-            _courseLines.push(lineBg);
-            const line = new naver.maps.Polyline({ path: [from, to], strokeWeight: 5, strokeColor: color, strokeOpacity: 1, strokeStyle: 'solid' });
-            line.setMap(map);
-            _courseLines.push(line);
-            // 중간점
-            const midLat = (from.y + to.y) / 2;
-            const midLng = (from.x + to.x) / 2;
-            const angle = Math.atan2(to.x - from.x, to.y - from.y) * 180 / Math.PI;
-            const km = getDistanceKm(_courseSel[i].lat, _courseSel[i].lng, _courseSel[i+1].lat, _courseSel[i+1].lng);
-            const walkMin = Math.round(km / 4 * 60);
-            const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
-            const segIdx = i;
-            const infoEl = document.createElement('div');
-            infoEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-              <div style="transform:rotate(${angle-90}deg);color:${color};font-size:22px;text-shadow:0 0 4px white,0 0 4px white;line-height:1">➤</div>
-              <div style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid ${color};border-radius:12px;padding:2px 8px;font-size:10px;color:#333;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);font-weight:600;cursor:pointer" id="navInfo${i}">
-                ${distTxt} · 🚶${walkMin}분
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
-              </div>
-            </div>`;
-            infoEl.querySelector(`#navInfo${i}`).onclick = () => openKakaoRoute(segIdx, segIdx+1);
-            const info = new NaverCustomOverlay({
-              position: new naver.maps.LatLng(midLat, midLng),
-              content: infoEl, yAnchor: 0.5, xAnchor: 0.5, zIndex: 6
-            });
-            info.setMap(map);
-            _courseMarkers.push(info);
-          }
+          infoEl.querySelector(`#navInfo${i}`).onclick = () => openKakaoRoute(segIdx, segIdx+1);
+          const info = new NaverCustomOverlay({
+            position: new naver.maps.LatLng(midLat, midLng),
+            content: infoEl, yAnchor: 0.5, xAnchor: 0.5, zIndex: 6
+          });
+          info.setMap(map);
+          _courseMarkers.push(info);
         }
-        // bounds 맞추기
-        if (positions.length > 0) {
-          const bounds = new naver.maps.LatLngBounds();
-          positions.forEach(pos => bounds.extend(pos));
-          map.fitBounds(bounds, {top:80,right:80,bottom:80,left:80});
-        }
-        // 코스 컨트롤 버튼 표시
-        _showCourseControls();
-        toast(`코스 ${_courseSel.length}곳 표시 완료`);
-      } catch(e) {
-        console.error('courseShowMap error:', e);
-        toast('경로 표시 오류: ' + e.message);
       }
-    }, 300);
-  }, 600);
+      if (positions.length > 0) {
+        const bounds = new naver.maps.LatLngBounds();
+        positions.forEach(pos => bounds.extend(pos));
+        map.fitBounds(bounds, {top:80,right:80,bottom:80,left:80});
+      }
+      _showCourseControls();
+      toast(`코스 ${_courseSel.length}곳 표시 완료`);
+    } catch(e) {
+      console.error('courseShowMap error:', e);
+      toast('경로 표시 오류: ' + e.message);
+    }
+  }, 200);
 }
 function _showCourseControls() {
   let ctrl = document.getElementById('courseCtrl');
