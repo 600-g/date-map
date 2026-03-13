@@ -27,7 +27,7 @@ header{display:none}
 .main{display:flex;flex:1;overflow:hidden}
 .panel{width:320px;background:var(--cream);border-right:1px solid var(--warm);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
 #map{flex:1;background:#e8e0d8;overflow:hidden}
-html,body,.main,#mapWrap,#map,#map *{touch-action:auto!important}
+#map,#map *{touch-action:auto!important}
 .tabs{display:flex;border-bottom:1px solid var(--warm);flex-shrink:0;background:white}
 .tab{flex:1;padding:11px 2px;text-align:center;font-size:13px;font-weight:550;color:var(--brown);cursor:pointer;border:none;border-bottom:2.5px solid transparent;background:none;transition:all .2s}
 .tab.active{color:var(--dark);border-bottom-color:var(--accent);font-weight:650}
@@ -233,7 +233,7 @@ header .lc svg{width:18px;height:18px}
   .fb{flex-shrink:0}
   #myLocStatus{order:5;width:100%}
   /* 카드 리스트 */
-  .place-list{order:6;overflow-y:auto;width:100%;max-height:22vh;flex:none;-webkit-overflow-scrolling:touch;scroll-snap-type:y proximity;scroll-padding-top:2px;scroll-padding-bottom:2px}
+  .place-list{order:6;overflow-y:auto;width:100%;height:22vh;flex:0 0 22vh;-webkit-overflow-scrolling:touch;scroll-snap-type:y proximity;scroll-padding-top:2px;scroll-padding-bottom:2px}
   .pi-wrap{scroll-snap-align:start;scroll-margin-top:2px}
   /* 설정탭 */
   #tab-cfg{order:6;width:100%;flex:1;overflow-y:auto}
@@ -243,7 +243,7 @@ header .lc svg{width:18px;height:18px}
   .map-expanded .list-top-bar{display:none!important}
   .map-expanded #mapWrap{flex:999!important;min-height:100%!important}
   .map-expanded .filter-bar{display:none!important}
-  .map-expanded .place-list{max-height:0!important;overflow:hidden;padding:0}
+  .map-expanded .place-list{display:none!important}
   .map-expanded #myLocStatus{display:none!important}
   .map-expanded #addPanel{display:none!important}
   #listViewBtn{display:none!important}
@@ -259,7 +259,7 @@ header .lc svg{width:18px;height:18px}
 }
 @supports(height:100dvh){
   @media(max-width:680px){
-    .map-expanded .place-list{max-height:0}
+    .map-expanded .place-list{display:none!important}
   }
 }
 </style>
@@ -391,7 +391,6 @@ header .lc svg{width:18px;height:18px}
     <div id="map" style="flex:1"></div>
     <div id="listViewBtn" style="display:none!important"></div>
     <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
-    <button class="my-loc-btn" id="compassBtn" title="북쪽 정렬" style="top:auto;bottom:56px;right:10px;width:32px;height:32px" onclick="resetNorth()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="#E05252" stroke="#E05252"/></svg></button>
     <!-- 주변 검색 퀵버튼 -->
     <div class="nearby-bar" id="nearbyBar">
       <button class="nb-btn" data-nb="cat" data-code="CE7" data-label="카페" data-icon="cafe" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6F4E37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg> 카페</button>
@@ -766,8 +765,8 @@ function initMap() {
     logoControl: false,
     scaleControl: true,
     mapDataControl: false,
-    tiltable: true,
-    rotatable: true
+    tiltable: false,
+    rotatable: false
   });
   naver.maps.Event.addListener(map, 'click', (e) => {
     // 오버레이 클릭 직후면 무시 (500ms)
@@ -784,7 +783,6 @@ function initMap() {
     toggleMapExpand();
   });
   renderAll();
-  _watchHeading();
   // 앱 시작 시: savedLoc 있으면 이전 위치 + 자동 GPS
   if (savedLoc) {
     setTimeout(() => {
@@ -2697,7 +2695,6 @@ function stopTracking() {
   toast('위치 추적 종료');
 }
 
-let _myHeading = null;
 function updateMyLocMarker() {
   if (!map || myLat === null) return;
   const pos = new naver.maps.LatLng(myLat, myLng);
@@ -2707,43 +2704,9 @@ function updateMyLocMarker() {
     el.style.cssText = 'position:relative;width:56px;height:56px;pointer-events:none';
     el.innerHTML = '<div style="position:absolute;inset:0;background:rgba(66,133,244,.1);border-radius:50%;animation:locPulse 2s infinite"></div>' +
       '<div style="position:absolute;inset:8px;background:rgba(66,133,244,.15);border-radius:50%"></div>' +
-      '<div id="myLocArrow" style="position:absolute;top:-8px;left:50%;transform:translateX(-50%) rotate(0deg);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:14px solid #4285F4;filter:drop-shadow(0 0 2px rgba(66,133,244,.6));display:none;transform-origin:50% 36px"></div>' +
       '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(66,133,244,.8)"></div>';
     myLocOverlay = new NaverCustomOverlay({ position: pos, content: el, yAnchor: 0.5, xAnchor: 0.5, zIndex: 999 });
     myLocOverlay.setMap(map);
-    _startCompass();
-  } else {
-    myLocOverlay.setPosition(pos);
-  }
-}
-function _startCompass() {
-  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
-    // iOS 13+: 사용자 제스처에서 권한 요청 필요
-    document.addEventListener('touchstart', function _reqCompass() {
-      document.removeEventListener('touchstart', _reqCompass, true);
-      DeviceOrientationEvent.requestPermission().then(function(state) {
-        if (state === 'granted') _listenCompass();
-      }).catch(function(){});
-    }, { once: true, capture: true });
-  } else {
-    _listenCompass();
-  }
-}
-function _listenCompass() {
-  window.addEventListener('deviceorientation', function(e) {
-    let heading = e.alpha;
-    if (e.webkitCompassHeading !== undefined) heading = e.webkitCompassHeading;
-    else if (heading !== null) heading = 360 - heading;
-    if (heading === null || heading === undefined) return;
-    _myHeading = heading;
-    const arrow = document.getElementById('myLocArrow');
-    if (arrow) {
-      arrow.style.display = 'block';
-      arrow.style.transform = 'translateX(-50%) rotate(' + heading + 'deg)';
-    }
-  }, true);
-}
-
 function getDistanceKm(lat1, lng1, lat2, lng2) {
   const R = 6371;
   const dLat = (lat2-lat1)*Math.PI/180;
@@ -2914,8 +2877,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.1.5';
-const APP_VERSION_NUM = 115;
+const APP_VERSION = '1.1.6';
+const APP_VERSION_NUM = 116;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4188,34 +4151,6 @@ function doForceReload() {
   } else {
     window.location.reload(true);
   }
-}
-
-// ── 북쪽 정렬 (지도 회전 후 원위치) ──
-function resetNorth() {
-  if (!map) return;
-  map.setOptions({ heading: 0, tilt: 0 });
-  const btn = document.getElementById('compassBtn');
-  if (btn) { btn.style.background = ''; btn.style.borderColor = ''; }
-  toast('🧭 북쪽 정렬');
-}
-function _watchHeading() {
-  if (!map) return;
-  naver.maps.Event.addListener(map, 'heading_changed', function() {
-    const btn = document.getElementById('compassBtn');
-    if (!btn) return;
-    const h = map.getOptions('heading') || 0;
-    if (h !== 0) {
-      btn.style.background = '#4285F4';
-      btn.style.borderColor = '#4285F4';
-      btn.style.color = 'white';
-      btn.querySelector('svg circle').setAttribute('stroke', 'white');
-    } else {
-      btn.style.background = '';
-      btn.style.borderColor = '';
-      btn.style.color = '';
-      btn.querySelector('svg circle').setAttribute('stroke', 'currentColor');
-    }
-  });
 }
 
 // ── 시작 ──
