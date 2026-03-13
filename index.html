@@ -237,15 +237,9 @@ header .lc svg{width:18px;height:18px}
   .pi-wrap{scroll-snap-align:start;scroll-margin-top:2px}
   /* 설정탭 */
   #tab-cfg{order:6;width:100%;flex:1;overflow-y:auto}
-  /* 지도 확대 모드 */
+  /* 지도 확대 모드 — mapWrap만 CSS, 나머지는 JS에서 제어 */
   .map-expanded{padding-bottom:0!important}
-  .map-expanded .tabs{display:none!important}
-  .map-expanded .list-top-bar{display:none!important}
   .map-expanded #mapWrap{flex:999!important;min-height:100%!important}
-  .map-expanded .filter-bar{display:none!important}
-  .map-expanded .place-list{display:none!important}
-  .map-expanded #myLocStatus{display:none!important}
-  .map-expanded #addPanel{display:none!important}
   #listViewBtn{display:none!important}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
@@ -256,11 +250,6 @@ header .lc svg{width:18px;height:18px}
   .pi-dist{font-size:11px}
   .pi-acts{margin-top:4px;gap:3px}
   .bx{padding:3px 7px;font-size:11px}
-}
-@supports(height:100dvh){
-  @media(max-width:680px){
-    .map-expanded .place-list{display:none!important}
-  }
 }
 </style>
 <!-- Lucide Icons -->
@@ -815,14 +804,26 @@ function _refreshMapSize() {
   const el = document.getElementById('map');
   if (el) map.setSize(new naver.maps.Size(el.offsetWidth, el.offsetHeight));
 }
+// 확대 시 숨길 요소 목록
+var _expandHideEls = null;
+function _getExpandHideEls() {
+  if (_expandHideEls) return _expandHideEls;
+  _expandHideEls = [
+    document.querySelector('.tabs'),
+    document.querySelector('.list-top-bar'),
+    document.getElementById('filterBar'),
+    document.getElementById('placeList'),
+    document.getElementById('myLocStatus'),
+    document.getElementById('addPanel')
+  ].filter(Boolean);
+  return _expandHideEls;
+}
 function expandMap() {
   if (window.innerWidth > 680) return;
   const m = document.querySelector('.main');
   if (m.classList.contains('map-expanded')) return;
-  // mapWrap JS 높이제한 해제
-  const wrap = document.getElementById('mapWrap');
-  if (wrap) wrap.style.maxHeight = '';
   m.classList.add('map-expanded');
+  _getExpandHideEls().forEach(el => { el.style.display = 'none'; });
   requestAnimationFrame(() => {
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
@@ -833,20 +834,9 @@ function collapseMap() {
   const m = document.querySelector('.main');
   if (!m.classList.contains('map-expanded')) return;
   m.classList.remove('map-expanded');
-  // JS로 mapWrap 높이를 직접 제한하여 카드리스트 공간 확보
+  // 모든 숨긴 요소 복원
+  _getExpandHideEls().forEach(el => { el.style.display = ''; });
   requestAnimationFrame(() => {
-    const wrap = document.getElementById('mapWrap');
-    const main = document.querySelector('.main');
-    if (wrap && main) {
-      // main 전체 높이에서 다른 요소 높이를 빼서 mapWrap 높이 계산
-      const mainH = main.offsetHeight;
-      const topBar = document.querySelector('.list-top-bar');
-      const filterBar = document.getElementById('filterBar');
-      const placeList = document.getElementById('placeList');
-      const otherH = (topBar ? topBar.offsetHeight : 0) + (filterBar ? filterBar.offsetHeight : 0);
-      const cardH = Math.round(mainH * 0.22); // 22vh 상당
-      wrap.style.maxHeight = (mainH - otherH - cardH) + 'px';
-    }
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
     setTimeout(_refreshMapSize, 400);
@@ -2734,9 +2724,11 @@ function _startCompassListener() {
     if (heading === null || heading === undefined) return;
     _myHeading = heading;
     var arrow = document.getElementById('myLocArrow');
+    var circle = document.getElementById('myLocCircle');
     if (arrow) {
       arrow.style.display = 'block';
-      arrow.style.transform = 'translateX(-50%) rotate(' + heading + 'deg)';
+      arrow.style.transform = 'translate(-50%,-50%) rotate(' + heading + 'deg)';
+      if (circle) circle.style.display = 'none';
     }
   }, true);
 }
@@ -2748,10 +2740,16 @@ function updateMyLocMarker() {
     const el = document.createElement('div');
     el.id = 'myLocDot';
     el.style.cssText = 'position:relative;width:56px;height:56px;pointer-events:none';
-    el.innerHTML = '<div style="position:absolute;inset:0;background:rgba(66,133,244,.1);border-radius:50%;animation:locPulse 2s infinite"></div>' +
+    // 펄스 + 방향 화살표 마커 (나침반 없으면 원형, 있으면 화살표)
+    el.innerHTML =
+      '<div style="position:absolute;inset:0;background:rgba(66,133,244,.1);border-radius:50%;animation:locPulse 2s infinite"></div>' +
       '<div style="position:absolute;inset:8px;background:rgba(66,133,244,.15);border-radius:50%"></div>' +
-      '<div id="myLocArrow" style="position:absolute;top:-8px;left:50%;transform:translateX(-50%) rotate(0deg);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:18px solid #4285F4;filter:drop-shadow(0 0 3px rgba(66,133,244,.6));display:none;transform-origin:50% 36px;z-index:1"></div>' +
-      '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(66,133,244,.8)"></div>';
+      // 원형 (나침반 없을 때)
+      '<div id="myLocCircle" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(66,133,244,.8)"></div>' +
+      // 화살표 (나침반 있을 때) — 네이버맵 네비게이션 스타일
+      '<svg id="myLocArrow" viewBox="0 0 40 40" width="40" height="40" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) rotate(0deg);display:none;filter:drop-shadow(0 1px 3px rgba(0,0,0,.3))">' +
+        '<path d="M20 4 L30 32 L20 26 L10 32 Z" fill="#4285F4" stroke="white" stroke-width="2" stroke-linejoin="round"/>' +
+      '</svg>';
     myLocOverlay = new NaverCustomOverlay({ position: pos, content: el, yAnchor: 0.5, xAnchor: 0.5, zIndex: 999 });
     myLocOverlay.setMap(map);
   } else {
@@ -2929,8 +2927,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.1.8';
-const APP_VERSION_NUM = 118;
+const APP_VERSION = '1.1.9';
+const APP_VERSION_NUM = 119;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
