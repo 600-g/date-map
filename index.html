@@ -26,8 +26,8 @@ header{display:none}
 @keyframes locPulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.2);opacity:0}}
 .main{display:flex;flex:1;overflow:hidden}
 .panel{width:320px;background:var(--cream);border-right:1px solid var(--warm);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
-#map{flex:1;background:#e8e0d8;touch-action:auto}
-#map *{touch-action:auto!important}
+#map{flex:1;background:#e8e0d8;overflow:hidden}
+html,body,.main,#mapWrap,#map,#map *{touch-action:auto!important}
 .tabs{display:flex;border-bottom:1px solid var(--warm);flex-shrink:0;background:white}
 .tab{flex:1;padding:11px 2px;text-align:center;font-size:13px;font-weight:550;color:var(--brown);cursor:pointer;border:none;border-bottom:2.5px solid transparent;background:none;transition:all .2s}
 .tab.active{color:var(--dark);border-bottom-color:var(--accent);font-weight:650}
@@ -832,12 +832,6 @@ function collapseMap() {
   const m = document.querySelector('.main');
   if (!m.classList.contains('map-expanded')) return;
   m.classList.remove('map-expanded');
-  // 네이버맵이 설정한 인라인 높이 초기화 (flex 레이아웃 복원)
-  const mapEl = document.getElementById('map');
-  if (mapEl) { mapEl.style.height = ''; mapEl.style.width = ''; }
-  const wrap = document.getElementById('mapWrap');
-  if (wrap) { wrap.style.height = ''; wrap.style.minHeight = ''; }
-  void m.offsetHeight; // reflow 강제
   requestAnimationFrame(() => {
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
@@ -2920,8 +2914,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.1.4';
-const APP_VERSION_NUM = 114;
+const APP_VERSION = '1.1.5';
+const APP_VERSION_NUM = 115;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
