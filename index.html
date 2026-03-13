@@ -804,11 +804,8 @@ function _refreshMapSize() {
   const el = document.getElementById('map');
   if (el) map.setSize(new naver.maps.Size(el.offsetWidth, el.offsetHeight));
 }
-// 확대 시 숨길 요소 목록
-var _expandHideEls = null;
-function _getExpandHideEls() {
-  if (_expandHideEls) return _expandHideEls;
-  _expandHideEls = [
+function _getHideEls() {
+  return [
     document.querySelector('.tabs'),
     document.querySelector('.list-top-bar'),
     document.getElementById('filterBar'),
@@ -816,14 +813,16 @@ function _getExpandHideEls() {
     document.getElementById('myLocStatus'),
     document.getElementById('addPanel')
   ].filter(Boolean);
-  return _expandHideEls;
 }
 function expandMap() {
   if (window.innerWidth > 680) return;
   const m = document.querySelector('.main');
   if (m.classList.contains('map-expanded')) return;
   m.classList.add('map-expanded');
-  _getExpandHideEls().forEach(el => { el.style.display = 'none'; });
+  _getHideEls().forEach(el => { el.style.display = 'none'; });
+  // mapWrap: flex 해제, 전체 높이
+  const wrap = document.getElementById('mapWrap');
+  if (wrap) { wrap.style.flex = 'none'; wrap.style.height = '100%'; }
   requestAnimationFrame(() => {
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
@@ -834,9 +833,23 @@ function collapseMap() {
   const m = document.querySelector('.main');
   if (!m.classList.contains('map-expanded')) return;
   m.classList.remove('map-expanded');
-  // 모든 숨긴 요소 복원
-  _getExpandHideEls().forEach(el => { el.style.display = ''; });
+  // 숨긴 요소 복원
+  _getHideEls().forEach(el => { el.style.display = ''; });
+  // mapWrap: 명시적 px 높이 지정 (flex 축소에 의존하지 않음)
   requestAnimationFrame(() => {
+    const wrap = document.getElementById('mapWrap');
+    const main = document.querySelector('.main');
+    if (wrap && main) {
+      const mainH = main.offsetHeight;
+      const topBar = document.querySelector('.list-top-bar');
+      const filterBar = document.getElementById('filterBar');
+      const tbH = topBar ? topBar.offsetHeight : 0;
+      const fbH = filterBar ? filterBar.offsetHeight : 0;
+      const cardH = Math.round(window.innerHeight * 0.22);
+      const mapH = mainH - tbH - fbH - cardH;
+      wrap.style.flex = 'none';
+      wrap.style.height = Math.max(mapH, 100) + 'px';
+    }
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
     setTimeout(_refreshMapSize, 400);
@@ -2927,8 +2940,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.1.9';
-const APP_VERSION_NUM = 119;
+const APP_VERSION = '1.2.0';
+const APP_VERSION_NUM = 120;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
