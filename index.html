@@ -769,6 +769,8 @@ function initMap() {
     closeAllIw();
     nearbyMarkers.forEach(m => { if(m.iw) try{m.iw.setMap(null);m.open=false;}catch(e){} });
     if (addPanelOpen) { closeAddPanel(); return; }
+    // full 상태일 때만 지도 누르면 half로
+    if (_bsState === 'full') _setBsState('half');
   });
   _initBottomSheet();
   renderAll();
@@ -2951,8 +2953,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.3.5';
-const APP_VERSION_NUM = 135;
+const APP_VERSION = '1.3.6';
+const APP_VERSION_NUM = 136;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
