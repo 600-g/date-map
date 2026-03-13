@@ -227,7 +227,7 @@ header .lc svg{width:18px;height:18px}
   #map{height:100%}
   .my-loc-btn{bottom:14px;right:10px;top:auto;width:32px;height:32px}
   /* 필터바 — 카드 바로 위에 붙음 */
-  .filter-bar{order:4;width:100%;padding:6px 8px 4px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;min-height:34px;flex-shrink:0;background:white;border-top:1px solid var(--warm)}
+  .filter-bar{order:4;width:100%;padding:6px 8px 4px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;min-height:34px;flex-shrink:0;background:white;border-top:1px solid var(--warm);border-bottom:none;position:static;z-index:auto}
   .filter-bar::-webkit-scrollbar{display:none}
   .fb{flex-shrink:0}
   #myLocStatus{order:5;width:100%}
@@ -390,8 +390,6 @@ header .lc svg{width:18px;height:18px}
     <div id="map" style="flex:1"></div>
     <div id="listViewBtn" style="display:none!important"></div>
     <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
-    <button class="my-loc-btn" id="compassBtn" title="북쪽 정렬" style="top:auto;bottom:56px;right:10px;width:32px;height:32px" onclick="resetNorth()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="#E05252" stroke="#E05252"/></svg></button>
-    <button class="my-loc-btn" id="streetViewBtn" title="거리뷰" style="top:auto;bottom:96px;right:10px;width:32px;height:32px" onclick="toggleStreetView()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M12 8v4"/><path d="M6.5 20c.9-3.3 3-5 5.5-5s4.6 1.7 5.5 5"/></svg></button>
     <!-- 주변 검색 퀵버튼 -->
     <div class="nearby-bar" id="nearbyBar">
       <button class="nb-btn" data-nb="cat" data-code="CE7" data-label="카페" data-icon="cafe" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6F4E37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg> 카페</button>
@@ -399,7 +397,7 @@ header .lc svg{width:18px;height:18px}
       <button class="nb-btn" data-nb="kw" data-kw="CGV OR 메가박스 OR 롯데시네마" data-label="영화관" data-icon="movie" data-filter="영화관,극장" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3B4C6B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><path d="M7 2v20M17 2v20M2 12h20M2 7h5M2 17h5M17 17h5M17 7h5"/></svg> 영화관</button>
       <button class="nb-btn" data-nb="cat" data-code="CS2" data-label="편의점" data-icon="conv" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path d="M9 22V12h6v10"/></svg> 편의점</button>
       <button class="nb-btn" data-nb="cat" data-code="PM9" data-label="약국" data-icon="pharmacy" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18"><rect x="9" y="3" width="6" height="18" rx="1" fill="#E74C3C"/><rect x="3" y="9" width="18" height="6" rx="1" fill="#E74C3C"/></svg> 약국</button>
-      <button class="nb-btn" data-nb="kw" data-kw="공중화장실" data-label="화장실" data-icon="toilet" data-filter="화장실,공중,위생,공공" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="6.5" cy="5" r="2.2" fill="#3498DB"/><polygon points="2.5,9 10.5,9 8.5,18 4.5,18" fill="#3498DB"/><line x1="12" y1="2" x2="12" y2="20" stroke="#ddd" stroke-width=".6"/><circle cx="17.5" cy="5" r="2.2" fill="#E74C3C"/><polygon points="13.5,18 21.5,18 17.5,9" fill="#E74C3C"/></svg> 화장실</button>
+      <button class="nb-btn" data-nb="kw" data-kw="공중화장실" data-label="화장실" data-icon="toilet" data-filter="공중,공공,위생,공원" data-exclude="청소,인테리어,수리,설비,용품,리모델링,시공,업체,대행" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><circle cx="6.5" cy="5" r="2.2" fill="#3498DB"/><polygon points="2.5,9 10.5,9 8.5,18 4.5,18" fill="#3498DB"/><line x1="12" y1="2" x2="12" y2="20" stroke="#ddd" stroke-width=".6"/><circle cx="17.5" cy="5" r="2.2" fill="#E74C3C"/><polygon points="13.5,18 21.5,18 17.5,9" fill="#E74C3C"/></svg> 화장실</button>
     </div>
   </div>
 </div>
@@ -775,7 +773,13 @@ function initMap() {
       window._overlayJustClicked = 0;
       return;
     }
-    closeAllIw(); toggleMapExpand(); if(addPanelOpen) closeAddPanel();
+    // 정보창 열려있으면 닫기만 (토글 안함)
+    const hadIw = focusedPlaceId || nearbyMarkers.some(m => m.open);
+    closeAllIw();
+    nearbyMarkers.forEach(m => { if(m.iw) try{m.iw.setMap(null);m.open=false;}catch(e){} });
+    if (addPanelOpen) { closeAddPanel(); return; }
+    if (hadIw) return;
+    toggleMapExpand();
   });
   renderAll();
   // 앱 시작 시: savedLoc 있으면 이전 위치 + 자동 GPS
@@ -815,17 +819,6 @@ function expandMap() {
   const m = document.querySelector('.main');
   if (m.classList.contains('map-expanded')) return;
   m.classList.add('map-expanded');
-  // 닫기 버튼 표시
-  let cb = document.getElementById('mapCollapseBtn');
-  if (!cb) {
-    cb = document.createElement('button');
-    cb.id = 'mapCollapseBtn';
-    cb.style.cssText = 'position:absolute;top:10px;left:10px;z-index:100;background:white;border:1.5px solid #e0ddd8;border-radius:10px;padding:6px 14px;font-size:13px;font-weight:600;color:#333;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.15);font-family:inherit';
-    cb.textContent = '✕ 지도 닫기';
-    cb.onclick = collapseMap;
-    document.getElementById('mapWrap').appendChild(cb);
-  }
-  cb.style.display = 'block';
   requestAnimationFrame(() => {
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
@@ -836,8 +829,6 @@ function collapseMap() {
   const m = document.querySelector('.main');
   if (!m.classList.contains('map-expanded')) return;
   m.classList.remove('map-expanded');
-  const cb = document.getElementById('mapCollapseBtn');
-  if (cb) cb.style.display = 'none';
   requestAnimationFrame(() => {
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
@@ -846,8 +837,8 @@ function collapseMap() {
   try{lucide.createIcons();}catch(e){}
 }
 function toggleMapExpand() {
-  // 확대 상태에서 맵 탭으로 축소하지 않음 (닫기 버튼 사용)
-  if (!document.querySelector('.main').classList.contains('map-expanded')) expandMap();
+  if (document.querySelector('.main').classList.contains('map-expanded')) collapseMap();
+  else expandMap();
 }
 let _courseMode = false;
 
@@ -2291,7 +2282,7 @@ function getNearbyAreaName(lat, lng) {
   });
 }
 
-async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
+async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter, excludeFilter) {
   const key = 'kw_' + keyword;
   if (nearbyActiveKeys.has(key)) { removeNearbyByKey(key); if(btnEl) btnEl.classList.remove('active'); return; }
   if (btnEl) btnEl.classList.add('active');
@@ -2334,6 +2325,13 @@ async function searchNearbyKeyword(keyword, label, btnEl, icon, catFilter) {
         const name = d.place_name || '';
         const cat = (d.category_name||'') + (d.category_group_name||'');
         return filters.some(f => cat.includes(f) || name.includes(f));
+      });
+    }
+    if (excludeFilter) {
+      const excl = excludeFilter.split(',');
+      allDocs = allDocs.filter(d => {
+        const name = d.place_name || '';
+        return !excl.some(f => name.includes(f));
       });
     }
     allDocs.sort((a, b) => (parseInt(a.distance)||99999) - (parseInt(b.distance)||99999));
@@ -2444,7 +2442,6 @@ function getMovieIcon(name) {
   return NEARBY_ICONS.movie;
 }
 function renderNearbyResults(docs, iconKey, groupKey) {
-  expandMap();
   docs.forEach(d => {
     const svgIcon = iconKey === 'conv' ? getConvIcon(d.place_name) : iconKey === 'movie' ? getMovieIcon(d.place_name) : (NEARBY_ICONS[iconKey] || '');
     const pos = new naver.maps.LatLng(parseFloat(d.y), parseFloat(d.x));
@@ -2507,7 +2504,7 @@ document.addEventListener('DOMContentLoaded', () => {
       e.preventDefault();
       const type = btn.dataset.nb;
       if (type === 'cat') searchNearby(btn.dataset.code, btn.dataset.label, btn, btn.dataset.icon);
-      else if (type === 'kw') searchNearbyKeyword(btn.dataset.kw, btn.dataset.label, btn, btn.dataset.icon, btn.dataset.filter||null);
+      else if (type === 'kw') searchNearbyKeyword(btn.dataset.kw, btn.dataset.label, btn, btn.dataset.icon, btn.dataset.filter||null, btn.dataset.exclude||null);
     };
     btn.addEventListener('click', handler);
   });
@@ -2914,8 +2911,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.1.0';
-const APP_VERSION_NUM = 110;
+const APP_VERSION = '1.1.2';
+const APP_VERSION_NUM = 112;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4184,76 +4181,6 @@ function doForceReload() {
   }
 }
 
-// ── 네이버 전용: 북쪽 정렬 ──
-function resetNorth() {
-  if (!map) return;
-  toast('🧭 북쪽 정렬');
-  map.setOptions({ heading: 0, tilt: 0 });
-}
-
-// ── 네이버 전용: 거리뷰 ──
-let _streetViewMode = false;
-let _streetViewListener = null;
-function toggleStreetView() {
-  if (_streetViewMode) {
-    closeStreetView();
-    return;
-  }
-  _streetViewMode = true;
-  const btn = document.getElementById('streetViewBtn');
-  btn.style.background = '#4285F4';
-  btn.style.color = 'white';
-  btn.style.borderColor = '#4285F4';
-  toast('거리뷰: 도로 근처를 탭하세요');
-  _streetViewListener = naver.maps.Event.addListener(map, 'click', function(e) {
-    window._overlayClicked = Date.now();
-    const pos = new naver.maps.LatLng(e.coord.y, e.coord.x);
-    toast('거리뷰 확인 중...');
-    try {
-      var client = new naver.maps.PanoramaClient();
-      var _svTimeout = setTimeout(function(){ toast('거리뷰 응답 없음 — 이 위치에서는 지원되지 않을 수 있어요'); }, 5000);
-      client.getNearestPanoId(pos, 200, function(id) {
-        clearTimeout(_svTimeout);
-        if (id) {
-          openStreetView(id);
-        } else {
-          toast('이 위치에는 거리뷰가 없어요 — 도로 위를 탭하세요');
-        }
-      });
-    } catch(e) {
-      toast('거리뷰 오류: ' + e.message);
-      console.error('StreetView error:', e);
-    }
-  });
-}
-function openStreetView(panoId) {
-  let sv = document.getElementById('streetViewModal');
-  if (sv) sv.remove();
-  sv = document.createElement('div');
-  sv.id = 'streetViewModal';
-  sv.style.cssText = 'position:fixed;inset:0;z-index:10001;background:#000;display:flex;flex-direction:column';
-  sv.innerHTML = `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--dark);color:white;flex-shrink:0;padding-top:calc(8px + env(safe-area-inset-top,0px))">
-      <span style="font-size:14px;font-weight:600;display:flex;align-items:center;gap:4px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="3"/><path d="M12 8v4"/><path d="M6.5 20c.9-3.3 3-5 5.5-5s4.6 1.7 5.5 5"/></svg> 거리뷰</span>
-      <button onclick="closeStreetView()" style="background:none;border:none;color:white;font-size:20px;cursor:pointer;padding:4px 8px">&times;</button>
-    </div>
-    <div id="streetViewPano" style="flex:1"></div>
-  `;
-  document.body.appendChild(sv);
-  new naver.maps.StreetView('streetViewPano', {
-    panoId: panoId,
-    pov: { pan: 0, tilt: 0, fov: 100 }
-  });
-}
-function closeStreetView() {
-  _streetViewMode = false;
-  const btn = document.getElementById('streetViewBtn');
-  if (btn) { btn.style.background = 'white'; btn.style.color = ''; btn.style.borderColor = ''; }
-  if (_streetViewListener) { naver.maps.Event.removeListener(_streetViewListener); _streetViewListener = null; }
-  const sv = document.getElementById('streetViewModal');
-  if (sv) sv.remove();
-}
-
 // ── 시작 ──
 window.addEventListener('load', () => {
   checkVersion();
@@ -4266,7 +4193,7 @@ window.addEventListener('load', () => {
   if (_appIcon) { let _iconTapTime=0; _appIcon.addEventListener('click',e=>{const now=Date.now();if(now-_iconTapTime<400){e.preventDefault();startWorldCup();_iconTapTime=0;}else _iconTapTime=now;}); }
   // 네이버 지도 SDK 동적 로드
   const script = document.createElement('script');
-  script.src = 'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=' + NAVER_CLIENT_ID + '&submodules=geocoder,panorama';
+  script.src = 'https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=' + NAVER_CLIENT_ID + '&submodules=geocoder';
   script.onload = function() {
     // NaverCustomOverlay 전역 정의 (SDK 로드 후)
     window.NaverCustomOverlay = function(opts) {
