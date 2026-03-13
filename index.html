@@ -819,6 +819,9 @@ function expandMap() {
   if (window.innerWidth > 680) return;
   const m = document.querySelector('.main');
   if (m.classList.contains('map-expanded')) return;
+  // mapWrap JS 높이제한 해제
+  const wrap = document.getElementById('mapWrap');
+  if (wrap) wrap.style.maxHeight = '';
   m.classList.add('map-expanded');
   requestAnimationFrame(() => {
     _refreshMapSize();
@@ -830,7 +833,20 @@ function collapseMap() {
   const m = document.querySelector('.main');
   if (!m.classList.contains('map-expanded')) return;
   m.classList.remove('map-expanded');
+  // JS로 mapWrap 높이를 직접 제한하여 카드리스트 공간 확보
   requestAnimationFrame(() => {
+    const wrap = document.getElementById('mapWrap');
+    const main = document.querySelector('.main');
+    if (wrap && main) {
+      // main 전체 높이에서 다른 요소 높이를 빼서 mapWrap 높이 계산
+      const mainH = main.offsetHeight;
+      const topBar = document.querySelector('.list-top-bar');
+      const filterBar = document.getElementById('filterBar');
+      const placeList = document.getElementById('placeList');
+      const otherH = (topBar ? topBar.offsetHeight : 0) + (filterBar ? filterBar.offsetHeight : 0);
+      const cardH = Math.round(mainH * 0.22); // 22vh 상당
+      wrap.style.maxHeight = (mainH - otherH - cardH) + 'px';
+    }
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
     setTimeout(_refreshMapSize, 400);
@@ -2609,6 +2625,8 @@ function setupLocBtn() {
 
 function handleLocClick() {
   if (!navigator.geolocation) { toast('이 브라우저에서 위치를 지원하지 않아요'); return; }
+  // 위치 버튼 클릭 = 사용자 제스처 → iOS 나침반 권한 요청 가능
+  _requestCompass();
 
   // Permissions API로 차단 상태 먼저 확인
   if (navigator.permissions) {
@@ -2695,6 +2713,34 @@ function stopTracking() {
   toast('위치 추적 종료');
 }
 
+// ── 방향 화살표 (나침반) ──
+let _compassListening = false;
+let _myHeading = null;
+function _requestCompass() {
+  if (_compassListening) return;
+  if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission().then(function(state) {
+      if (state === 'granted') _startCompassListener();
+    }).catch(function(){});
+  } else if ('DeviceOrientationEvent' in window) {
+    _startCompassListener();
+  }
+}
+function _startCompassListener() {
+  if (_compassListening) return;
+  _compassListening = true;
+  window.addEventListener('deviceorientation', function(e) {
+    var heading = e.webkitCompassHeading !== undefined ? e.webkitCompassHeading : (e.alpha !== null ? 360 - e.alpha : null);
+    if (heading === null || heading === undefined) return;
+    _myHeading = heading;
+    var arrow = document.getElementById('myLocArrow');
+    if (arrow) {
+      arrow.style.display = 'block';
+      arrow.style.transform = 'translateX(-50%) rotate(' + heading + 'deg)';
+    }
+  }, true);
+}
+
 function updateMyLocMarker() {
   if (!map || myLat === null) return;
   const pos = new naver.maps.LatLng(myLat, myLng);
@@ -2704,6 +2750,7 @@ function updateMyLocMarker() {
     el.style.cssText = 'position:relative;width:56px;height:56px;pointer-events:none';
     el.innerHTML = '<div style="position:absolute;inset:0;background:rgba(66,133,244,.1);border-radius:50%;animation:locPulse 2s infinite"></div>' +
       '<div style="position:absolute;inset:8px;background:rgba(66,133,244,.15);border-radius:50%"></div>' +
+      '<div id="myLocArrow" style="position:absolute;top:-8px;left:50%;transform:translateX(-50%) rotate(0deg);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-bottom:18px solid #4285F4;filter:drop-shadow(0 0 3px rgba(66,133,244,.6));display:none;transform-origin:50% 36px;z-index:1"></div>' +
       '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:20px;height:20px;background:#4285F4;border:3px solid white;border-radius:50%;box-shadow:0 0 10px rgba(66,133,244,.8)"></div>';
     myLocOverlay = new NaverCustomOverlay({ position: pos, content: el, yAnchor: 0.5, xAnchor: 0.5, zIndex: 999 });
     myLocOverlay.setMap(map);
@@ -2882,8 +2929,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.1.7';
-const APP_VERSION_NUM = 117;
+const APP_VERSION = '1.1.8';
+const APP_VERSION_NUM = 118;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
