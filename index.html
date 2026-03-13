@@ -226,20 +226,21 @@ header .lc svg{width:18px;height:18px}
   /* 지도 */
   #mapWrap{order:3;flex:1;min-height:0}
   #map{height:100%}
-  .my-loc-btn{bottom:14px;right:10px;top:auto;width:32px;height:32px}
-  /* 필터바 — 카드 바로 위에 붙음 */
-  .filter-bar{order:4;width:100%;padding:6px 8px 4px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;min-height:34px;flex-shrink:0;background:white;border-top:1px solid var(--warm);border-bottom:none;position:static;z-index:auto}
+  .my-loc-btn{bottom:14px;right:10px;top:auto;width:32px;height:32px;z-index:101}
+  /* 필터바 — 바텀시트 내부 */
+  .filter-bar{width:100%;padding:6px 8px 4px;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;min-height:34px;flex-shrink:0;background:white;border-top:1px solid var(--warm);border-bottom:none;position:static;z-index:auto}
   .filter-bar::-webkit-scrollbar{display:none}
   .fb{flex-shrink:0}
-  #myLocStatus{order:5;width:100%}
-  /* 카드 리스트 */
-  .place-list{order:6;overflow-y:auto;width:100%;height:22vh;flex:0 0 22vh;-webkit-overflow-scrolling:touch;scroll-snap-type:y proximity;scroll-padding-top:2px;scroll-padding-bottom:2px}
+  #myLocStatus{width:100%}
+  /* 카드 리스트 — 바텀시트 내부 */
+  .place-list{overflow-y:auto;width:100%;flex:1;-webkit-overflow-scrolling:touch;scroll-snap-type:y proximity;scroll-padding-top:2px;scroll-padding-bottom:2px}
   .pi-wrap{scroll-snap-align:start;scroll-margin-top:2px}
   /* 설정탭 */
   #tab-cfg{order:6;width:100%;flex:1;overflow-y:auto}
-  /* 지도 확대 모드 — mapWrap만 CSS, 나머지는 JS에서 제어 */
-  .map-expanded{padding-bottom:0!important}
-  .map-expanded #mapWrap{flex:999!important;min-height:100%!important}
+  /* 바텀시트 */
+  #bottomSheet{position:fixed;left:0;right:0;bottom:calc(48px + env(safe-area-inset-bottom,0px));z-index:100;background:white;border-radius:14px 14px 0 0;box-shadow:0 -2px 10px rgba(0,0,0,.08);display:flex;flex-direction:column;overflow:hidden;transition:height .25s cubic-bezier(.4,0,.2,1);will-change:height}
+  #bsHandle{width:100%;padding:10px 0 2px;display:flex;justify-content:center;cursor:grab;flex-shrink:0;touch-action:none}
+  #bsHandle::after{content:'';width:36px;height:4px;border-radius:2px;background:#ccc}
   #listViewBtn{display:none!important}
   /* 카드 컴팩트 */
   .pi{padding:8px 10px}
@@ -771,6 +772,7 @@ function initMap() {
     if (hadIw) return;
     toggleMapExpand();
   });
+  _initBottomSheet();
   renderAll();
   // 앱 시작 시: savedLoc 있으면 이전 위치 + 자동 GPS
   if (savedLoc) {
@@ -798,56 +800,86 @@ function initMap() {
   }
 }
 
-// ── 지도 확대/축소 (모바일) ──
+// ── 바텀시트 (모바일) ──
+let _bsState = 'half'; // 'peek' | 'half' | 'full'
+const BS_PEEK = 44;
+const BS_HALF_VH = 35;
+const BS_FULL_VH = 65;
+function _bsHeight(state) {
+  if (state === 'peek') return BS_PEEK;
+  if (state === 'half') return window.innerHeight * BS_HALF_VH / 100;
+  return window.innerHeight * BS_FULL_VH / 100;
+}
+function _setBsState(state) {
+  const sheet = document.getElementById('bottomSheet');
+  if (!sheet) return;
+  _bsState = state;
+  sheet.style.height = _bsHeight(state) + 'px';
+}
+function _initBottomSheet() {
+  if (window.innerWidth > 680) return;
+  const sheet = document.createElement('div');
+  sheet.id = 'bottomSheet';
+  const handle = document.createElement('div');
+  handle.id = 'bsHandle';
+  sheet.appendChild(handle);
+  // 기존 요소를 바텀시트로 이동
+  const filterBar = document.getElementById('filterBar');
+  const myLocStatus = document.getElementById('myLocStatus');
+  const placeList = document.getElementById('placeList');
+  if (filterBar) sheet.appendChild(filterBar);
+  if (myLocStatus) sheet.appendChild(myLocStatus);
+  if (placeList) sheet.appendChild(placeList);
+  document.body.appendChild(sheet);
+  sheet.style.height = _bsHeight('half') + 'px';
+  // 드래그 로직
+  let startY = 0, startH = 0, dragging = false;
+  handle.addEventListener('touchstart', function(e) {
+    startY = e.touches[0].clientY;
+    startH = sheet.offsetHeight;
+    dragging = true;
+    sheet.style.transition = 'none';
+  }, { passive: true });
+  handle.addEventListener('touchmove', function(e) {
+    if (!dragging) return;
+    var dy = startY - e.touches[0].clientY;
+    var newH = Math.max(BS_PEEK, Math.min(window.innerHeight * 0.7, startH + dy));
+    sheet.style.height = newH + 'px';
+  }, { passive: true });
+  handle.addEventListener('touchend', function() {
+    if (!dragging) return;
+    dragging = false;
+    sheet.style.transition = '';
+    var h = sheet.offsetHeight;
+    var peekH = BS_PEEK;
+    var halfH = _bsHeight('half');
+    var fullH = _bsHeight('full');
+    var dPeek = Math.abs(h - peekH);
+    var dHalf = Math.abs(h - halfH);
+    var dFull = Math.abs(h - fullH);
+    if (dPeek <= dHalf && dPeek <= dFull) _bsState = 'peek';
+    else if (dHalf <= dFull) _bsState = 'half';
+    else _bsState = 'full';
+    sheet.style.height = _bsHeight(_bsState) + 'px';
+  });
+  // 핸들 클릭으로도 토글
+  handle.addEventListener('click', function() {
+    if (_bsState === 'peek') _setBsState('half');
+    else if (_bsState === 'half') _setBsState('full');
+    else _setBsState('half');
+  });
+}
 function _refreshMapSize() {
   if (!map) return;
-  const el = document.getElementById('map');
+  var el = document.getElementById('map');
   if (el) map.setSize(new naver.maps.Size(el.offsetWidth, el.offsetHeight));
 }
-function _getHideEls() {
-  return [
-    document.querySelector('.tabs'),
-    document.querySelector('.list-top-bar'),
-    document.getElementById('filterBar'),
-    document.getElementById('placeList'),
-    document.getElementById('myLocStatus'),
-    document.getElementById('addPanel')
-  ].filter(Boolean);
-}
-function expandMap() {
-  if (window.innerWidth > 680) return;
-  const m = document.querySelector('.main');
-  if (m.classList.contains('map-expanded')) return;
-  m.classList.add('map-expanded');
-  _getHideEls().forEach(el => { el.style.display = 'none'; });
-  requestAnimationFrame(() => {
-    _refreshMapSize();
-    setTimeout(_refreshMapSize, 100);
-    setTimeout(_refreshMapSize, 400);
-  });
-}
-function collapseMap() {
-  const m = document.querySelector('.main');
-  if (!m.classList.contains('map-expanded')) return;
-  m.classList.remove('map-expanded');
-  // 숨긴 요소 복원
-  _getHideEls().forEach(el => { el.style.display = ''; });
-  // 핵심: 네이버 SDK가 #map에 설정한 인라인 높이 리셋 → flex:1 복원
-  const mapEl = document.getElementById('map');
-  if (mapEl) { mapEl.style.height = ''; mapEl.style.width = ''; }
-  // mapWrap: flex:1 복원 (overflow:hidden이 넘침 방지)
-  const wrap = document.getElementById('mapWrap');
-  if (wrap) { wrap.style.flex = ''; wrap.style.height = ''; }
-  requestAnimationFrame(() => {
-    _refreshMapSize();
-    setTimeout(_refreshMapSize, 100);
-    setTimeout(_refreshMapSize, 400);
-  });
-  try{lucide.createIcons();}catch(e){}
-}
+// 하위 호환 — 기존 코드에서 호출하는 부분 대응
+function expandMap() { _setBsState('peek'); }
+function collapseMap() { _setBsState('half'); }
 function toggleMapExpand() {
-  if (document.querySelector('.main').classList.contains('map-expanded')) collapseMap();
-  else expandMap();
+  if (_bsState === 'peek') _setBsState('half');
+  else _setBsState('peek');
 }
 let _courseMode = false;
 
@@ -865,8 +897,8 @@ function showTab(name) {
   document.getElementById('tab-'+name).classList.add('active');
   document.querySelectorAll('.tab')[['list','cfg'].indexOf(name)].classList.add('active');
   const mw = document.getElementById('mapWrap');
-  if (name==='cfg') { mw.style.display='none'; catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; try{lucide.createIcons();}catch(e){} document.getElementById('appVer').textContent = APP_VERSION; checkUpdateBtn(); }
-  else { mw.style.display=''; if (!window._skipCollapse) collapseMap(); window._skipCollapse = false; }
+  if (name==='cfg') { mw.style.display='none'; var bs=document.getElementById('bottomSheet'); if(bs) bs.style.display='none'; catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; try{lucide.createIcons();}catch(e){} document.getElementById('appVer').textContent = APP_VERSION; checkUpdateBtn(); }
+  else { mw.style.display=''; var bs=document.getElementById('bottomSheet'); if(bs) bs.style.display='flex'; if (!window._skipCollapse) _setBsState('half'); window._skipCollapse = false; }
   if (name==='list') populateCatSelect();
 }
 
@@ -2929,8 +2961,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.2.1';
-const APP_VERSION_NUM = 121;
+const APP_VERSION = '1.3.0';
+const APP_VERSION_NUM = 130;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
