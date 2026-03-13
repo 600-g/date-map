@@ -376,7 +376,7 @@ header .lc svg{width:18px;height:18px}
     </div>
   </div>
 
-  <div id="mapWrap" style="position:relative;flex:1;display:flex;min-height:0">
+  <div id="mapWrap" style="position:relative;flex:1;display:flex;min-height:0;overflow:hidden">
     <div id="map" style="flex:1"></div>
     <div id="listViewBtn" style="display:none!important"></div>
     <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
@@ -820,9 +820,6 @@ function expandMap() {
   if (m.classList.contains('map-expanded')) return;
   m.classList.add('map-expanded');
   _getHideEls().forEach(el => { el.style.display = 'none'; });
-  // mapWrap: flex 해제, 전체 높이
-  const wrap = document.getElementById('mapWrap');
-  if (wrap) { wrap.style.flex = 'none'; wrap.style.height = '100%'; }
   requestAnimationFrame(() => {
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
@@ -835,21 +832,13 @@ function collapseMap() {
   m.classList.remove('map-expanded');
   // 숨긴 요소 복원
   _getHideEls().forEach(el => { el.style.display = ''; });
-  // mapWrap: 명시적 px 높이 지정 (flex 축소에 의존하지 않음)
+  // 핵심: 네이버 SDK가 #map에 설정한 인라인 높이 리셋 → flex:1 복원
+  const mapEl = document.getElementById('map');
+  if (mapEl) { mapEl.style.height = ''; mapEl.style.width = ''; }
+  // mapWrap: flex:1 복원 (overflow:hidden이 넘침 방지)
+  const wrap = document.getElementById('mapWrap');
+  if (wrap) { wrap.style.flex = ''; wrap.style.height = ''; }
   requestAnimationFrame(() => {
-    const wrap = document.getElementById('mapWrap');
-    const main = document.querySelector('.main');
-    if (wrap && main) {
-      const mainH = main.offsetHeight;
-      const topBar = document.querySelector('.list-top-bar');
-      const filterBar = document.getElementById('filterBar');
-      const tbH = topBar ? topBar.offsetHeight : 0;
-      const fbH = filterBar ? filterBar.offsetHeight : 0;
-      const cardH = Math.round(window.innerHeight * 0.22);
-      const mapH = mainH - tbH - fbH - cardH;
-      wrap.style.flex = 'none';
-      wrap.style.height = Math.max(mapH, 100) + 'px';
-    }
     _refreshMapSize();
     setTimeout(_refreshMapSize, 100);
     setTimeout(_refreshMapSize, 400);
@@ -2940,8 +2929,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.2.0';
-const APP_VERSION_NUM = 120;
+const APP_VERSION = '1.2.1';
+const APP_VERSION_NUM = 121;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
