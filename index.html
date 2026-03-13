@@ -2953,8 +2953,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.3.7';
-const APP_VERSION_NUM = 137;
+const APP_VERSION = '1.3.8';
+const APP_VERSION_NUM = 138;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3398,7 +3398,9 @@ function courseBack() {
   document.getElementById('coursePhase2').style.display = 'none';
 }
 function courseShowMap() {
-  const selCopy = _courseSel.slice();
+  try {
+  var selCopy = _courseSel.slice();
+  if (!selCopy.length) { toast('코스 장소가 없어요'); return; }
   closeCourseModal();
   clearCourseOverlays();
   clearNearbyMarkers();
@@ -3407,7 +3409,7 @@ function courseShowMap() {
   window._skipCollapse = true;
   showTab('list');
   _setBsState('peek');
-  toast(`코스 ${_courseSel.length}곳 표시 중...`);
+  toast('코스 ' + _courseSel.length + '곳 표시 중');
   setTimeout(() => {
     try {
       const positions = [];
@@ -3478,6 +3480,7 @@ function courseShowMap() {
       toast('경로 표시 오류: ' + e.message);
     }
   }, 200);
+  } catch(outerErr) { toast('코스 오류: ' + outerErr.message); console.error(outerErr); }
 }
 function _showCourseControls() {
   let ctrl = document.getElementById('courseCtrl');
