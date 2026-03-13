@@ -823,10 +823,8 @@ function _initBottomSheet() {
   sheet.appendChild(handle);
   // 기존 요소를 바텀시트로 이동
   const filterBar = document.getElementById('filterBar');
-  const myLocStatus = document.getElementById('myLocStatus');
   const placeList = document.getElementById('placeList');
   if (filterBar) sheet.appendChild(filterBar);
-  if (myLocStatus) sheet.appendChild(myLocStatus);
   if (placeList) sheet.appendChild(placeList);
   document.body.appendChild(sheet);
   sheet.style.height = _bsHeight('half') + 'px';
@@ -2040,13 +2038,7 @@ function renderAll() {
 
 function renderList() {
   const list = document.getElementById('placeList');
-  const locStatus = document.getElementById('myLocStatus');
-  if (myLat !== null) {
-    locStatus.style.display = 'flex';
-    locStatus.innerHTML = `<span style="width:8px;height:8px;background:#4285F4;border-radius:50%;display:inline-block;animation:pulse 2s infinite"></span> 내 위치 추적 중 · 가까운 순 정렬`;
-  } else {
-    locStatus.style.display = 'none';
-  }
+  // 위치 추적 상태는 locBtn 색상(파란색)으로 표시
   let f = activeFilters.size === 0 ? [...places] : places.filter(p=>activeFilters.has(p.cat));
   // 목록 내 텍스트 검색 (자음/초성 검색 지원)
   if (listSearchQuery) {
@@ -2959,8 +2951,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.3.4';
-const APP_VERSION_NUM = 134;
+const APP_VERSION = '1.3.5';
+const APP_VERSION_NUM = 135;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3410,6 +3402,7 @@ function courseShowMap() {
   clearNearbyMarkers();
   closeAllIw();
   _courseSel = selCopy;
+  window._skipCollapse = true;
   showTab('list');
   _setBsState('peek');
   toast(`코스 ${_courseSel.length}곳 표시 중...`);
