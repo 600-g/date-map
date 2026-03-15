@@ -382,22 +382,6 @@ header .lc svg{width:18px;height:18px}
         </div>
 
         <hr class="div">
-        <div class="s-title"><i data-lucide="moon" class="lc lc-sm"></i> 다크모드</div>
-        <div class="s-desc">야간에 눈이 편해요</div>
-        <div style="display:flex;align-items:center;gap:10px">
-          <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;cursor:pointer">
-            <input type="checkbox" id="darkToggle" onchange="toggleDarkMode(this.checked)" style="opacity:0;width:0;height:0;margin:0;padding:0;position:absolute">
-            <span style="position:absolute;inset:0;background:#ccc;border-radius:24px;transition:background .3s"></span>
-            <span style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;border-radius:50%;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
-          </label>
-          <span id="darkLabel" style="font-size:12px;color:var(--brown)">끄기</span>
-        </div>
-        <style>
-          #darkToggle:checked+span{background:var(--accent)}
-          #darkToggle:checked+span+span{transform:translateX(20px)}
-        </style>
-
-        <hr class="div">
         <div class="s-title"><i data-lucide="flask-conical" class="lc lc-sm"></i> 실험실</div>
         <div class="s-desc">새로운 기능을 미리 체험해보세요</div>
         <button class="btn btn-outline" style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px" onclick="openLab()"><i data-lucide="beaker" class="lc lc-sm"></i> 실험실 입장</button>
@@ -451,6 +435,22 @@ header .lc svg{width:18px;height:18px}
     </div>
     <p style="font-size:12px;color:var(--brown);margin-bottom:14px;line-height:1.6">개발 중인 기능을 미리 체험해보세요.<br>불안정할 수 있어요.</p>
     <div id="labList">
+      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="moon" class="lc lc-sm" style="color:var(--accent)"></i> 다크모드</div>
+          <div style="font-size:12px;color:var(--brown);line-height:1.5">야간에 눈이 편해요.</div>
+          <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">실험</span></div>
+        </div>
+        <label style="position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0;cursor:pointer">
+          <input type="checkbox" id="darkToggle" onchange="toggleDarkMode(this.checked)" style="opacity:0;width:0;height:0;margin:0;padding:0;position:absolute">
+          <span style="position:absolute;inset:0;background:#ccc;border-radius:24px;transition:background .3s"></span>
+          <span style="position:absolute;top:2px;left:2px;width:20px;height:20px;background:white;border-radius:50%;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
+        </label>
+        <style>
+          #darkToggle:checked+span{background:var(--accent)}
+          #darkToggle:checked+span+span{transform:translateX(20px)}
+        </style>
+      </div>
       <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openRandomPick()">
         <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="dice-3" class="lc lc-sm" style="color:var(--accent)"></i> 랜덤 픽</div>
         <div style="font-size:12px;color:var(--brown);line-height:1.5">지역을 고르면 저장된 장소 중 랜덤으로 추천해드려요.</div>
@@ -3075,8 +3075,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.5.0';
-const APP_VERSION_NUM = 150;
+const APP_VERSION = '1.5.1';
+const APP_VERSION_NUM = 151;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3147,7 +3147,7 @@ function _applyDarkMode(on){
   // 다크모드일 때 meta theme-color도 변경
   const mc=document.querySelector('meta[name="theme-color"]');
   if(mc){
-    if(on) mc.content='#1a1a2e';
+    if(on) mc.content='#0a0a0a';
     else{
       const t=JSON.parse(localStorage.getItem('datemap-theme')||'{}');
       const th=THEMES[t.color||'default'];
