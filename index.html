@@ -3169,8 +3169,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.6.4';
-const APP_VERSION_NUM = 164;
+const APP_VERSION = '1.6.5';
+const APP_VERSION_NUM = 165;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3274,7 +3274,7 @@ async function fetchWeather() {
   try {
     // 초단기실황 (현재 온도)
     const ncstUrl = `${KMA_BASE}/getUltraSrtNcst?serviceKey=${KMA_KEY}&pageNo=1&numOfRows=10&dataType=JSON&base_date=${bt.date}&base_time=${bt.time}&nx=${g.nx}&ny=${g.ny}`;
-    const fcstUrl = `${KMA_BASE}/getVilageFcst?serviceKey=${KMA_KEY}&pageNo=1&numOfRows=290&dataType=JSON&base_date=${ft.date}&base_time=${ft.time}&nx=${g.nx}&ny=${g.ny}`;
+    const fcstUrl = `${KMA_BASE}/getVilageFcst?serviceKey=${KMA_KEY}&pageNo=1&numOfRows=900&dataType=JSON&base_date=${ft.date}&base_time=${ft.time}&nx=${g.nx}&ny=${g.ny}`;
     const [ncstRes, fcstRes] = await Promise.all([fetch(ncstUrl), fetch(fcstUrl)]);
     const ncstData = await ncstRes.json();
     const fcstData = await fcstRes.json();
@@ -3299,6 +3299,18 @@ async function fetchWeather() {
       if (h.date > todayStr) return false; // 오늘만
       return parseInt(h.time) >= nowH * 100;
     });
+    // 일별 요약 (최고/최저/대표 하늘)
+    const dailyMap = {};
+    hours.forEach(h => {
+      if (!dailyMap[h.date]) dailyMap[h.date] = { date: h.date, tmps: [], skys: [], ptys: [], pops: [] };
+      if (h.TMP !== undefined) dailyMap[h.date].tmps.push(h.TMP);
+      if (h.TMN !== undefined) dailyMap[h.date].tmn = h.TMN;
+      if (h.TMX !== undefined) dailyMap[h.date].tmx = h.TMX;
+      if (h.SKY !== undefined) dailyMap[h.date].skys.push(h.SKY);
+      if (h.PTY !== undefined) dailyMap[h.date].ptys.push(h.PTY);
+      if (h.POP !== undefined) dailyMap[h.date].pops.push(h.POP);
+    });
+    const dailyList = Object.values(dailyMap).sort((a,b) => a.date.localeCompare(b.date));
     // 위치명 + 시도명 가져오기
     let locName = '', sidoName = '';
     try {
@@ -3334,7 +3346,7 @@ async function fetchWeather() {
         }
       } catch(e) { console.warn('미세먼지 로딩 실패', e); }
     }
-    _weatherCache = { cur, hours: futureHours, ts: now, locName, air };
+    _weatherCache = { cur, hours: futureHours, daily: dailyList, ts: now, locName, air };
     _weatherCacheTime = now;
     _renderWeatherBadge(_weatherCache);
   } catch(e) {
@@ -3416,8 +3428,13 @@ function toggleWeatherDetail() {
     if (g25) html += `<span style="display:inline-flex;align-items:center;gap:3px">초미세 ${g25.face} <b style="color:${g25.color}">${g25.text}</b></span>`;
     html += '</div>';
   }
-  // 시간대별 가로 스크롤
-  html += '<div class="wd-scroll-wrap"><div style="font-size:11px;font-weight:600;margin-bottom:4px;color:var(--brown)">오늘</div>';
+  // 탭: 시간대별 / 일별
+  html += `<div style="display:flex;gap:0;margin-bottom:6px;border-bottom:1px solid var(--warm)">`;
+  html += `<button class="wd-tab active" onclick="_wdSwitchTab('hourly')" style="flex:1;padding:4px;font-size:11px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--accent);color:var(--accent)" data-wdtab="hourly">시간대별</button>`;
+  html += `<button class="wd-tab" onclick="_wdSwitchTab('daily')" style="flex:1;padding:4px;font-size:11px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--brown)" data-wdtab="daily">일별</button>`;
+  html += `</div>`;
+  // 시간대별
+  html += '<div class="wd-scroll-wrap" id="wdHourly">';
   html += '<div class="wd-scroll">';
   _weatherCache.hours.forEach(h => {
     const t = h.time.substring(0,2) + '시';
@@ -3427,9 +3444,34 @@ function toggleWeatherDetail() {
     html += `<div class="wd-cell"><div class="wd-c-time">${t}</div><div class="wd-c-icon">${icon}</div><div class="wd-c-temp">${temp}</div>${pop?`<div class="wd-c-pop">${pop}</div>`:''}</div>`;
   });
   html += '</div></div>';
+  // 일별
+  const dayNames = ['일','월','화','수','목','금','토'];
+  html += '<div class="wd-scroll-wrap" id="wdDaily" style="display:none">';
+  html += '<div class="wd-scroll">';
+  (_weatherCache.daily||[]).forEach(d => {
+    const dt = new Date(d.date.substring(0,4)+'-'+d.date.substring(4,6)+'-'+d.date.substring(6,8));
+    const dayLabel = d.date === _fmtDate(new Date()) ? '오늘' : dayNames[dt.getDay()];
+    const lo = d.tmn !== undefined ? Math.round(d.tmn) : (d.tmps.length ? Math.round(Math.min(...d.tmps)) : '-');
+    const hi = d.tmx !== undefined ? Math.round(d.tmx) : (d.tmps.length ? Math.round(Math.max(...d.tmps)) : '-');
+    const mainSky = d.skys.length ? Math.round(d.skys.reduce((a,b)=>a+b,0)/d.skys.length) : 1;
+    const mainPty = d.ptys.some(p=>p>0) ? d.ptys.find(p=>p>0) : 0;
+    const maxPop = d.pops.length ? Math.max(...d.pops) : 0;
+    html += `<div class="wd-cell"><div class="wd-c-time">${dayLabel}</div><div class="wd-c-icon">${_skyIcon(mainSky, mainPty, false)}</div><div class="wd-c-temp">${hi}°</div><div style="font-size:9px;color:var(--text-sub)">${lo}°</div>${maxPop>0?`<div class="wd-c-pop">☂️${maxPop}%</div>`:''}</div>`;
+  });
+  html += '</div></div>';
   html += '<div class="wd-credit">기상청 단기예보 · 에어코리아 제공</div>';
   panel.innerHTML = html;
   panel.classList.add('open');
+}
+
+function _wdSwitchTab(tab) {
+  document.getElementById('wdHourly').style.display = tab==='hourly' ? '' : 'none';
+  document.getElementById('wdDaily').style.display = tab==='daily' ? '' : 'none';
+  document.querySelectorAll('.wd-tab').forEach(b => {
+    const on = b.dataset.wdtab === tab;
+    b.style.borderBottomColor = on ? 'var(--accent)' : 'transparent';
+    b.style.color = on ? 'var(--accent)' : 'var(--brown)';
+  });
 }
 
 // 지도 클릭 시 날씨 패널 닫기
