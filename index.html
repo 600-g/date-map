@@ -232,16 +232,21 @@ header .lc svg{width:18px;height:18px}
 .weather-badge:empty{display:none}
 [data-dark="true"] .weather-badge{background:rgba(30,30,30,.92);border-color:#444;color:var(--text-main)}
 /* 날씨 상세 패널 */
-.weather-detail{position:absolute;top:62px;left:8px;z-index:11;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--warm);box-shadow:0 4px 16px rgba(0,0,0,.15);padding:12px;min-width:200px;max-width:280px;max-height:320px;overflow-y:auto;display:none;font-size:12px}
+.weather-detail{position:absolute;top:62px;left:8px;right:8px;z-index:11;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--warm);box-shadow:0 4px 16px rgba(0,0,0,.15);padding:12px;max-height:50vh;overflow-y:auto;display:none;font-size:12px}
 .weather-detail.open{display:block}
 [data-dark="true"] .weather-detail{background:rgba(26,26,26,.96);border-color:#333;color:var(--text-main)}
-.weather-detail .wd-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--warm)}
-.weather-detail .wd-row:last-child{border-bottom:none}
-.weather-detail .wd-time{font-weight:600;min-width:36px}
-.weather-detail .wd-icon{font-size:16px;min-width:20px;text-align:center}
-.weather-detail .wd-temp{font-weight:600;min-width:30px}
-.weather-detail .wd-info{color:var(--brown);font-size:11px}
-.weather-detail .wd-credit{font-size:9px;color:var(--text-sub);text-align:right;margin-top:6px}
+.wd-current{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--warm)}
+.wd-current .wd-cur-icon{font-size:36px}
+.wd-current .wd-cur-temp{font-size:32px;font-weight:700;line-height:1}
+.wd-current .wd-cur-info{font-size:11px;color:var(--brown);margin-top:2px}
+.wd-scroll{display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px}
+.wd-scroll::-webkit-scrollbar{display:none}
+.wd-cell{flex-shrink:0;width:52px;text-align:center;padding:6px 2px;border-radius:8px}
+.wd-cell .wd-c-time{font-size:10px;color:var(--brown);margin-bottom:4px}
+.wd-cell .wd-c-icon{font-size:18px;margin-bottom:2px}
+.wd-cell .wd-c-temp{font-size:13px;font-weight:700}
+.wd-cell .wd-c-pop{font-size:9px;color:var(--accent);margin-top:2px}
+.wd-credit{font-size:9px;color:var(--text-sub);text-align:right;margin-top:6px}
 .nb-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:11px;padding:4px 7px;border-radius:16px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap;flex-shrink:0}
 .nb-btn svg{width:14px;height:14px;flex-shrink:0;vertical-align:middle}
 .nb-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
@@ -3163,8 +3168,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.6.0';
-const APP_VERSION_NUM = 160;
+const APP_VERSION = '1.6.1';
+const APP_VERSION_NUM = 161;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3268,7 +3273,7 @@ async function fetchWeather() {
   try {
     // 초단기실황 (현재 온도)
     const ncstUrl = `${KMA_BASE}/getUltraSrtNcst?serviceKey=${KMA_KEY}&pageNo=1&numOfRows=10&dataType=JSON&base_date=${bt.date}&base_time=${bt.time}&nx=${g.nx}&ny=${g.ny}`;
-    const fcstUrl = `${KMA_BASE}/getVilageFcst?serviceKey=${KMA_KEY}&pageNo=1&numOfRows=60&dataType=JSON&base_date=${ft.date}&base_time=${ft.time}&nx=${g.nx}&ny=${g.ny}`;
+    const fcstUrl = `${KMA_BASE}/getVilageFcst?serviceKey=${KMA_KEY}&pageNo=1&numOfRows=290&dataType=JSON&base_date=${ft.date}&base_time=${ft.time}&nx=${g.nx}&ny=${g.ny}`;
     const [ncstRes, fcstRes] = await Promise.all([fetch(ncstUrl), fetch(fcstUrl)]);
     const ncstData = await ncstRes.json();
     const fcstData = await fcstRes.json();
@@ -3290,9 +3295,9 @@ async function fetchWeather() {
     const nowH = new Date().getHours();
     const todayStr = _fmtDate(new Date());
     const futureHours = hours.filter(h => {
-      if (h.date > todayStr) return true;
+      if (h.date > todayStr) return false; // 오늘만
       return parseInt(h.time) >= nowH * 100;
-    }).slice(0, 12);
+    });
     // 위치명 + 시도명 가져오기
     let locName = '', sidoName = '';
     try {
@@ -3380,7 +3385,7 @@ function _pmLabel(air) {
   if (!air || air.pm10 === '-' || air.pm10 === null) return '';
   const g = _pmGrade(air.pm10);
   if (!g) return '';
-  return `<span style="color:${g.color};display:inline-flex;align-items:center;gap:2px">${g.face} ${g.text}</span>`;
+  return `<span style="color:${g.color};display:inline-flex;align-items:center;gap:2px">${g.text} ${g.face}</span>`;
 }
 
 function toggleWeatherDetail() {
@@ -3389,28 +3394,38 @@ function toggleWeatherDetail() {
   if (!_weatherCache || !_weatherCache.hours.length) { toast('날씨 정보를 불러오는 중...'); fetchWeather(); return; }
   const isNight = h => parseInt(h) >= 1800 || parseInt(h) < 600;
   const loc = _weatherCache.locName || '';
-  let html = `<div style="font-weight:600;margin-bottom:2px;font-size:13px">시간대별 날씨</div>`;
-  if (loc) html += `<div style="font-size:11px;color:var(--brown);margin-bottom:6px">📍 ${loc}</div>`;
-  _weatherCache.hours.forEach(h => {
-    const t = h.time.substring(0,2) + ':00';
-    const icon = _skyIcon(h.SKY||1, h.PTY||0, isNight(h.time));
-    const temp = h.TMP !== undefined ? Math.round(h.TMP) + '°' : '-';
-    const info = [];
-    if (h.POP !== undefined) info.push('☂️' + h.POP + '%');
-    if (h.REH !== undefined) info.push('💧' + Math.round(h.REH) + '%');
-    html += `<div class="wd-row"><span class="wd-time">${t}</span><span class="wd-icon">${icon}</span><span class="wd-temp">${temp}</span><span class="wd-info">${info.join(' · ')}</span></div>`;
-  });
+  const c = _weatherCache.cur;
+  const curSky = _weatherCache.hours[0]?.SKY || 1;
+  const curPty = c.PTY || 0;
+  const nowNight = new Date().getHours() >= 18 || new Date().getHours() < 6;
+  let html = '';
+  // 현재 날씨 크게
+  html += `<div class="wd-current">`;
+  html += `<div class="wd-cur-icon">${_skyIcon(curSky, curPty, nowNight)}</div>`;
+  html += `<div><div class="wd-cur-temp">${Math.round(c.T1H)}°</div>`;
+  html += `<div class="wd-cur-info">${loc ? '📍 '+loc : ''}${c.REH !== undefined ? ' · 습도 '+Math.round(c.REH)+'%' : ''}${c.RN1 > 0 ? ' · ☂️'+c.RN1+'mm' : ''}</div>`;
+  html += `</div></div>`;
   // 미세먼지
   if (_weatherCache.air && _weatherCache.air.pm10 !== '-') {
     const a = _weatherCache.air;
     const g10 = _pmGrade(a.pm10);
     const g25 = _pm25Grade(a.pm25);
-    html += '<div style="margin-top:8px;padding:8px;background:var(--warm);border-radius:8px;font-size:12px">';
-    if (g10) html += `<div style="display:flex;align-items:center;gap:4px">${g10.face} 미세먼지 <b style="color:${g10.color}">${g10.text}</b></div>`;
-    if (g25) html += `<div style="display:flex;align-items:center;gap:4px;margin-top:2px">${g25.face} 초미세먼지 <b style="color:${g25.color}">${g25.text}</b></div>`;
-    if (a.station) html += `<div style="font-size:10px;color:var(--text-sub);margin-top:2px">측정소: ${a.station}</div>`;
+    html += '<div style="display:flex;gap:10px;margin-bottom:10px;padding:6px 8px;background:var(--warm);border-radius:8px;font-size:11px;align-items:center;flex-wrap:wrap">';
+    if (g10) html += `<span style="display:inline-flex;align-items:center;gap:3px">미세 ${g10.face} <b style="color:${g10.color}">${g10.text}</b></span>`;
+    if (g25) html += `<span style="display:inline-flex;align-items:center;gap:3px">초미세 ${g25.face} <b style="color:${g25.color}">${g25.text}</b></span>`;
     html += '</div>';
   }
+  // 시간대별 가로 스크롤
+  html += '<div style="font-size:11px;font-weight:600;margin-bottom:4px;color:var(--brown)">오늘</div>';
+  html += '<div class="wd-scroll">';
+  _weatherCache.hours.forEach(h => {
+    const t = h.time.substring(0,2) + '시';
+    const icon = _skyIcon(h.SKY||1, h.PTY||0, isNight(h.time));
+    const temp = h.TMP !== undefined ? Math.round(h.TMP) + '°' : '-';
+    const pop = h.POP !== undefined && h.POP > 0 ? '☂️' + h.POP + '%' : '';
+    html += `<div class="wd-cell"><div class="wd-c-time">${t}</div><div class="wd-c-icon">${icon}</div><div class="wd-c-temp">${temp}</div>${pop?`<div class="wd-c-pop">${pop}</div>`:''}</div>`;
+  });
+  html += '</div>';
   html += '<div class="wd-credit">기상청 단기예보 · 에어코리아 제공</div>';
   panel.innerHTML = html;
   panel.classList.add('open');
