@@ -232,7 +232,7 @@ header .lc svg{width:18px;height:18px}
 .weather-badge:empty{display:none}
 [data-dark="true"] .weather-badge{background:rgba(30,30,30,.92);border-color:#444;color:var(--text-main)}
 /* 날씨 상세 패널 */
-.weather-detail{position:absolute;top:62px;left:8px;right:8px;z-index:11;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--warm);box-shadow:0 4px 16px rgba(0,0,0,.15);padding:12px;max-height:28vh;display:none;font-size:12px;overflow:hidden}
+.weather-detail{position:absolute;top:62px;left:8px;z-index:11;width:52%;max-width:220px;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--warm);box-shadow:0 4px 16px rgba(0,0,0,.15);padding:10px;display:none;font-size:12px;overflow:hidden}
 .weather-detail.open{display:flex;flex-direction:column}
 [data-dark="true"] .weather-detail{background:rgba(26,26,26,.96);border-color:#333;color:var(--text-main)}
 .wd-current{display:flex;align-items:center;gap:12px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--warm);flex-shrink:0}
@@ -3169,8 +3169,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.6.3';
-const APP_VERSION_NUM = 163;
+const APP_VERSION = '1.6.4';
+const APP_VERSION_NUM = 164;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
