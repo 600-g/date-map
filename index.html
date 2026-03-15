@@ -17,15 +17,29 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-user-select:none;user-select:none}
 input,textarea,select,.pi-memo,.pi-addr,.code-box{-webkit-user-select:text;user-select:text}
 :root{--cream:#FAFAF7;--warm:#EEEBE5;--brown:#8B7E74;--dark:#3B4C6B;--dark-light:#4E6490;--green:#2D8659;--red:#E05252;--accent:#5B7DB8;--card-shadow:0 1px 4px rgba(0,0,0,.06);--bg-card:#fff;--bg-input:#fff;--border-card:#e0ddd8;--border-input:#e0e0e0;--text-main:#333;--text-sub:#999}
-[data-dark="true"]{--cream:#1a1a2e;--warm:#2a2a3e;--brown:#9a9ab0;--bg-card:#242438;--bg-input:#2a2a40;--border-card:#3a3a50;--border-input:#3a3a50;--text-main:#e0e0e8;--text-sub:#8888a0;--card-shadow:0 1px 4px rgba(0,0,0,.3)}
-[data-dark="true"] .cr-item,[data-dark="true"] .cat-name-input,[data-dark="true"] .cat-palette,[data-dark="true"] .cat-summary-item,[data-dark="true"] .iw-btn,[data-dark="true"] .modal-close,[data-dark="true"] .wc-card,[data-dark="true"] .sr-item{background:var(--bg-card)!important;color:var(--text-main)!important;border-color:var(--border-card)!important}
+[data-dark="true"]{--cream:#121212;--warm:#1e1e1e;--brown:#999;--dark:#0a0a0a;--dark-light:#1a1a1a;--bg-card:#1a1a1a;--bg-input:#222;--border-card:#333;--border-input:#333;--text-main:#e0e0e0;--text-sub:#888;--card-shadow:0 1px 4px rgba(0,0,0,.5)}
+[data-dark="true"] .cr-item,[data-dark="true"] .cat-name-input,[data-dark="true"] .cat-palette,[data-dark="true"] .cat-summary-item,[data-dark="true"] .iw-btn,[data-dark="true"] .modal-close,[data-dark="true"] .wc-card,[data-dark="true"] .sr-item,[data-dark="true"] .pi-photo-add{background:var(--bg-card)!important;color:var(--text-main)!important;border-color:var(--border-card)!important}
 [data-dark="true"] .pi-del-bg{background:#8B2020}
-[data-dark="true"] h3,[data-dark="true"] .s-title{color:var(--text-main)}
+[data-dark="true"] h3,[data-dark="true"] .s-title,[data-dark="true"] b,[data-dark="true"] .pi-name{color:var(--text-main)!important}
 [data-dark="true"] .bx:hover{background:var(--warm)!important}
 [data-dark="true"] #bsHandle::after{background:#555}
 [data-dark="true"] .pi-wrap{border-bottom-color:var(--warm)}
 [data-dark="true"] .place-list{background:var(--cream)}
-[data-dark="true"] .nb-btn{background:var(--bg-card);border-color:var(--border-card);color:var(--text-main)}
+[data-dark="true"] .nb-btn{background:rgba(30,30,30,.92)!important;border-color:#444!important;color:var(--text-main)!important;backdrop-filter:blur(6px)}
+[data-dark="true"] .tab{color:rgba(255,255,255,.6)}
+[data-dark="true"] .tab.active{color:white}
+[data-dark="true"] .tabs{background:#0a0a0a}
+[data-dark="true"] .s-desc{color:var(--text-sub)}
+[data-dark="true"] .pi-cat{color:var(--text-main)!important}
+[data-dark="true"] .pi-addr{color:var(--text-sub)!important}
+[data-dark="true"] .pi-memo{color:var(--text-sub)!important}
+[data-dark="true"] .addr-search{background:var(--warm);border-color:var(--border-card);color:var(--text-sub)}
+[data-dark="true"] .fb{background:var(--bg-card);color:var(--text-sub);border-color:var(--border-card)}
+[data-dark="true"] .fb.active{background:var(--accent);color:white;border-color:var(--accent)}
+[data-dark="true"] .pi-photo-btn{color:var(--text-sub)}
+[data-dark="true"] .list-search-box{background:var(--bg-input);border-color:var(--border-input)}
+[data-dark="true"] .list-search-box input{color:var(--text-main)}
+[data-dark="true"] .div{border-color:var(--border-card)!important}
 body{font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;font-weight:450;background:var(--dark);color:var(--text-main);height:100dvh;height:100vh;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top, 0px);padding-left:env(safe-area-inset-left, 0px);padding-right:env(safe-area-inset-right, 0px)}
 @supports(height:100dvh){body{height:100dvh}}
 header{display:none}
@@ -2228,14 +2242,14 @@ function renderMarkers() {
     const avg = getAvgRating(p);
     // 팝업도 CustomOverlay로 (InfoWindow 대신 — auto-pan 문제 해결)
     const iwEl = document.createElement('div');
-    iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:13px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
+    iwEl.style.cssText = 'position:relative;background:var(--bg-card);padding:10px 12px;font-size:13px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid var(--border-card);color:var(--text-main)';
     iwEl.innerHTML = `
-      <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:#aaa;line-height:1" data-action="close">&times;</div>
-      <b style="font-size:14px">${p.name}</b>
+      <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:var(--text-sub);line-height:1" data-action="close">&times;</div>
+      <b style="font-size:14px;color:var(--text-main)">${p.name}</b>
       <div style="font-size:12px;margin-top:2px"><span data-action="cat" style="background:${c.color};padding:1px 6px;border-radius:8px;font-size:11px;display:inline-flex;align-items:center;gap:2px;max-width:80px;overflow:hidden;white-space:nowrap;cursor:pointer">${svgSized(getIcon(c.emoji),12)||c.emoji} ${c.name}</span></div>
-      ${avg?`<div style="font-size:12px;margin-top:3px;color:var(--dark);font-weight:500;display:flex;align-items:center;gap:2px"><span style="color:#F1C40F">★</span>${avg}</div>`:''}
-      ${p.addr?`<div style="font-size:11px;color:#8B6F5E;margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;display:inline-flex;align-items:center;padding:1px 4px;border:1px solid #ddd;border-radius:3px;background:#fafafa;margin-left:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#8B6F5E" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></span></div>`:''}
-      ${p.memo?`<div style="font-size:11px;color:#999;margin-top:3px;font-style:italic">${linkify(p.memo)}</div>`:''}
+      ${avg?`<div style="font-size:12px;margin-top:3px;color:var(--accent);font-weight:500;display:flex;align-items:center;gap:2px"><span style="color:#F1C40F">★</span>${avg}</div>`:''}
+      ${p.addr?`<div style="font-size:11px;color:var(--brown);margin-top:3px">${p.addr} <span data-action="addr-search" style="cursor:pointer;display:inline-flex;align-items:center;padding:1px 4px;border:1px solid var(--border-card);border-radius:3px;background:var(--cream);margin-left:2px"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--brown)" stroke-width="2.5" stroke-linecap="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"/></svg></span></div>`:''}
+      ${p.memo?`<div style="font-size:11px;color:var(--text-sub);margin-top:3px;font-style:italic">${linkify(p.memo)}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px;flex-wrap:wrap">
         <button class="iw-btn" data-action="visit" style="${p.visited?'background:#4A7C59;border-color:#4A7C59':''}">
           ${p.visited
@@ -2590,11 +2604,11 @@ function renderNearbyResults(docs, iconKey, groupKey) {
     el.innerHTML = `<div style="background:white;border:2px solid #ddd;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(0,0,0,.15);cursor:pointer">${svgIcon||'<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#E74C3C" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>'}</div>`;
     const marker = new NaverCustomOverlay({ position:pos, content:el, yAnchor:1, zIndex:2 });
     const iwEl = document.createElement('div');
-    iwEl.style.cssText = 'position:relative;background:white;padding:10px 12px;font-size:13px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;max-width:220px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid #ddd';
+    iwEl.style.cssText = 'position:relative;background:var(--bg-card);padding:10px 12px;font-size:13px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;max-width:220px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid var(--border-card);color:var(--text-main)';
     iwEl.innerHTML = `
-      <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:#aaa;line-height:1" data-action="close">&times;</div>
-      <b style="font-size:13px">${d.place_name}</b>
-      <div style="font-size:11px;color:#8B6F5E;margin-top:2px">${d.road_address_name || d.address_name}${dist?' · '+dist:''}</div>
+      <div style="position:absolute;top:4px;right:6px;cursor:pointer;font-size:16px;color:var(--text-sub);line-height:1" data-action="close">&times;</div>
+      <b style="font-size:13px;color:var(--text-main)">${d.place_name}</b>
+      <div style="font-size:11px;color:var(--brown);margin-top:2px">${d.road_address_name || d.address_name}${dist?' · '+dist:''}</div>
       ${d.phone?`<div style="font-size:11px;color:var(--accent);margin-top:2px">${d.phone}</div>`:''}
       <div style="display:flex;gap:4px;margin-top:6px">
         <button class="iw-btn" data-action="nb-naver"><svg width="16" height="16" viewBox="0 0 24 24"><rect x="1" y="1" width="22" height="22" rx="5" fill="#03C75A"/><path d="M13.5 12.5l-3.2-4.6H7.8v8.2h2.7v-4.6l3.2 4.6h2.5V7.9h-2.7v4.6z" fill="white"/></svg></button>
@@ -3061,8 +3075,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.4.9';
-const APP_VERSION_NUM = 149;
+const APP_VERSION = '1.5.0';
+const APP_VERSION_NUM = 150;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
