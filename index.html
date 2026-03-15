@@ -3163,8 +3163,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.5.8';
-const APP_VERSION_NUM = 158;
+const APP_VERSION = '1.5.9';
+const APP_VERSION_NUM = 159;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4403,7 +4403,6 @@ async function _distDoSearch(query,loadMore) {
             docs.forEach(d=>{d._dist=getDistanceKm(myLat,myLng,parseFloat(d.y),parseFloat(d.x));});
             docs.sort((a,b)=>a._dist-b._dist);
           }
-          docs=docs.slice(0,5);
           st.allItems[cat]=(st.allItems[cat]||[]).concat(docs);
           st.pages[cat]=pg+1;
           st.hasMore[cat]=startIdx+d.items.length<=(d.total||0);
@@ -4423,7 +4422,7 @@ async function _distDoSearch(query,loadMore) {
             id:'nv_'+Math.random().toString(36).slice(2,8),
             category_name:it.category||''
           }));
-          if(areaCtx){filtered=filtered.filter(doc=>{const addr=(doc.road_address_name||'')+(doc.address_name||'');return addr.includes(areaCtx);}).slice(0,5);}
+          if(areaCtx){filtered=filtered.filter(doc=>{const addr=(doc.road_address_name||'')+(doc.address_name||'');return addr.includes(areaCtx);});}
           st.allItems[cat]=(st.allItems[cat]||[]).concat(filtered);
           st.pages[cat]=pg+1;
           st.hasMore[cat]=(pg-1)*15+d.items.length<(d.total||0);
