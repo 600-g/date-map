@@ -247,7 +247,7 @@ header .lc svg{width:18px;height:18px}
 .wd-cell .wd-c-icon{font-size:18px;margin-bottom:2px}
 .wd-cell .wd-c-temp{font-size:13px;font-weight:700}
 .wd-cell .wd-c-pop{font-size:9px;color:var(--accent);margin-top:2px}
-.wd-credit{font-size:9px;color:var(--text-sub);text-align:right;margin-top:6px;flex-shrink:0}
+.wd-credit{font-size:9px;color:var(--text-sub);text-align:left;margin-top:6px;flex-shrink:0}
 .nb-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:11px;padding:4px 7px;border-radius:16px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap;flex-shrink:0}
 .nb-btn svg{width:14px;height:14px;flex-shrink:0;vertical-align:middle}
 .nb-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
@@ -3169,8 +3169,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.6.6';
-const APP_VERSION_NUM = 166;
+const APP_VERSION = '1.6.7';
+const APP_VERSION_NUM = 167;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
