@@ -1031,21 +1031,16 @@ function expandListSearch() {
   setTimeout(() => document.getElementById('listSearchInput').focus(), 50);
 }
 function collapseListSearch() {
-  const box = document.getElementById('listSearchBox');
-  box.classList.remove('expanded');
-  box.classList.add('collapsed');
-  box.onclick = expandListSearch;
+  // 검색창은 항상 펼침 유지, 텍스트만 초기화
   document.getElementById('listSearchInput').value = '';
   listSearchQuery = '';
   renderList();
 }
 function toggleListSearch() {
-  const box = document.getElementById('listSearchBox');
-  if (box.classList.contains('expanded')) {
-    collapseListSearch();
-  } else {
-    expandListSearch();
-  }
+  // 검색창은 항상 펼침 — 검색어만 초기화
+  const input = document.getElementById('listSearchInput');
+  if (input.value) { collapseListSearch(); }
+  else { input.focus(); }
 }
 
 // ── 카테고리 셀렉트 채우기 ──
@@ -3066,8 +3061,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.4.8';
-const APP_VERSION_NUM = 148;
+const APP_VERSION = '1.4.9';
+const APP_VERSION_NUM = 149;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
