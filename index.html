@@ -1061,7 +1061,7 @@ async function doSearch(append) {
     box.innerHTML = '<div class="search-loading">🔍 검색 중...</div>';
   }
   try {
-    let url = `${NAVER_PROXY}?query=${encodeURIComponent(q)}&display=5&start=${(_searchPage-1)*5+1}`;
+    let url = `${NAVER_PROXY}?query=${encodeURIComponent(q)}&display=5&start=${(_searchPage-1)*5+1}&sort=comment`;
     const res = await fetch(url);
     const raw = await res.json();
     const docs = (raw.items||[]).map(it => ({
@@ -2986,8 +2986,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.4.3';
-const APP_VERSION_NUM = 143;
+const APP_VERSION = '1.4.4';
+const APP_VERSION_NUM = 144;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
