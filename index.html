@@ -3162,8 +3162,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.5.3';
-const APP_VERSION_NUM = 153;
+const APP_VERSION = '1.5.4';
+const APP_VERSION_NUM = 154;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3288,7 +3288,23 @@ async function fetchWeather() {
       if (h.date > todayStr) return true;
       return parseInt(h.time) >= nowH * 100;
     }).slice(0, 12);
-    _weatherCache = { cur, hours: futureHours, ts: now };
+    // 위치명 가져오기
+    let locName = '';
+    try {
+      if (naver.maps.Service && naver.maps.Service.reverseGeocode) {
+        locName = await new Promise(resolve => {
+          naver.maps.Service.reverseGeocode({ coords: center, orders: 'addr' }, (status, response) => {
+            if (status !== naver.maps.Service.Status.OK) { resolve(''); return; }
+            const items = response.v2 && response.v2.results;
+            if (items && items.length > 0) {
+              const r = items[0].region;
+              resolve(((r.area2?.name||'')+' '+(r.area3?.name||'')).trim());
+            } else resolve('');
+          });
+        });
+      }
+    } catch(e) {}
+    _weatherCache = { cur, hours: futureHours, ts: now, locName };
     _weatherCacheTime = now;
     _renderWeatherBadge(_weatherCache);
   } catch(e) {
@@ -3315,17 +3331,17 @@ function toggleWeatherDetail() {
   if (panel.classList.contains('open')) { panel.classList.remove('open'); return; }
   if (!_weatherCache || !_weatherCache.hours.length) { toast('날씨 정보를 불러오는 중...'); fetchWeather(); return; }
   const isNight = h => parseInt(h) >= 1800 || parseInt(h) < 600;
-  let html = '<div style="font-weight:600;margin-bottom:6px;font-size:13px">시간대별 날씨</div>';
+  const loc = _weatherCache.locName || '';
+  let html = `<div style="font-weight:600;margin-bottom:2px;font-size:13px">시간대별 날씨</div>`;
+  if (loc) html += `<div style="font-size:11px;color:var(--brown);margin-bottom:6px">📍 ${loc}</div>`;
   _weatherCache.hours.forEach(h => {
     const t = h.time.substring(0,2) + ':00';
     const icon = _skyIcon(h.SKY||1, h.PTY||0, isNight(h.time));
     const temp = h.TMP !== undefined ? Math.round(h.TMP) + '°' : '-';
-    const pop = h.POP !== undefined ? h.POP + '%' : '';
     const info = [];
-    if (pop) info.push('💧' + pop);
-    if (h.REH !== undefined) info.push('💦' + Math.round(h.REH) + '%');
-    if (h.WSD !== undefined) info.push('💨' + h.WSD + 'm/s');
-    html += `<div class="wd-row"><span class="wd-time">${t}</span><span class="wd-icon">${icon}</span><span class="wd-temp">${temp}</span><span class="wd-info">${info.join(' ')}</span></div>`;
+    if (h.POP !== undefined) info.push('강수 ' + h.POP + '%');
+    if (h.REH !== undefined) info.push('습도 ' + Math.round(h.REH) + '%');
+    html += `<div class="wd-row"><span class="wd-time">${t}</span><span class="wd-icon">${icon}</span><span class="wd-temp">${temp}</span><span class="wd-info">${info.join(' · ')}</span></div>`;
   });
   html += '<div class="wd-credit">기상청 단기예보 제공</div>';
   panel.innerHTML = html;
