@@ -3162,8 +3162,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.5.4';
-const APP_VERSION_NUM = 154;
+const APP_VERSION = '1.5.5';
+const APP_VERSION_NUM = 155;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3192,6 +3192,10 @@ function easterTap() {
 // ── 날씨 ──
 const KMA_KEY = '06e87da265f1c439059277fd5c6ff211df53146aa982de2ffb80d1a503579c8f';
 const KMA_BASE = 'https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0';
+const AIR_KEY = KMA_KEY;
+const AIR_BASE = 'https://apis.data.go.kr/B552584/ArpltnInforInqireSvc';
+// 시도명 매핑 (역지오코딩 area1 → API sidoName)
+const SIDO_MAP = {'서울특별시':'서울','부산광역시':'부산','대구광역시':'대구','인천광역시':'인천','광주광역시':'광주','대전광역시':'대전','울산광역시':'울산','세종특별자치시':'세종','경기도':'경기','강원특별자치도':'강원','강원도':'강원','충청북도':'충북','충청남도':'충남','전북특별자치도':'전북','전라북도':'전북','전라남도':'전남','경상북도':'경북','경상남도':'경남','제주특별자치도':'제주'};
 let _weatherCache = null;
 let _weatherCacheTime = 0;
 
@@ -3288,23 +3292,42 @@ async function fetchWeather() {
       if (h.date > todayStr) return true;
       return parseInt(h.time) >= nowH * 100;
     }).slice(0, 12);
-    // 위치명 가져오기
-    let locName = '';
+    // 위치명 + 시도명 가져오기
+    let locName = '', sidoName = '';
     try {
       if (naver.maps.Service && naver.maps.Service.reverseGeocode) {
-        locName = await new Promise(resolve => {
+        const geoResult = await new Promise(resolve => {
           naver.maps.Service.reverseGeocode({ coords: center, orders: 'addr' }, (status, response) => {
-            if (status !== naver.maps.Service.Status.OK) { resolve(''); return; }
+            if (status !== naver.maps.Service.Status.OK) { resolve({}); return; }
             const items = response.v2 && response.v2.results;
             if (items && items.length > 0) {
               const r = items[0].region;
-              resolve(((r.area2?.name||'')+' '+(r.area3?.name||'')).trim());
-            } else resolve('');
+              resolve({ loc: ((r.area2?.name||'')+' '+(r.area3?.name||'')).trim(), sido: r.area1?.name||'', gu: r.area2?.name||'' });
+            } else resolve({});
           });
         });
+        locName = geoResult.loc || '';
+        sidoName = geoResult.sido || '';
       }
     } catch(e) {}
-    _weatherCache = { cur, hours: futureHours, ts: now, locName };
+    // 미세먼지 조회
+    let air = null;
+    if (sidoName) {
+      try {
+        const sn = SIDO_MAP[sidoName] || sidoName.replace(/특별시|광역시|특별자치시|특별자치도|도$/,'');
+        const airUrl = `${AIR_BASE}/getCtprvnRltmMesureDnsty?serviceKey=${AIR_KEY}&returnType=json&numOfRows=100&pageNo=1&sidoName=${encodeURIComponent(sn)}&ver=1.3`;
+        const airRes = await fetch(airUrl);
+        const airData = await airRes.json();
+        const airItems = airData?.response?.body?.items || [];
+        if (airItems.length > 0) {
+          // 가장 가까운 측정소 (같은 구 우선)
+          const guName = locName.split(' ')[0];
+          const match = airItems.find(it => it.stationName && it.stationName.includes(guName)) || airItems[0];
+          air = { pm10: match.pm10Value, pm25: match.pm25Value, pm10Grade: match.pm10Grade, pm25Grade: match.pm25Grade, station: match.stationName };
+        }
+      } catch(e) { console.warn('미세먼지 로딩 실패', e); }
+    }
+    _weatherCache = { cur, hours: futureHours, ts: now, locName, air };
     _weatherCacheTime = now;
     _renderWeatherBadge(_weatherCache);
   } catch(e) {
@@ -3323,7 +3346,25 @@ function _renderWeatherBadge(data) {
   const icon = _skyIcon(sky, pty, isNight);
   const temp = Math.round(c.T1H);
   const rain = c.RN1 > 0 ? ` 💧${c.RN1}mm` : '';
-  badge.innerHTML = `${icon} ${temp}°${rain}`;
+  const pm = data.air ? ` · ${_pmLabel(data.air)}` : '';
+  badge.innerHTML = `${icon} ${temp}°${rain}${pm}`;
+}
+
+function _pmGrade(val) {
+  const v = parseInt(val);
+  if (isNaN(v) || v < 0) return null;
+  // PM10 기준: 0~30좋음 31~80보통 81~150나쁨 151~매우나쁨
+  if (v <= 30) return { text: '좋음', color: '#2196F3' };
+  if (v <= 80) return { text: '보통', color: '#4CAF50' };
+  if (v <= 150) return { text: '나쁨', color: '#FF9800' };
+  return { text: '매우나쁨', color: '#F44336' };
+}
+
+function _pmLabel(air) {
+  if (!air || air.pm10 === '-' || air.pm10 === null) return '';
+  const g = _pmGrade(air.pm10);
+  if (!g) return '';
+  return `<span style="color:${g.color}">미세 ${g.text}</span>`;
 }
 
 function toggleWeatherDetail() {
@@ -3343,7 +3384,19 @@ function toggleWeatherDetail() {
     if (h.REH !== undefined) info.push('습도 ' + Math.round(h.REH) + '%');
     html += `<div class="wd-row"><span class="wd-time">${t}</span><span class="wd-icon">${icon}</span><span class="wd-temp">${temp}</span><span class="wd-info">${info.join(' · ')}</span></div>`;
   });
-  html += '<div class="wd-credit">기상청 단기예보 제공</div>';
+  // 미세먼지
+  if (_weatherCache.air && _weatherCache.air.pm10 !== '-') {
+    const a = _weatherCache.air;
+    const g10 = _pmGrade(a.pm10);
+    const g25 = _pmGrade(a.pm25);
+    html += '<div style="margin-top:8px;padding:8px;background:var(--warm);border-radius:8px;font-size:12px">';
+    html += '<div style="font-weight:600;margin-bottom:4px">미세먼지</div>';
+    if (g10) html += `<div>PM10 <b style="color:${g10.color}">${a.pm10}㎍/㎥ (${g10.text})</b></div>`;
+    if (g25) html += `<div>PM2.5 <b style="color:${g25.color}">${a.pm25}㎍/㎥ (${g25.text})</b></div>`;
+    if (a.station) html += `<div style="font-size:10px;color:var(--text-sub);margin-top:2px">측정소: ${a.station}</div>`;
+    html += '</div>';
+  }
+  html += '<div class="wd-credit">기상청 단기예보 · 에어코리아 제공</div>';
   panel.innerHTML = html;
   panel.classList.add('open');
 }
