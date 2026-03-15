@@ -232,21 +232,21 @@ header .lc svg{width:18px;height:18px}
 .weather-badge:empty{display:none}
 [data-dark="true"] .weather-badge{background:rgba(30,30,30,.92);border-color:#444;color:var(--text-main)}
 /* 날씨 상세 패널 */
-.weather-detail{position:absolute;top:62px;left:8px;right:8px;z-index:11;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--warm);box-shadow:0 4px 16px rgba(0,0,0,.15);padding:12px;max-height:50vh;overflow-y:auto;display:none;font-size:12px}
+.weather-detail{position:absolute;top:62px;left:8px;right:8px;z-index:11;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-radius:10px;border:1px solid var(--warm);box-shadow:0 4px 16px rgba(0,0,0,.15);padding:8px 10px;display:none;font-size:11px}
 .weather-detail.open{display:block}
 [data-dark="true"] .weather-detail{background:rgba(26,26,26,.96);border-color:#333;color:var(--text-main)}
-.wd-current{display:flex;align-items:center;gap:12px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--warm)}
-.wd-current .wd-cur-icon{font-size:36px}
-.wd-current .wd-cur-temp{font-size:32px;font-weight:700;line-height:1}
-.wd-current .wd-cur-info{font-size:11px;color:var(--brown);margin-top:2px}
-.wd-scroll{display:flex;gap:2px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:4px}
+.wd-current{display:flex;align-items:center;gap:8px;margin-bottom:6px;padding-bottom:6px;border-bottom:1px solid var(--warm)}
+.wd-current .wd-cur-icon{font-size:24px}
+.wd-current .wd-cur-temp{font-size:22px;font-weight:700;line-height:1}
+.wd-current .wd-cur-info{font-size:10px;color:var(--brown);margin-top:1px}
+.wd-scroll{display:flex;gap:1px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
 .wd-scroll::-webkit-scrollbar{display:none}
-.wd-cell{flex-shrink:0;width:52px;text-align:center;padding:6px 2px;border-radius:8px}
-.wd-cell .wd-c-time{font-size:10px;color:var(--brown);margin-bottom:4px}
-.wd-cell .wd-c-icon{font-size:18px;margin-bottom:2px}
-.wd-cell .wd-c-temp{font-size:13px;font-weight:700}
-.wd-cell .wd-c-pop{font-size:9px;color:var(--accent);margin-top:2px}
-.wd-credit{font-size:9px;color:var(--text-sub);text-align:right;margin-top:6px}
+.wd-cell{flex-shrink:0;width:44px;text-align:center;padding:4px 1px;border-radius:6px}
+.wd-cell .wd-c-time{font-size:9px;color:var(--brown);margin-bottom:2px}
+.wd-cell .wd-c-icon{font-size:14px;margin-bottom:1px}
+.wd-cell .wd-c-temp{font-size:11px;font-weight:700}
+.wd-cell .wd-c-pop{font-size:8px;color:var(--accent);margin-top:1px}
+.wd-credit{font-size:8px;color:var(--text-sub);text-align:right;margin-top:4px}
 .nb-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:11px;padding:4px 7px;border-radius:16px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap;flex-shrink:0}
 .nb-btn svg{width:14px;height:14px;flex-shrink:0;vertical-align:middle}
 .nb-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
@@ -3168,8 +3168,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.6.1';
-const APP_VERSION_NUM = 161;
+const APP_VERSION = '1.6.2';
+const APP_VERSION_NUM = 162;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3403,7 +3403,7 @@ function toggleWeatherDetail() {
   html += `<div class="wd-current">`;
   html += `<div class="wd-cur-icon">${_skyIcon(curSky, curPty, nowNight)}</div>`;
   html += `<div><div class="wd-cur-temp">${Math.round(c.T1H)}°</div>`;
-  html += `<div class="wd-cur-info">${loc ? '📍 '+loc : ''}${c.REH !== undefined ? ' · 습도 '+Math.round(c.REH)+'%' : ''}${c.RN1 > 0 ? ' · ☂️'+c.RN1+'mm' : ''}</div>`;
+  html += `<div class="wd-cur-info">${loc ? '📍 '+loc : ''}${c.REH !== undefined ? ' · 💧'+Math.round(c.REH)+'%' : ''}${c.RN1 > 0 ? ' · ☂️'+c.RN1+'mm' : ''}</div>`;
   html += `</div></div>`;
   // 미세먼지
   if (_weatherCache.air && _weatherCache.air.pm10 !== '-') {
