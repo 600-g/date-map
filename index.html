@@ -1152,9 +1152,10 @@ async function doSearch(append) {
     _searchEnd = (_searchPage*5 >= (raw.total||0));
     const newHtml = docs.map((p,i) => {
       const idx = startIdx + i;
+      const already = places.some(x => x.name === p.place_name || (p.road_address_name && x.addr === p.road_address_name));
       return `<div class="sr-item" style="display:flex;align-items:center;gap:8px">
         <div style="flex:1;cursor:pointer" onclick="pickSearch(${idx})">
-          <div class="sr-name">${p.place_name}</div>
+          <div class="sr-name">${p.place_name}${already ? ' <span style="font-size:10px;font-style:italic;color:var(--accent);font-family:Georgia,serif;margin-left:4px">추가됨</span>' : ''}</div>
           <div class="sr-addr">${p.road_address_name || p.address_name}</div>
         </div>
         <input type="checkbox" class="sr-chk" data-idx="${idx}" style="width:18px;height:18px;flex-shrink:0;accent-color:var(--accent);cursor:pointer" onclick="event.stopPropagation();toggleSrChk(${idx},this)">
@@ -3065,8 +3066,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.4.7';
-const APP_VERSION_NUM = 147;
+const APP_VERSION = '1.4.8';
+const APP_VERSION_NUM = 148;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
