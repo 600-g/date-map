@@ -3163,8 +3163,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.5.9';
-const APP_VERSION_NUM = 159;
+const APP_VERSION = '1.6.0';
+const APP_VERSION_NUM = 160;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3351,15 +3351,29 @@ function _renderWeatherBadge(data) {
   badge.innerHTML = `${icon} ${temp}°${rain}${pm}`;
 }
 
+const _pmFaces = {
+  good: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#4CAF50"/><circle cx="8.5" cy="10" r="1.2" fill="white"/><circle cx="15.5" cy="10" r="1.2" fill="white"/><path d="M8 15c1.5 2 6.5 2 8 0" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>',
+  normal: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FFC107"/><circle cx="8.5" cy="10" r="1.2" fill="white"/><circle cx="15.5" cy="10" r="1.2" fill="white"/><line x1="8" y1="15" x2="16" y2="15" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  bad: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FF9800"/><circle cx="8.5" cy="10" r="1.2" fill="white"/><circle cx="15.5" cy="10" r="1.2" fill="white"/><path d="M8 16c1.5-2 6.5-2 8 0" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>',
+  worst: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#F44336"/><line x1="6.5" y1="8" x2="9.5" y2="10" stroke="white" stroke-width="1.2" stroke-linecap="round"/><line x1="17.5" y1="8" x2="14.5" y2="10" stroke="white" stroke-width="1.2" stroke-linecap="round"/><circle cx="8.5" cy="11" r="1.2" fill="white"/><circle cx="15.5" cy="11" r="1.2" fill="white"/><path d="M8 17c1.5-2.5 6.5-2.5 8 0" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>'
+};
 function _pmGrade(val) {
   const v = parseInt(val);
   if (isNaN(v) || v < 0) return null;
-  // PM10 기준: 0~30좋음 31~80보통 81~150나쁨 151~매우나쁨
-  // 표정 SVG: 좋음=웃기, 보통=정색, 나쁨=화남, 매우나쁨=화남+
-  if (v <= 30) return { text: '좋음', color: '#4CAF50', face: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#4CAF50"/><circle cx="8.5" cy="10" r="1.2" fill="white"/><circle cx="15.5" cy="10" r="1.2" fill="white"/><path d="M8 15c1.5 2 6.5 2 8 0" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>' };
-  if (v <= 80) return { text: '보통', color: '#FFC107', face: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FFC107"/><circle cx="8.5" cy="10" r="1.2" fill="white"/><circle cx="15.5" cy="10" r="1.2" fill="white"/><line x1="8" y1="15" x2="16" y2="15" stroke="white" stroke-width="1.5" stroke-linecap="round"/></svg>' };
-  if (v <= 150) return { text: '나쁨', color: '#FF9800', face: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#FF9800"/><circle cx="8.5" cy="10" r="1.2" fill="white"/><circle cx="15.5" cy="10" r="1.2" fill="white"/><path d="M8 16c1.5-2 6.5-2 8 0" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>' };
-  return { text: '매우나쁨', color: '#F44336', face: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#F44336"/><line x1="6.5" y1="8" x2="9.5" y2="10" stroke="white" stroke-width="1.2" stroke-linecap="round"/><line x1="17.5" y1="8" x2="14.5" y2="10" stroke="white" stroke-width="1.2" stroke-linecap="round"/><circle cx="8.5" cy="11" r="1.2" fill="white"/><circle cx="15.5" cy="11" r="1.2" fill="white"/><path d="M8 17c1.5-2.5 6.5-2.5 8 0" stroke="white" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>' };
+  // PM10: 0~30좋음 31~80보통 81~150나쁨 151~매우나쁨
+  if (v <= 30) return { text: '좋음', color: '#4CAF50', face: _pmFaces.good };
+  if (v <= 80) return { text: '보통', color: '#FFC107', face: _pmFaces.normal };
+  if (v <= 150) return { text: '나쁨', color: '#FF9800', face: _pmFaces.bad };
+  return { text: '매우나쁨', color: '#F44336', face: _pmFaces.worst };
+}
+function _pm25Grade(val) {
+  const v = parseInt(val);
+  if (isNaN(v) || v < 0) return null;
+  // PM2.5: 0~15좋음 16~35보통 36~75나쁨 76~매우나쁨
+  if (v <= 15) return { text: '좋음', color: '#4CAF50', face: _pmFaces.good };
+  if (v <= 35) return { text: '보통', color: '#FFC107', face: _pmFaces.normal };
+  if (v <= 75) return { text: '나쁨', color: '#FF9800', face: _pmFaces.bad };
+  return { text: '매우나쁨', color: '#F44336', face: _pmFaces.worst };
 }
 
 function _pmLabel(air) {
@@ -3390,11 +3404,10 @@ function toggleWeatherDetail() {
   if (_weatherCache.air && _weatherCache.air.pm10 !== '-') {
     const a = _weatherCache.air;
     const g10 = _pmGrade(a.pm10);
-    const g25 = _pmGrade(a.pm25);
+    const g25 = _pm25Grade(a.pm25);
     html += '<div style="margin-top:8px;padding:8px;background:var(--warm);border-radius:8px;font-size:12px">';
-    html += '<div style="font-weight:600;margin-bottom:4px">미세먼지</div>';
-    if (g10) html += `<div style="display:flex;align-items:center;gap:4px">${g10.face} PM10 <b style="color:${g10.color}">${a.pm10}㎍/㎥ (${g10.text})</b></div>`;
-    if (g25) html += `<div style="display:flex;align-items:center;gap:4px;margin-top:2px">${g25.face} PM2.5 <b style="color:${g25.color}">${a.pm25}㎍/㎥ (${g25.text})</b></div>`;
+    if (g10) html += `<div style="display:flex;align-items:center;gap:4px">${g10.face} 미세먼지 <b style="color:${g10.color}">${g10.text}</b></div>`;
+    if (g25) html += `<div style="display:flex;align-items:center;gap:4px;margin-top:2px">${g25.face} 초미세먼지 <b style="color:${g25.color}">${g25.text}</b></div>`;
     if (a.station) html += `<div style="font-size:10px;color:var(--text-sub);margin-top:2px">측정소: ${a.station}</div>`;
     html += '</div>';
   }
