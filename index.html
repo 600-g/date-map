@@ -2986,8 +2986,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.4.5';
-const APP_VERSION_NUM = 145;
+const APP_VERSION = '1.4.6';
+const APP_VERSION_NUM = 146;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3572,7 +3572,7 @@ function _showCourseInSheet() {
     }
     html += '<div style="padding:8px 10px;background:#fafaf7;border:1px solid #e0ddd8;border-radius:10px;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="_courseFocus(' + p.id + ')">' +
       '<div style="width:22px;height:22px;background:' + color + ';color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">' + label + '</div>' +
-      '<span style="font-size:13px">' + c.emoji + '</span>' +
+      '<div style="width:24px;height:24px;background:' + c.color + ';border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0">' + (svgSized(getIcon(c.emoji),13)||c.emoji) + '</div>' +
       '<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:550;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' + p.name + '</div>' +
       (p.addr ? '<div style="font-size:10.5px;color:var(--brown);margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' + p.addr + '</div>' : '') +
       '</div></div>';
@@ -3590,12 +3590,11 @@ function _showCourseList() { _showCourseInSheet(); }
 function _courseFocus(id) {
   const p = places.find(x => x.id === id); if (!p) return;
   if (!p.lat || !p.lng) return;
-  const panel = document.getElementById('courseListPanel');
-  if (panel) panel.remove();
   closeAllIw();
   map.setCenter(new naver.maps.LatLng(p.lat, p.lng));
   map.setZoom(16);
   focusedPlaceId = id;
+  // 코스 모드에서도 IW 표시
   if (iwMap[id]) iwMap[id].setMap(map);
 }
 function clearCourseOverlays() {
