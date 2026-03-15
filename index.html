@@ -3163,8 +3163,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.5.7';
-const APP_VERSION_NUM = 157;
+const APP_VERSION = '1.5.8';
+const APP_VERSION_NUM = 158;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4362,7 +4362,7 @@ async function _distDoSearch(query,loadMore) {
   if(!cats.length){toast('카테고리를 1개 이상 선택하세요');return;}
   const content=document.getElementById('distContent');
   if(!loadMore){
-    _distSearchState={query,cats,sort:_distSearchState.sort||'accuracy',pages:{},hasMore:{},allItems:{}};
+    _distSearchState={query,cats,sort:_distSearchState.sort||'accuracy',pages:{},hasMore:{},allItems:{},_showCount:{}};
     cats.forEach(c=>{_distSearchState.pages[c]=1;_distSearchState.hasMore[c]=true;_distSearchState.allItems[c]=[];});
     const sb=document.getElementById('distSortBar');if(sb)sb.style.display='flex';
     content.innerHTML='<div id="distResultList"><p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">검색 중...</p></div>';
@@ -4440,12 +4440,16 @@ function _distRenderResults(){
   if(!list) return;
   const anyResults=Object.values(st.allItems).some(a=>a.length);
   if(!anyResults){list.innerHTML='<p style="text-align:center;color:var(--brown);font-size:13px;padding:30px 0">결과가 없어요. 다른 지역명을 시도해보세요.</p>';return;}
+  if(!st._showCount) st._showCount={};
   let html='';
   for(const cat of st.cats){
     const items=st.allItems[cat]||[];
     if(!items.length) continue;
-    html+=`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px">${_distCatNames[cat]||cat}</div>`;
-    items.forEach(item=>{
+    const showN=st._showCount[cat]||4;
+    const visible=items.slice(0,showN);
+    const hasLocalMore=items.length>showN;
+    html+=`<div style="margin-bottom:16px"><div style="font-size:13px;font-weight:700;color:var(--accent);margin-bottom:8px">${_distCatNames[cat]||cat} <span style="font-size:11px;font-weight:400;color:var(--brown)">${items.length}곳</span></div>`;
+    visible.forEach(item=>{
       const ep=places.find(p=>Math.abs(p.lat-parseFloat(item.y))<0.0001&&Math.abs(p.lng-parseFloat(item.x))<0.0001)||places.find(p=>p.name===item.place_name);
       const esc=item.place_name.replace(/'/g,"\\'");
       let distText='';
@@ -4463,11 +4467,25 @@ function _distRenderResults(){
         </div>
       </div>`;
     });
+    if(hasLocalMore||st.hasMore[cat]){
+      html+=`<button class="btn btn-outline" style="width:100%;padding:8px;border-radius:8px;font-size:12px;color:var(--accent);border-color:var(--accent)" onclick="_distShowMore('${cat}')">더보기 +5</button>`;
+    }
     html+=`</div>`;
   }
-  const anyMore=Object.values(st.hasMore).some(v=>v);
-  if(anyMore) html+=`<button class="btn btn-outline" style="width:100%;padding:10px;border-radius:10px;font-size:13px;margin-top:4px" onclick="_distDoSearch('${st.query.replace(/'/g,"\\'")}',true)">더보기</button>`;
   list.innerHTML=html;
+}
+function _distShowMore(cat){
+  const st=_distSearchState;
+  if(!st._showCount) st._showCount={};
+  const cur=st._showCount[cat]||4;
+  st._showCount[cat]=cur+5;
+  // 로컬에 보여줄 게 부족하면 API 추가 호출
+  const items=st.allItems[cat]||[];
+  if(st._showCount[cat]>=items.length&&st.hasMore[cat]){
+    _distDoSearch(st.query,true);
+  } else {
+    _distRenderResults();
+  }
 }
 function _distSetSort(sort){
   _distSearchState.sort=sort;
