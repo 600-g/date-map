@@ -2986,8 +2986,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.4.4';
-const APP_VERSION_NUM = 144;
+const APP_VERSION = '1.4.5';
+const APP_VERSION_NUM = 145;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3518,17 +3518,11 @@ function courseShowMap() {
 function _showCourseControls() {
   let ctrl = document.getElementById('courseCtrl');
   if (ctrl) ctrl.remove();
-  // 지도 내 다른 컨트롤 숨기기
   const nb = document.getElementById('nearbyBar');
-  const lvb = document.getElementById('listViewBtn');
   const lb = document.getElementById('locBtn');
-  const fb = document.getElementById('filterBar');
   if (nb) nb.style.display = 'none';
   if (lb) lb.style.display = 'none';
-  if (fb) fb.style.display = 'none';
-  // listViewBtn을 "경로보기"로 변경
   _courseMode = true;
-  // 코스 외 장소 마커/팝업 숨기기
   markers.forEach(m => { try{m.setMap(null);}catch(e){} });
   iws.forEach(w => { try{w.setMap(null);}catch(e){} });
   ctrl = document.createElement('div');
@@ -3540,39 +3534,59 @@ function _showCourseControls() {
   clearBtn.onclick = () => { clearCourseOverlays(); collapseMap(); toast('코스 표시를 지웠어요'); };
   ctrl.appendChild(clearBtn);
   document.getElementById('mapWrap').appendChild(ctrl);
+  // 바텀시트에 코스 리스트 표시
+  _showCourseInSheet();
 }
-function _showCourseList() {
-  let panel = document.getElementById('courseListPanel');
-  if (panel) { panel.remove(); return; }
-  panel = document.createElement('div');
-  panel.id = 'courseListPanel';
-  panel.style.cssText = 'position:absolute;bottom:10px;left:10px;right:10px;z-index:100;background:white;border-radius:12px;padding:12px;max-height:50%;overflow-y:auto;box-shadow:0 4px 16px rgba(0,0,0,.2)';
-  const colors = ['#FF6B6B','#5B7DB8','#2D8659','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB'];
-  let html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;font-weight:700;color:var(--dark)">코스 경로</span><span style="cursor:pointer;font-size:18px;color:#aaa;line-height:1;padding:0 4px" onclick="document.getElementById(\'courseListPanel\').remove()">&times;</span></div>';
-  _courseSel.forEach((p, i) => {
-    const c = getCat(p.cat);
-    const color = colors[i % colors.length];
-    const isFirst = i === 0, isLast = i === _courseSel.length - 1;
-    const label = isFirst ? '출발' : isLast ? '도착' : (i+1);
+function _showCourseInSheet() {
+  var sheet = document.getElementById('bottomSheet');
+  if (!sheet) return;
+  // 기존 필터바, 카드리스트 숨기기
+  var fb = document.getElementById('filterBar');
+  var pl = document.getElementById('placeList');
+  if (fb) fb.style.display = 'none';
+  if (pl) pl.style.display = 'none';
+  // 기존 코스 패널 제거
+  var old = document.getElementById('courseSheetList');
+  if (old) old.remove();
+  var panel = document.createElement('div');
+  panel.id = 'courseSheetList';
+  panel.style.cssText = 'flex:1;overflow-y:auto;padding:8px 10px';
+  var colors = ['#FF6B6B','#5B7DB8','#2D8659','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB'];
+  var html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;font-weight:700;color:var(--dark)">코스 경로</span><span style="font-size:11px;color:var(--brown)">' + _courseSel.length + '곳</span></div>';
+  var totalKm = 0;
+  _courseSel.forEach(function(p, i) {
+    var c = getCat(p.cat);
+    var color = colors[i % colors.length];
+    var isFirst = i === 0, isLast = i === _courseSel.length - 1;
+    var label = isFirst ? '출발' : isLast ? '도착' : (i+1);
     if (i > 0) {
-      const prev = _courseSel[i-1];
-      const km = getDistanceKm(prev.lat, prev.lng, p.lat, p.lng);
-      const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
-      const walkMin = Math.round(km / 4 * 60);
-      html += `<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:2px 0;cursor:pointer" onclick="openKakaoRoute(${i-1},${i})">
-        <span style="font-size:10px;color:var(--accent)">↓ ${distTxt} · 🚶${walkMin}분</span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
-      </div>`;
+      var prev = _courseSel[i-1];
+      var km = getDistanceKm(prev.lat, prev.lng, p.lat, p.lng);
+      totalKm += km;
+      var distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
+      var walkMin = Math.round(km / 4 * 60);
+      html += '<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0;cursor:pointer" onclick="openKakaoRoute(' + (i-1) + ',' + i + ')">' +
+        '<span style="font-size:10px;color:var(--accent)">↓ ' + distTxt + ' · 🚶' + walkMin + '분</span>' +
+        '<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>' +
+      '</div>';
     }
-    html += `<div style="padding:6px 8px;background:#fafaf7;border:1px solid #e0ddd8;border-radius:8px;display:flex;align-items:center;gap:6px;cursor:pointer" onclick="_courseFocus(${p.id})">
-      <div style="width:20px;height:20px;background:${color};color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">${label}</div>
-      <span style="font-size:12px">${c.emoji}</span>
-      <div style="flex:1;min-width:0;font-size:12px;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${p.name}</div>
-    </div>`;
+    html += '<div style="padding:8px 10px;background:#fafaf7;border:1px solid #e0ddd8;border-radius:10px;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="_courseFocus(' + p.id + ')">' +
+      '<div style="width:22px;height:22px;background:' + color + ';color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0">' + label + '</div>' +
+      '<span style="font-size:13px">' + c.emoji + '</span>' +
+      '<div style="flex:1;min-width:0"><div style="font-size:12.5px;font-weight:550;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' + p.name + '</div>' +
+      (p.addr ? '<div style="font-size:10.5px;color:var(--brown);margin-top:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">' + p.addr + '</div>' : '') +
+      '</div></div>';
   });
+  if (totalKm > 0) {
+    var totalTxt = totalKm >= 1 ? totalKm.toFixed(1)+'km' : Math.round(totalKm*1000)+'m';
+    var totalWalk = Math.round(totalKm / 4 * 60);
+    html += '<div style="text-align:center;padding:8px 0;font-size:11px;color:var(--brown);font-weight:500">총 ' + totalTxt + ' · 도보 약 ' + totalWalk + '분</div>';
+  }
   panel.innerHTML = html;
-  document.getElementById('mapWrap').appendChild(panel);
+  sheet.appendChild(panel);
+  _setBsState('half');
 }
+function _showCourseList() { _showCourseInSheet(); }
 function _courseFocus(id) {
   const p = places.find(x => x.id === id); if (!p) return;
   if (!p.lat || !p.lng) return;
@@ -3594,17 +3608,20 @@ function clearCourseOverlays() {
   if (ctrl) ctrl.remove();
   const clp = document.getElementById('courseListPanel');
   if (clp) clp.remove();
+  const csl = document.getElementById('courseSheetList');
+  if (csl) csl.remove();
   // 숨겼던 지도 컨트롤 복원
   const nb = document.getElementById('nearbyBar');
-  const lvb = document.getElementById('listViewBtn');
   const lb = document.getElementById('locBtn');
   const fb = document.getElementById('filterBar');
+  const pl = document.getElementById('placeList');
   if (nb) nb.style.display = '';
+  if (lb) lb.style.display = '';
+  if (fb) fb.style.display = '';
+  if (pl) pl.style.display = '';
   _courseMode = false;
   // 장소 마커 복원
   markers.forEach(m => { try{m.setMap(map);}catch(e){} });
-  if (lb) lb.style.display = '';
-  if (fb) fb.style.display = '';
 }
 
 // 서울 25개 구 중심 좌표
