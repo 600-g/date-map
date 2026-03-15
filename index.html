@@ -976,7 +976,8 @@ function showTab(name) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
   document.getElementById('tab-'+name).classList.add('active');
-  document.querySelectorAll('.tab')[['list','cfg'].indexOf(name)].classList.add('active');
+  const tabIdx = name==='list' ? 0 : name==='cfg' ? 2 : 0;
+  document.querySelectorAll('.tab')[tabIdx].classList.add('active');
   const mw = document.getElementById('mapWrap');
   if (name==='cfg') { mw.style.display='none'; var bs=document.getElementById('bottomSheet'); if(bs) bs.style.display='none'; catEditorOpen=false; document.getElementById('catEditorWrap').style.display='none'; document.getElementById('catSummary').style.display='block'; const ch=document.getElementById('catChevron'); if(ch) ch.style.transform=''; updateExport(); renderCatSummary(); document.getElementById('nickChange').value = myNick; try{lucide.createIcons();}catch(e){} document.getElementById('appVer').textContent = APP_VERSION; checkUpdateBtn(); }
   else { mw.style.display=''; var bs=document.getElementById('bottomSheet'); if(bs) bs.style.display='flex'; if (!window._skipCollapse) _setBsState('half'); window._skipCollapse = false; }
@@ -3162,8 +3163,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.5.6';
-const APP_VERSION_NUM = 156;
+const APP_VERSION = '1.5.7';
+const APP_VERSION_NUM = 157;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4091,6 +4092,8 @@ const REGION_GROUPS = [
   {name:'제주', emoji:'🍊', areas:['제주시','서귀포','애월','성산','중문','한림','우도']},
 ];
 function openPlanMenu() {
+  document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab')[1].classList.add('active');
   document.querySelectorAll('.modal-overlay.open').forEach(m=>m.classList.remove('open'));
   if(_districtPage){_districtPage.remove();_districtPage=null;_distViewStack=[];}
   const existing = document.getElementById('planMenu');
