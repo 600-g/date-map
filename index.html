@@ -435,6 +435,21 @@ header .lc svg{width:18px;height:18px}
     </div>
     <p style="font-size:12px;color:var(--brown);margin-bottom:14px;line-height:1.6">개발 중인 기능을 미리 체험해보세요.<br>불안정할 수 있어요.</p>
     <div id="labList">
+      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openRandomPick()">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="dice-3" class="lc lc-sm" style="color:var(--accent)"></i> 랜덤 픽</div>
+        <div style="font-size:12px;color:var(--brown);line-height:1.5">지역을 고르면 저장된 장소 중 랜덤으로 추천해드려요.</div>
+        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">실험</span></div>
+      </div>
+      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="startWorldCup()">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="trophy" class="lc lc-sm" style="color:var(--accent)"></i> 장소 월드컵</div>
+        <div style="font-size:12px;color:var(--brown);line-height:1.5">저장된 장소끼리 토너먼트! 최애 장소를 뽑아보세요.</div>
+        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">실험</span></div>
+      </div>
+      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openThemePicker()">
+        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="palette" class="lc lc-sm" style="color:var(--accent)"></i> 테마 변경</div>
+        <div style="font-size:12px;color:var(--brown);line-height:1.5">폰트와 색상 컨셉을 바꿔보세요.</div>
+        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">실험</span></div>
+      </div>
       <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
         <div>
           <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="moon" class="lc lc-sm" style="color:var(--accent)"></i> 다크모드</div>
@@ -450,21 +465,6 @@ header .lc svg{width:18px;height:18px}
           #darkToggle:checked+span{background:var(--accent)}
           #darkToggle:checked+span+span{transform:translateX(20px)}
         </style>
-      </div>
-      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openRandomPick()">
-        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="dice-3" class="lc lc-sm" style="color:var(--accent)"></i> 랜덤 픽</div>
-        <div style="font-size:12px;color:var(--brown);line-height:1.5">지역을 고르면 저장된 장소 중 랜덤으로 추천해드려요.</div>
-        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">실험</span></div>
-      </div>
-      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="openThemePicker()">
-        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="palette" class="lc lc-sm" style="color:var(--accent)"></i> 테마 변경</div>
-        <div style="font-size:12px;color:var(--brown);line-height:1.5">폰트와 색상 컨셉을 바꿔보세요.</div>
-        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">실험</span></div>
-      </div>
-      <div class="lab-item" style="padding:12px;border:1px solid var(--warm);border-radius:10px;margin-bottom:8px;cursor:pointer" onclick="startWorldCup()">
-        <div style="font-size:14px;font-weight:600;margin-bottom:4px"><i data-lucide="trophy" class="lc lc-sm" style="color:var(--accent)"></i> 장소 월드컵</div>
-        <div style="font-size:12px;color:var(--brown);line-height:1.5">저장된 장소끼리 토너먼트! 최애 장소를 뽑아보세요.</div>
-        <div style="margin-top:6px"><span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#E3F2FD;color:#1565C0">실험</span></div>
       </div>
     </div>
   </div>
@@ -808,6 +808,12 @@ function initMap() {
     tiltable: false,
     rotatable: false,
     tileTransition: false
+  });
+  // 줌 변경 시 클러스터링 갱신 (debounce)
+  let _zoomTimer = null;
+  naver.maps.Event.addListener(map, 'zoom_changed', () => {
+    if (_zoomTimer) clearTimeout(_zoomTimer);
+    _zoomTimer = setTimeout(() => renderMarkers(), 200);
   });
   naver.maps.Event.addListener(map, 'click', (e) => {
     // 오버레이 클릭 직후면 무시 (500ms)
@@ -2224,23 +2230,91 @@ function setupSwipeDelete() {
   });
 }
 
+// ── 클러스터링 ──
+let _clusterOverlays = [];
+const CLUSTER_ZOOM_THRESHOLD = 13; // 이 줌 이하에서 클러스터링 활성
+const CLUSTER_GRID = 60; // 픽셀 단위 그리드 크기
+
+function _clusterPlaces(filtered, zoom) {
+  if (zoom > CLUSTER_ZOOM_THRESHOLD) return null; // 줌 충분하면 클러스터링 안 함
+  const proj = map.getProjection();
+  const grid = {};
+  filtered.forEach(p => {
+    if (!p.lat || !p.lng) return;
+    const px = proj.fromCoordToOffset(new naver.maps.LatLng(p.lat, p.lng));
+    const key = Math.floor(px.x / CLUSTER_GRID) + ',' + Math.floor(px.y / CLUSTER_GRID);
+    if (!grid[key]) grid[key] = [];
+    grid[key].push(p);
+  });
+  return Object.values(grid);
+}
+
+function _clearClusters() {
+  _clusterOverlays.forEach(o => { try { o.setMap(null); } catch(e) {} });
+  _clusterOverlays = [];
+}
+
 function renderMarkers() {
   if (!map) return;
   markers.forEach(m=>{ try{m.setMap(null);}catch(e){} });
   iws.forEach(w=>{ try{w.setMap(null);}catch(e){} });
+  _clearClusters();
   markers=[]; iws=[]; iwMap={};
   const filtered = activeFilters.size === 0 ? places : places.filter(p=>activeFilters.has(p.cat));
-  filtered.forEach((p)=>{
+  const zoom = map.getZoom();
+  const clusters = _clusterPlaces(filtered, zoom);
+
+  // 클러스터 모드
+  if (clusters) {
+    clusters.forEach(group => {
+      if (group.length === 1) {
+        _renderSingleMarker(group[0]);
+      } else {
+        // 클러스터 중심 = 그룹 평균 좌표
+        const avgLat = group.reduce((s,p)=>s+p.lat,0) / group.length;
+        const avgLng = group.reduce((s,p)=>s+p.lng,0) / group.length;
+        const pos = new naver.maps.LatLng(avgLat, avgLng);
+        const el = document.createElement('div');
+        const size = group.length >= 10 ? 44 : 36;
+        el.innerHTML = `<div style="width:${size}px;height:${size}px;background:var(--accent);border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:${group.length>=10?14:13}px;box-shadow:0 2px 8px rgba(0,0,0,.3);cursor:pointer">${group.length}</div>`;
+        el.onclick = (e) => {
+          e.stopPropagation();
+          window._overlayClicked = Date.now();
+          // 클러스터 클릭 시 해당 영역으로 줌인
+          const bounds = new naver.maps.LatLngBounds();
+          group.forEach(p => bounds.extend(new naver.maps.LatLng(p.lat, p.lng)));
+          map.fitBounds(bounds, { top:50, right:30, bottom:150, left:30 });
+        };
+        const overlay = new NaverCustomOverlay({ position:pos, content:el, yAnchor:0.5, zIndex:5 });
+        overlay.setMap(map);
+        _clusterOverlays.push(overlay);
+      }
+    });
+  } else {
+    // 일반 모드 (줌 충분)
+    filtered.forEach(p => _renderSingleMarker(p));
+  }
+
+  if (_reopenAfterRender) {
+    if (iwMap[_reopenAfterRender]) {
+      iwMap[_reopenAfterRender].setMap(map);
+      focusedPlaceId = _reopenAfterRender;
+      const el = document.getElementById('pi-'+_reopenAfterRender);
+      if (el) el.classList.add('sel');
+    }
+    _reopenAfterRender = null;
+  }
+}
+
+function _renderSingleMarker(p) {
     if (!p.lat || !p.lng) return;
     const pos = new naver.maps.LatLng(p.lat, p.lng);
     const c = getCat(p.cat);
-    // 커스텀 마커 (SVG 아이콘)
     const markerEl = document.createElement('div');
     const isSvg = SVG_ICONS[c.emoji];
     markerEl.innerHTML = `<div style="width:32px;height:32px;background:${c.color};border:2px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;${isSvg?'':'font-size:16px;'}box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer">${getIcon(c.emoji, 16)}</div>`;
     const marker = new NaverCustomOverlay({ position:pos, content:markerEl, yAnchor:1, zIndex:3 });
     const avg = getAvgRating(p);
-    // 팝업도 CustomOverlay로 (InfoWindow 대신 — auto-pan 문제 해결)
     const iwEl = document.createElement('div');
     iwEl.style.cssText = 'position:relative;background:var(--bg-card);padding:10px 12px;font-size:13px;font-family:Pretendard Variable,Pretendard,sans-serif;min-width:160px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,.25);border:1px solid var(--border-card);color:var(--text-main)';
     iwEl.innerHTML = `
@@ -2276,11 +2350,9 @@ function renderMarkers() {
     iwEl.querySelector('[data-action="visit"]').onclick = () => { toggleV(p.id); };
     const addrBtn = iwEl.querySelector('[data-action="addr-search"]');
     if (addrBtn) addrBtn.onclick = () => window.open(`https://map.naver.com/v5/search/${encodeURIComponent(p.addr)}`, '_blank');
-    // 팝업 클릭 시 지도 이벤트 전파 완전 차단
     ['click','mousedown','mouseup','touchstart','touchend','pointerdown','pointerup'].forEach(evt => {
       iwEl.addEventListener(evt, e => e.stopPropagation());
     });
-
     const iw = new NaverCustomOverlay({ position:pos, content:iwEl, yAnchor:1.15, zIndex:10 });
     iwMap[p.id] = iw;
     markerEl.onclick = (e) => {
@@ -2299,16 +2371,6 @@ function renderMarkers() {
     };
     marker.setMap(map);
     markers.push(marker); iws.push(iw);
-  });
-  // mapInitialBoundsSet은 제거 — 항상 현위치 또는 savedLoc 중심 유지
-  // 체크 등으로 renderAll 후 팝업 재오픈
-  if (_reopenAfterRender && iwMap[_reopenAfterRender]) {
-    iwMap[_reopenAfterRender].setMap(map);
-    focusedPlaceId = _reopenAfterRender;
-    const el = document.getElementById('pi-'+_reopenAfterRender);
-    if (el) el.classList.add('sel');
-    _reopenAfterRender = null;
-  }
 }
 
 let focusedPlaceId = null;
@@ -2690,7 +2752,6 @@ function confirmDelPlace() {
   document.getElementById('delModal').classList.remove('open');
   if (deletingPlaceId !== null) {
     places = places.filter(x=>x.id!==deletingPlaceId);
-    deletingPlaceId = null;
     saveData(); renderAll(); toast('삭제됐어요');
   }
   deletingPlaceId = null;
@@ -3075,8 +3136,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.5.1';
-const APP_VERSION_NUM = 151;
+const APP_VERSION = '1.5.2';
+const APP_VERSION_NUM = 152;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3140,8 +3201,6 @@ function toggleDarkMode(on){
 }
 function _applyDarkMode(on){
   document.documentElement.setAttribute('data-dark', on?'true':'false');
-  const lbl=document.getElementById('darkLabel');
-  if(lbl) lbl.textContent=on?'켜기':'끄기';
   const tog=document.getElementById('darkToggle');
   if(tog) tog.checked=on;
   // 다크모드일 때 meta theme-color도 변경
@@ -3365,9 +3424,6 @@ function aiRecDel(btn,lat,lng,name){
   if(idx<0){toast('이미 삭제됨');return;}
   const p=places[idx];
   places.splice(idx,1);
-  if(markers[idx]){try{markers[idx].setMap(null);}catch(e){}}
-  markers.splice(idx,1);
-  if(iwMap[p.id]){try{iwMap[p.id].setMap(null);delete iwMap[p.id];}catch(e){}}
   saveData();renderAll();
   const wrap=btn.parentElement;
   wrap.innerHTML=`<button class="btn btn-outline" style="font-size:11px;padding:3px 8px" onclick="aiRecAdd(this,'${name.replace(/'/g,"\\'")}','${p.lat}','${p.lng}','','${(p.addr||'').replace(/'/g,"\\'")}')">추가</button>`;
@@ -4198,11 +4254,7 @@ function _distRecDel(btn,lat,lng,name){
   let idx=places.findIndex(x=>Math.abs(x.lat-la)<0.0001&&Math.abs(x.lng-lo)<0.0001);
   if(idx<0) idx=places.findIndex(x=>x.name===name);
   if(idx<0){toast('이미 삭제됨');return;}
-  const p=places[idx];
   places.splice(idx,1);
-  if(markers[idx]){try{markers[idx].setMap(null);}catch(e){}}
-  markers.splice(idx,1);
-  if(iwMap[p.id]){try{iwMap[p.id].setMap(null);delete iwMap[p.id];}catch(e){}}
   saveData();
   setTimeout(()=>renderAll(),100);
   _distRenderResults();
