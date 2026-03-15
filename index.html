@@ -3169,8 +3169,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.6.5';
-const APP_VERSION_NUM = 165;
+const APP_VERSION = '1.6.6';
+const APP_VERSION_NUM = 166;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3199,6 +3199,10 @@ function easterTap() {
 // ── 날씨 ──
 const KMA_KEY = '06e87da265f1c439059277fd5c6ff211df53146aa982de2ffb80d1a503579c8f';
 const KMA_BASE = 'https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0';
+const MID_BASE = 'https://apis.data.go.kr/1360000/MidFcstInfoService';
+// 중기예보 지역코드 (기온: 도시별, 육상: 권역별)
+const MID_TA_MAP = {'서울특별시':'11B10101','인천광역시':'11B20201','수원':'11B20601','대전광역시':'11C20401','세종특별자치시':'11C20404','청주':'11C10301','춘천':'11D10301','강릉':'11D20501','대구광역시':'11H10701','부산광역시':'11H20201','울산광역시':'11H20101','광주광역시':'11F20501','전주':'11F10201','제주특별자치도':'11G00201','경기도':'11B20601'};
+const MID_LAND_MAP = {'서울특별시':'11B00000','인천광역시':'11B00000','경기도':'11B00000','강원특별자치도':'11D10000','강원도':'11D10000','대전광역시':'11C20000','세종특별자치시':'11C20000','충청남도':'11C20000','충청북도':'11C10000','광주광역시':'11F20000','전라남도':'11F20000','전북특별자치도':'11F10000','전라북도':'11F10000','대구광역시':'11H10000','경상북도':'11H10000','부산광역시':'11H20000','울산광역시':'11H20000','경상남도':'11H20000','제주특별자치도':'11G00000'};
 const AIR_KEY = KMA_KEY;
 const AIR_BASE = 'https://apis.data.go.kr/B552584/ArpltnInforInqireSvc';
 // 시도명 매핑 (역지오코딩 area1 → API sidoName)
@@ -3346,7 +3350,45 @@ async function fetchWeather() {
         }
       } catch(e) { console.warn('미세먼지 로딩 실패', e); }
     }
-    _weatherCache = { cur, hours: futureHours, daily: dailyList, ts: now, locName, air };
+    // 중기예보 (4~7일) 호출
+    let midDays = [];
+    if (sidoName) {
+      try {
+        const taId = MID_TA_MAP[sidoName] || '11B10101';
+        const landId = MID_LAND_MAP[sidoName] || '11B00000';
+        const now2 = new Date();
+        const midH = now2.getHours();
+        const tmFc = _fmtDate(now2) + (midH >= 18 ? '1800' : '0600');
+        const [taRes, landRes] = await Promise.all([
+          fetch(`${MID_BASE}/getMidTa?serviceKey=${KMA_KEY}&dataType=JSON&regId=${taId}&tmFc=${tmFc}&numOfRows=1&pageNo=1`),
+          fetch(`${MID_BASE}/getMidLandFcst?serviceKey=${KMA_KEY}&dataType=JSON&regId=${landId}&tmFc=${tmFc}&numOfRows=1&pageNo=1`)
+        ]);
+        const taData = await taRes.json();
+        const landData = await landRes.json();
+        const ta = taData?.response?.body?.items?.item?.[0] || {};
+        const land = landData?.response?.body?.items?.item?.[0] || {};
+        for (let d = 3; d <= 7; d++) {
+          const dt = new Date(now2); dt.setDate(dt.getDate() + d);
+          const lo = ta['taMin'+d]; const hi = ta['taMax'+d];
+          const wf = land['wf'+d+'Am'] || land['wf'+d] || '';
+          const rnSt = Math.max(land['rnSt'+d+'Am']||0, land['rnSt'+d+'Pm']||0);
+          let sky = 1, pty = 0;
+          if (wf.includes('흐')) sky = 4; else if (wf.includes('구름')) sky = 3;
+          if (wf.includes('비') || wf.includes('소나기')) pty = 1;
+          if (wf.includes('눈')) pty = 3;
+          midDays.push({ date: _fmtDate(dt), tmn: lo, tmx: hi, sky, pty, pop: rnSt });
+        }
+      } catch(e) { console.warn('중기예보 실패', e); }
+    }
+    // 단기(3일) + 중기(4~7일) 합치기
+    const allDaily = [...dailyList];
+    midDays.forEach(md => {
+      if (!allDaily.find(d => d.date === md.date)) {
+        allDaily.push({ date: md.date, tmn: md.tmn, tmx: md.tmx, tmps: [], skys: [md.sky], ptys: [md.pty], pops: [md.pop] });
+      }
+    });
+    allDaily.sort((a,b) => a.date.localeCompare(b.date));
+    _weatherCache = { cur, hours: futureHours, daily: allDaily, ts: now, locName, air };
     _weatherCacheTime = now;
     _renderWeatherBadge(_weatherCache);
   } catch(e) {
