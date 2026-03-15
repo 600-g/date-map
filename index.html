@@ -227,6 +227,21 @@ header .lc svg{width:18px;height:18px}
 .nearby-bar{position:absolute;top:6px;left:6px;right:6px;z-index:10;display:flex;gap:3px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;transition:opacity .2s,visibility .2s}
 .nearby-bar::-webkit-scrollbar{display:none}
 .nearby-bar.hidden{opacity:0;pointer-events:none;visibility:hidden}
+/* 날씨 뱃지 */
+.weather-badge{position:absolute;top:38px;left:8px;z-index:10;display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:14px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;font-size:11px;font-weight:500;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap;transition:opacity .2s}
+.weather-badge:empty{display:none}
+[data-dark="true"] .weather-badge{background:rgba(30,30,30,.92);border-color:#444;color:var(--text-main)}
+/* 날씨 상세 패널 */
+.weather-detail{position:absolute;top:62px;left:8px;z-index:11;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);border-radius:12px;border:1px solid var(--warm);box-shadow:0 4px 16px rgba(0,0,0,.15);padding:12px;min-width:200px;max-width:280px;max-height:320px;overflow-y:auto;display:none;font-size:12px}
+.weather-detail.open{display:block}
+[data-dark="true"] .weather-detail{background:rgba(26,26,26,.96);border-color:#333;color:var(--text-main)}
+.weather-detail .wd-row{display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid var(--warm)}
+.weather-detail .wd-row:last-child{border-bottom:none}
+.weather-detail .wd-time{font-weight:600;min-width:36px}
+.weather-detail .wd-icon{font-size:16px;min-width:20px;text-align:center}
+.weather-detail .wd-temp{font-weight:600;min-width:30px}
+.weather-detail .wd-info{color:var(--brown);font-size:11px}
+.weather-detail .wd-credit{font-size:9px;color:var(--text-sub);text-align:right;margin-top:6px}
 .nb-btn{font-family:'Pretendard Variable',Pretendard,sans-serif;font-size:11px;padding:4px 7px;border-radius:16px;border:1px solid rgba(255,255,255,.8);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);color:#333;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.1);white-space:nowrap;flex-shrink:0}
 .nb-btn svg{width:14px;height:14px;flex-shrink:0;vertical-align:middle}
 .nb-btn.active{background:var(--accent);color:white;border-color:var(--accent)}
@@ -405,6 +420,9 @@ header .lc svg{width:18px;height:18px}
     <div id="map" style="flex:1"></div>
     <div id="listViewBtn" style="display:none!important"></div>
     <button class="my-loc-btn" id="locBtn" title="클릭: 내 위치 / 길게 누르기: 종료"><i data-lucide="locate" class="lc lc-lg"></i></button>
+    <!-- 날씨 뱃지 -->
+    <div class="weather-badge" id="weatherBadge" onclick="toggleWeatherDetail()"></div>
+    <div class="weather-detail" id="weatherDetail"></div>
     <!-- 주변 검색 퀵버튼 -->
     <div class="nearby-bar" id="nearbyBar">
       <button class="nb-btn" data-nb="cat" data-code="CE7" data-label="카페" data-icon="cafe" style="display:inline-flex;align-items:center;gap:3px"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6F4E37" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8h1a4 4 0 010 8h-1"/><path d="M3 8h14v9a4 4 0 01-4 4H7a4 4 0 01-4-4V8z"/><line x1="6" y1="2" x2="6" y2="4"/><line x1="10" y1="2" x2="10" y2="4"/><line x1="14" y1="2" x2="14" y2="4"/></svg> 카페</button>
@@ -829,8 +847,16 @@ function initMap() {
     // full 상태일 때만 지도 누르면 half로
     if (_bsState === 'full') _setBsState('half');
   });
+  // 지도 이동 완료 시 날씨 갱신 (debounce)
+  let _weatherTimer = null;
+  naver.maps.Event.addListener(map, 'idle', () => {
+    if (_weatherTimer) clearTimeout(_weatherTimer);
+    _weatherTimer = setTimeout(() => { _weatherCache = null; fetchWeather(); }, 3000);
+  });
   _initBottomSheet();
   renderAll();
+  // 날씨 초기 로딩
+  setTimeout(() => fetchWeather(), 1500);
   // 앱 시작 시: savedLoc 있으면 이전 위치 + 자동 GPS
   if (savedLoc) {
     setTimeout(() => {
@@ -3136,8 +3162,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.5.2';
-const APP_VERSION_NUM = 152;
+const APP_VERSION = '1.5.3';
+const APP_VERSION_NUM = 153;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3162,6 +3188,158 @@ function easterTap() {
     toast('안녕하세요 개발자입니다.');
   }
 }
+
+// ── 날씨 ──
+const KMA_KEY = '06e87da265f1c439059277fd5c6ff211df53146aa982de2ffb80d1a503579c8f';
+const KMA_BASE = 'https://apis.data.go.kr/1360000/VilageFcstInfoService_2.0';
+let _weatherCache = null;
+let _weatherCacheTime = 0;
+
+// 위경도 → 기상청 격자 변환
+function _latLngToGrid(lat, lng) {
+  const RE=6371.00877, GRID=5.0, SLAT1=30.0, SLAT2=60.0, OLAT=38.0, OLON=126.0, XO=43, YO=136;
+  const DEGRAD=Math.PI/180.0;
+  const re=RE/GRID;
+  const slat1=SLAT1*DEGRAD, slat2=SLAT2*DEGRAD, olon=OLON*DEGRAD, olat=OLAT*DEGRAD;
+  let sn=Math.tan(Math.PI*0.25+slat2*0.5)/Math.tan(Math.PI*0.25+slat1*0.5);
+  sn=Math.log(Math.cos(slat1)/Math.cos(slat2))/Math.log(sn);
+  let sf=Math.tan(Math.PI*0.25+slat1*0.5);
+  sf=Math.pow(sf,sn)*Math.cos(slat1)/sn;
+  let ro=Math.tan(Math.PI*0.25+olat*0.5);
+  ro=re*sf/Math.pow(ro,sn);
+  let ra=Math.tan(Math.PI*0.25+lat*DEGRAD*0.5);
+  ra=re*sf/Math.pow(ra,sn);
+  let theta=lng*DEGRAD-olon;
+  if(theta>Math.PI) theta-=2.0*Math.PI;
+  if(theta<-Math.PI) theta+=2.0*Math.PI;
+  theta*=sn;
+  return {nx:Math.floor(ra*Math.sin(theta)+XO+0.5), ny:Math.floor(ro-ra*Math.cos(theta)+YO+0.5)};
+}
+
+function _skyIcon(sky, pty, isNight) {
+  // sky: 1맑음 3구름많음 4흐림, pty: 0없음 1비 2비/눈 3눈 5빗방울 6빗방울눈 7눈날림
+  if (pty >= 1 && pty <= 2) return '🌧️';
+  if (pty === 3 || pty === 7) return '🌨️';
+  if (pty >= 5) return '🌦️';
+  if (sky === 1) return isNight ? '🌙' : '☀️';
+  if (sky === 3) return isNight ? '🌙' : '⛅';
+  if (sky === 4) return '☁️';
+  return '🌤️';
+}
+
+function _getBaseTime() {
+  // 초단기실황: 매시 정각 발표, 40분 이후 데이터 유효
+  const now = new Date();
+  let h = now.getHours(), m = now.getMinutes();
+  if (m < 40) { h -= 1; if (h < 0) h = 23; }
+  return { date: _fmtDate(m < 40 && h === 23 ? new Date(now - 86400000) : now), time: String(h).padStart(2,'0')+'00' };
+}
+
+function _getFcstBaseTime() {
+  // 단기예보: 0200,0500,0800,1100,1400,1700,2000,2300 발표 (발표후 10분부터 유효)
+  const bases = [2,5,8,11,14,17,20,23];
+  const now = new Date();
+  let h = now.getHours(), m = now.getMinutes();
+  let baseH = 23;
+  for (let i = bases.length - 1; i >= 0; i--) {
+    if (h > bases[i] || (h === bases[i] && m >= 10)) { baseH = bases[i]; break; }
+  }
+  const useYesterday = h < 2 || (h === 2 && m < 10);
+  return { date: _fmtDate(useYesterday ? new Date(now - 86400000) : now), time: String(baseH).padStart(2,'0')+'00' };
+}
+
+function _fmtDate(d) {
+  return d.getFullYear()+String(d.getMonth()+1).padStart(2,'0')+String(d.getDate()).padStart(2,'0');
+}
+
+async function fetchWeather() {
+  if (!map) return;
+  const now = Date.now();
+  if (_weatherCache && now - _weatherCacheTime < 600000) { _renderWeatherBadge(_weatherCache); return; } // 10분 캐시
+  const center = map.getCenter();
+  const g = _latLngToGrid(center.lat(), center.lng());
+  const bt = _getBaseTime();
+  const ft = _getFcstBaseTime();
+  try {
+    // 초단기실황 (현재 온도)
+    const ncstUrl = `${KMA_BASE}/getUltraSrtNcst?serviceKey=${KMA_KEY}&pageNo=1&numOfRows=10&dataType=JSON&base_date=${bt.date}&base_time=${bt.time}&nx=${g.nx}&ny=${g.ny}`;
+    const fcstUrl = `${KMA_BASE}/getVilageFcst?serviceKey=${KMA_KEY}&pageNo=1&numOfRows=60&dataType=JSON&base_date=${ft.date}&base_time=${ft.time}&nx=${g.nx}&ny=${g.ny}`;
+    const [ncstRes, fcstRes] = await Promise.all([fetch(ncstUrl), fetch(fcstUrl)]);
+    const ncstData = await ncstRes.json();
+    const fcstData = await fcstRes.json();
+    const ncstItems = ncstData?.response?.body?.items?.item || [];
+    const fcstItems = fcstData?.response?.body?.items?.item || [];
+    // 현재 실황 파싱
+    const cur = {};
+    ncstItems.forEach(it => { cur[it.category] = parseFloat(it.obsrValue); });
+    // T1H:기온 RN1:1시간강수 REH:습도 PTY:강수형태 WSD:풍속
+    // 단기예보 → 시간대별 정리
+    const hourly = {};
+    fcstItems.forEach(it => {
+      const key = it.fcstTime;
+      if (!hourly[key]) hourly[key] = { time: key, date: it.fcstDate };
+      hourly[key][it.category] = parseFloat(it.fcstValue);
+    });
+    const hours = Object.values(hourly).sort((a,b) => (a.date+a.time).localeCompare(b.date+b.time));
+    // 현재 시간 이후만
+    const nowH = new Date().getHours();
+    const todayStr = _fmtDate(new Date());
+    const futureHours = hours.filter(h => {
+      if (h.date > todayStr) return true;
+      return parseInt(h.time) >= nowH * 100;
+    }).slice(0, 12);
+    _weatherCache = { cur, hours: futureHours, ts: now };
+    _weatherCacheTime = now;
+    _renderWeatherBadge(_weatherCache);
+  } catch(e) {
+    console.warn('날씨 로딩 실패', e);
+  }
+}
+
+function _renderWeatherBadge(data) {
+  const badge = document.getElementById('weatherBadge');
+  if (!badge) return;
+  const c = data.cur;
+  if (!c.T1H && c.T1H !== 0) { badge.textContent = ''; return; }
+  const isNight = new Date().getHours() >= 18 || new Date().getHours() < 6;
+  const sky = data.hours[0]?.SKY || 1;
+  const pty = c.PTY || 0;
+  const icon = _skyIcon(sky, pty, isNight);
+  const temp = Math.round(c.T1H);
+  const rain = c.RN1 > 0 ? ` 💧${c.RN1}mm` : '';
+  badge.innerHTML = `${icon} ${temp}°${rain}`;
+}
+
+function toggleWeatherDetail() {
+  const panel = document.getElementById('weatherDetail');
+  if (panel.classList.contains('open')) { panel.classList.remove('open'); return; }
+  if (!_weatherCache || !_weatherCache.hours.length) { toast('날씨 정보를 불러오는 중...'); fetchWeather(); return; }
+  const isNight = h => parseInt(h) >= 1800 || parseInt(h) < 600;
+  let html = '<div style="font-weight:600;margin-bottom:6px;font-size:13px">시간대별 날씨</div>';
+  _weatherCache.hours.forEach(h => {
+    const t = h.time.substring(0,2) + ':00';
+    const icon = _skyIcon(h.SKY||1, h.PTY||0, isNight(h.time));
+    const temp = h.TMP !== undefined ? Math.round(h.TMP) + '°' : '-';
+    const pop = h.POP !== undefined ? h.POP + '%' : '';
+    const info = [];
+    if (pop) info.push('💧' + pop);
+    if (h.REH !== undefined) info.push('💦' + Math.round(h.REH) + '%');
+    if (h.WSD !== undefined) info.push('💨' + h.WSD + 'm/s');
+    html += `<div class="wd-row"><span class="wd-time">${t}</span><span class="wd-icon">${icon}</span><span class="wd-temp">${temp}</span><span class="wd-info">${info.join(' ')}</span></div>`;
+  });
+  html += '<div class="wd-credit">기상청 단기예보 제공</div>';
+  panel.innerHTML = html;
+  panel.classList.add('open');
+}
+
+// 지도 클릭 시 날씨 패널 닫기
+document.addEventListener('click', e => {
+  const panel = document.getElementById('weatherDetail');
+  const badge = document.getElementById('weatherBadge');
+  if (panel && !panel.contains(e.target) && badge && !badge.contains(e.target)) {
+    panel.classList.remove('open');
+  }
+});
 
 // ── 실험실 ──
 function openLab() {
