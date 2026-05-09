@@ -1,7 +1,8 @@
 {
   "name": "김춘식 데이트 맵",
   "short_name": "데이트 맵",
-  "start_url": "/date-map/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#F5F0E8",
   "theme_color": "#2C1810",

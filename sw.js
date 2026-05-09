@@ -1,10 +1,11 @@
-const CACHE_NAME = 'datemap-v1.6.8';
+const CACHE_NAME = 'datemap-v1.6.9';
+// 자체 도메인(datemap.600g.net) root 기준. GH Pages 도 CNAME 등록되어 동일.
 const ASSETS = [
-  '/date-map/',
-  '/date-map/index.html',
-  '/date-map/manifest.json',
-  '/date-map/icon-192.png',
-  '/date-map/icon-512.png'
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
 // 설치 시 기본 파일 캐시
