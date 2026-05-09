@@ -512,6 +512,11 @@ header .lc svg{width:18px;height:18px}
       <p style="font-size:12px;color:var(--brown);margin-bottom:10px">순서를 조정하세요</p>
       <div id="courseRouteList" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px"></div>
       <div id="courseSummary" style="font-size:12px;color:var(--dark);padding:10px;background:#f5f0e8;border-radius:8px;margin-bottom:12px;text-align:center;font-weight:500;flex-shrink:0"></div>
+      <!-- 길찾기 모드 토글 -->
+      <div style="display:flex;gap:6px;margin-bottom:10px;flex-shrink:0">
+        <button class="route-mode-btn active" data-mode="drive" onclick="setRouteMode('drive')" style="flex:1;padding:8px;font-size:12px;border:2px solid var(--brown);background:var(--brown);color:white;border-radius:8px;cursor:pointer;font-weight:600">🚗 자동차</button>
+        <button class="route-mode-btn" data-mode="transit" onclick="setRouteMode('transit')" style="flex:1;padding:8px;font-size:12px;border:2px solid var(--brown);background:white;color:var(--brown);border-radius:8px;cursor:pointer;font-weight:600">🚇 대중교통</button>
+      </div>
       <div style="display:flex;gap:8px;flex-shrink:0">
         <button class="btn btn-outline" style="flex:1" onclick="courseBack()">다시 선택</button>
         <button class="btn btn-dark" style="flex:1" onclick="courseShowMap()">지도에서 보기</button>
@@ -3187,8 +3192,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.6.10';
-const APP_VERSION_NUM = 1610;
+const APP_VERSION = '1.7.0';
+const APP_VERSION_NUM = 170;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3964,6 +3969,71 @@ function _initCourseDrag() {
     });
   }
 }
+// ── 길찾기 모드 (drive | transit) ──
+let _courseRouteMode = 'drive';
+function setRouteMode(mode) {
+  if (mode !== 'drive' && mode !== 'transit') return;
+  _courseRouteMode = mode;
+  // UI 토글
+  document.querySelectorAll('.route-mode-btn').forEach(b => {
+    const active = b.dataset.mode === mode;
+    b.style.background = active ? 'var(--brown)' : 'white';
+    b.style.color = active ? 'white' : 'var(--brown)';
+    b.classList.toggle('active', active);
+  });
+}
+
+// 한국 지하철 노선 색깔 (subwayCode 기준)
+const SUBWAY_COLORS = {
+  1: '#0052a4',  // 1호선
+  2: '#00a84d',  // 2호선
+  3: '#ef7c1c',  // 3호선
+  4: '#00a4e3',  // 4호선
+  5: '#996cac',  // 5호선
+  6: '#cd7c2f',  // 6호선
+  7: '#747f00',  // 7호선
+  8: '#e6186c',  // 8호선
+  9: '#bdb092',  // 9호선
+  101: '#0052a4', 104: '#77c4a3', 107: '#0c8e72', 109: '#bdb092',
+  110: '#d4003b', // 신분당선
+  111: '#FABE00', // 분당선
+  112: '#3cb371', // 경의중앙선
+  113: '#0090d2', // 공항철도
+  114: '#178c72', // 경춘선
+  115: '#9bb0e6', // 우이신설선
+  116: '#a6005f', // 김포골드라인
+  117: '#65aebc', // 서해선
+  118: '#71be38', // 수인선
+};
+const subwayColor = (code) => SUBWAY_COLORS[code] || '#666';
+
+// 버스 타입 색깔 (lane[].type)
+const BUS_TYPE_COLORS = {
+  1: '#0068b7', 11: '#0068b7', 21: '#0068b7',  // 일반/간선/급행간선 — 파랑
+  2: '#0068b7',                                   // 좌석
+  3: '#5bb025', 13: '#fcc16b',                    // 마을/순환 — 초록/연두
+  4: '#f25f23',                                   // 직행좌석
+  5: '#3cb371',                                   // 공항
+  12: '#5bb025', 22: '#5bb025',                   // 지선/급행지선 — 초록
+  14: '#f25f23', 23: '#f25f23',                   // 광역/급행광역 — 빨강
+  16: '#888',                                     // 농어촌
+};
+const busColor = (busType) => BUS_TYPE_COLORS[busType] || '#0068b7';
+
+/** ODSAY 대중교통 경로 fetch — 직선 polyline + 환승역 마커. */
+async function fetchTransitRoute(fromLat, fromLng, toLat, toLng) {
+  try {
+    const url = `${DOOGEUN_API}/api/odsay/transit?sx=${fromLng}&sy=${fromLat}&ex=${toLng}&ey=${toLat}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.ok ? d.best : null;
+  } catch (e) {
+    console.warn('[transit] 실패', e);
+    return null;
+  }
+}
+
 function openKakaoRoute(fromIdx, toIdx) {
   // 출발지 = 현재 위치 (구간 fromIdx 무시), 목적지 = 구간 도착점
   // 데이트 진행 중 "지금 내 위치 → 다음 장소" 가 자연스러움
@@ -4022,66 +4092,143 @@ function courseShowMap() {
         _courseMarkers.push(marker);
       });
       // 구간별 폴리라인 + 화살표 + 시간 + 경로버튼
-      // 도로 경로(NCP Directions 5) 우선, 실패 시 직선 fallback
+      // 모드 분기: drive(NCP Directions) | transit(ODSAY 대중교통)
       if (positions.length >= 2) {
-        let totalDistM = 0, totalDurMs = 0, anyDriving = false;
-        // 모든 구간 병렬 호출 (5개 구간 = 1초 내)
-        const segments = await Promise.all(positions.slice(0, -1).map((from, i) => {
-          const to = positions[i+1];
-          const fLat = typeof from.lat === 'function' ? from.lat() : from.y;
-          const fLng = typeof from.lng === 'function' ? from.lng() : from.x;
-          const tLat = typeof to.lat === 'function' ? to.lat() : to.y;
-          const tLng = typeof to.lng === 'function' ? to.lng() : to.x;
-          return fetchDriveRoute(fLat, fLng, tLat, tLng).then(r => ({from, to, fLat, fLng, tLat, tLng, drive: r, i}));
-        }));
-        for (const seg of segments) {
-          const {from, to, fLat, fLng, tLat, tLng, drive, i} = seg;
-          const color = colors[i % colors.length];
-          // path: 도로 경로 우선, 없으면 직선
-          let path = [from, to];
-          let distM = null, durMs = null;
-          if (drive && drive.path && drive.path.length >= 2) {
-            path = drive.path.map(p => new naver.maps.LatLng(p[1], p[0]));
-            distM = drive.distance_m;
-            durMs = drive.duration_ms;
-            anyDriving = true;
-            totalDistM += distM;
-            totalDurMs += durMs;
+        if (_courseRouteMode === 'transit') {
+          // ── 🚇 대중교통 모드 (ODSAY) ──
+          let totalTime = 0, totalFare = 0, totalTransfers = 0, anySuccess = false;
+          const segments = await Promise.all(positions.slice(0, -1).map((from, i) => {
+            const to = positions[i+1];
+            const fLat = typeof from.lat === 'function' ? from.lat() : from.y;
+            const fLng = typeof from.lng === 'function' ? from.lng() : from.x;
+            const tLat = typeof to.lat === 'function' ? to.lat() : to.y;
+            const tLng = typeof to.lng === 'function' ? to.lng() : to.x;
+            return fetchTransitRoute(fLat, fLng, tLat, tLng).then(r => ({from, to, fLat, fLng, tLat, tLng, transit: r, i}));
+          }));
+          for (const seg of segments) {
+            const {from, to, fLat, fLng, tLat, tLng, transit, i} = seg;
+            if (!transit) {
+              // ODSAY 실패 → 직선 fallback (회색 점선)
+              const fb = new naver.maps.Polyline({ map, path: [from, to], strokeWeight: 4, strokeColor: '#aaa', strokeOpacity: 0.7, strokeStyle: 'shortdash' });
+              _courseLines.push(fb);
+              continue;
+            }
+            anySuccess = true;
+            totalTime += transit.total_time_min;
+            totalFare += transit.fare;
+            totalTransfers += transit.transfer_count;
+            // subpath 별 polyline + 시작역/정류장 마커
+            let prevLat = fLat, prevLng = fLng;
+            for (let j = 0; j < transit.subpath.length; j++) {
+              const sp = transit.subpath[j];
+              let segStart, segEnd, color, isDashed = false, label = null;
+              if (sp.type === 'WALK') {
+                segStart = new naver.maps.LatLng(prevLat, prevLng);
+                const next = transit.subpath[j+1];
+                if (next && next.start_x != null) {
+                  segEnd = new naver.maps.LatLng(next.start_y, next.start_x);
+                } else {
+                  segEnd = new naver.maps.LatLng(tLat, tLng);
+                }
+                color = '#888'; isDashed = true;
+              } else if (sp.type === 'SUBWAY') {
+                segStart = new naver.maps.LatLng(sp.start_y, sp.start_x);
+                segEnd = new naver.maps.LatLng(sp.end_y, sp.end_x);
+                color = subwayColor(sp.subway_code);
+                label = `🚇 ${sp.lane}<br><span style="font-weight:500;font-size:9px">${sp.start_station}</span>`;
+                prevLat = sp.end_y; prevLng = sp.end_x;
+              } else if (sp.type === 'BUS') {
+                segStart = new naver.maps.LatLng(sp.start_y, sp.start_x);
+                segEnd = new naver.maps.LatLng(sp.end_y, sp.end_x);
+                color = busColor(sp.bus_type);
+                label = `🚌 ${sp.bus_no}<br><span style="font-weight:500;font-size:9px">${sp.start_stop}</span>`;
+                prevLat = sp.end_y; prevLng = sp.end_x;
+              }
+              if (segStart && segEnd) {
+                const lineBg = new naver.maps.Polyline({ map, path: [segStart, segEnd], strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: 0.85 });
+                const line = new naver.maps.Polyline({ map, path: [segStart, segEnd], strokeWeight: 5, strokeColor: color, strokeOpacity: 1, strokeStyle: isDashed ? 'shortdash' : 'solid' });
+                _courseLines.push(lineBg, line);
+              }
+              if (label) {
+                const el = document.createElement('div');
+                el.innerHTML = `<div style="background:${color};color:white;border:2.5px solid white;border-radius:10px;padding:3px 7px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35);text-align:center;line-height:1.2">${label}</div>`;
+                const marker = new NaverCustomOverlay({ position: segStart, content: el, yAnchor: 1.1, xAnchor: 0.5, zIndex: 7 });
+                marker.setMap(map);
+                _courseMarkers.push(marker);
+              }
+            }
+            // 구간 요약 라벨 (중간점)
+            const midLat = (fLat + tLat) / 2, midLng = (fLng + tLng) / 2;
+            const segIdx = i;
+            const sumEl = document.createElement('div');
+            sumEl.innerHTML = `<div style="background:white;border:1.5px solid #333;border-radius:14px;padding:3px 9px;font-size:11px;font-weight:700;color:#333;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer" id="transInfo${i}">🚇 ${transit.total_time_min}분 · 환승${transit.transfer_count} · ₩${transit.fare.toLocaleString()}</div>`;
+            sumEl.querySelector(`#transInfo${i}`).onclick = () => openKakaoRoute(segIdx, segIdx+1);
+            const sumOv = new NaverCustomOverlay({ position: new naver.maps.LatLng(midLat, midLng), content: sumEl, yAnchor: 0.5, xAnchor: 0.5, zIndex: 8 });
+            sumOv.setMap(map);
+            _courseMarkers.push(sumOv);
           }
-          const lineBg = new naver.maps.Polyline({ map: map, path, strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: 0.9 });
-          _courseLines.push(lineBg);
-          const line = new naver.maps.Polyline({ map: map, path, strokeWeight: 5, strokeColor: color, strokeOpacity: 1 });
-          _courseLines.push(line);
-          // 라벨 위치: path 중간점 (도로면 실제 도로 중간), 화살표 angle: 직선 기준
-          const midPath = path[Math.floor(path.length / 2)];
-          const midLat = typeof midPath.lat === 'function' ? midPath.lat() : midPath.y;
-          const midLng = typeof midPath.lng === 'function' ? midPath.lng() : midPath.x;
-          const angle = Math.atan2(tLng - fLng, tLat - fLat) * 180 / Math.PI;
-          const km = distM !== null ? distM / 1000 : getDistanceKm(_courseSel[i].lat, _courseSel[i].lng, _courseSel[i+1].lat, _courseSel[i+1].lng);
-          const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
-          const timeTxt = durMs !== null ? `🚗${Math.round(durMs/60000)}분` : `🚶${Math.round(km/4*60)}분`;
-          const segIdx = i;
-          const infoEl = document.createElement('div');
-          infoEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
-            <div style="transform:rotate(${angle-90}deg);color:${color};font-size:22px;text-shadow:0 0 4px white,0 0 4px white;line-height:1">➤</div>
-            <div style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid ${color};border-radius:12px;padding:2px 8px;font-size:10px;color:#333;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);font-weight:600;cursor:pointer" id="navInfo${i}">
-              ${distTxt} · ${timeTxt}
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
-            </div>
-          </div>`;
-          infoEl.querySelector(`#navInfo${i}`).onclick = () => openKakaoRoute(segIdx, segIdx+1);
-          const info = new NaverCustomOverlay({
-            position: new naver.maps.LatLng(midLat, midLng),
-            content: infoEl, yAnchor: 0.5, xAnchor: 0.5, zIndex: 6
-          });
-          info.setMap(map);
-          _courseMarkers.push(info);
-        }
-        // 코스 요약 — 화면 상단 토스트 (전체 도로 거리 + 차량 시간)
-        if (anyDriving) {
-          const totalKm = (totalDistM / 1000).toFixed(1);
-          const totalMin = Math.round(totalDurMs / 60000);
-          toast(`총 ${totalKm}km · 차량 ${totalMin}분 · ${positions.length}곳`);
+          if (anySuccess) {
+            toast(`🚇 총 ${totalTime}분 · 환승 ${totalTransfers}회 · ₩${totalFare.toLocaleString()} · ${positions.length}곳`);
+          } else {
+            toast('대중교통 경로 못 찾음 — 거리가 너무 가까울 수 있음');
+          }
+        } else {
+          // ── 🚗 자동차 모드 (NCP Directions) ──
+          let totalDistM = 0, totalDurMs = 0, anyDriving = false;
+          const segments = await Promise.all(positions.slice(0, -1).map((from, i) => {
+            const to = positions[i+1];
+            const fLat = typeof from.lat === 'function' ? from.lat() : from.y;
+            const fLng = typeof from.lng === 'function' ? from.lng() : from.x;
+            const tLat = typeof to.lat === 'function' ? to.lat() : to.y;
+            const tLng = typeof to.lng === 'function' ? to.lng() : to.x;
+            return fetchDriveRoute(fLat, fLng, tLat, tLng).then(r => ({from, to, fLat, fLng, tLat, tLng, drive: r, i}));
+          }));
+          for (const seg of segments) {
+            const {from, to, fLat, fLng, tLat, tLng, drive, i} = seg;
+            const color = colors[i % colors.length];
+            let path = [from, to];
+            let distM = null, durMs = null;
+            if (drive && drive.path && drive.path.length >= 2) {
+              path = drive.path.map(p => new naver.maps.LatLng(p[1], p[0]));
+              distM = drive.distance_m;
+              durMs = drive.duration_ms;
+              anyDriving = true;
+              totalDistM += distM;
+              totalDurMs += durMs;
+            }
+            const lineBg = new naver.maps.Polyline({ map: map, path, strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: 0.9 });
+            _courseLines.push(lineBg);
+            const line = new naver.maps.Polyline({ map: map, path, strokeWeight: 5, strokeColor: color, strokeOpacity: 1 });
+            _courseLines.push(line);
+            const midPath = path[Math.floor(path.length / 2)];
+            const midLat = typeof midPath.lat === 'function' ? midPath.lat() : midPath.y;
+            const midLng = typeof midPath.lng === 'function' ? midPath.lng() : midPath.x;
+            const angle = Math.atan2(tLng - fLng, tLat - fLat) * 180 / Math.PI;
+            const km = distM !== null ? distM / 1000 : getDistanceKm(_courseSel[i].lat, _courseSel[i].lng, _courseSel[i+1].lat, _courseSel[i+1].lng);
+            const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
+            const timeTxt = durMs !== null ? `🚗${Math.round(durMs/60000)}분` : `🚶${Math.round(km/4*60)}분`;
+            const segIdx = i;
+            const infoEl = document.createElement('div');
+            infoEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <div style="transform:rotate(${angle-90}deg);color:${color};font-size:22px;text-shadow:0 0 4px white,0 0 4px white;line-height:1">➤</div>
+              <div style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid ${color};border-radius:12px;padding:2px 8px;font-size:10px;color:#333;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);font-weight:600;cursor:pointer" id="navInfo${i}">
+                ${distTxt} · ${timeTxt}
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
+              </div>
+            </div>`;
+            infoEl.querySelector(`#navInfo${i}`).onclick = () => openKakaoRoute(segIdx, segIdx+1);
+            const info = new NaverCustomOverlay({
+              position: new naver.maps.LatLng(midLat, midLng),
+              content: infoEl, yAnchor: 0.5, xAnchor: 0.5, zIndex: 6
+            });
+            info.setMap(map);
+            _courseMarkers.push(info);
+          }
+          if (anyDriving) {
+            const totalKm = (totalDistM / 1000).toFixed(1);
+            const totalMin = Math.round(totalDurMs / 60000);
+            toast(`🚗 총 ${totalKm}km · ${totalMin}분 · ${positions.length}곳`);
+          }
         }
       }
       if (positions.length > 0) {
