@@ -674,8 +674,24 @@ let myLocMarker = null, myLocOverlay = null, watchId = null, myLat = null, myLng
 let firestoreReady = false;
 
 const NAVER_CLIENT_ID = 'lxiz2j5ujj';
-const NAVER_CLIENT_SECRET = 'HCslMTQcOk7XtyUjejrFmY51wmkIWJJHQ6tPQPr9';
+// NAVER_CLIENT_SECRET 은 클라에 노출하지 않음 — 두근컴퍼니 백엔드 프록시(api.600g.net) 가 보유
 const NAVER_PROXY = 'https://date-map.enoq001.workers.dev';
+const DOOGEUN_API = 'https://api.600g.net';
+
+/** NCP Directions 5 — 두 지점 사이 실제 도로 경로 fetch.
+ *  반환: {distance_m, duration_ms, path:[[lng,lat]...]} | null (실패 시) */
+async function fetchDriveRoute(fromLat, fromLng, toLat, toLng, option='trafast') {
+  try {
+    const url = `${DOOGEUN_API}/api/naver/directions?start=${fromLng},${fromLat}&goal=${toLng},${toLat}&option=${encodeURIComponent(option)}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.ok ? d.route : null;
+  } catch (e) {
+    console.warn('[directions] 실패', e);
+    return null;
+  }
+}
 
 // ── 이모지→SVG키 마이그레이션 ──
 const EMOJI_TO_SVG = {
@@ -3171,8 +3187,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.6.7';
-const APP_VERSION_NUM = 167;
+const APP_VERSION = '1.6.8';
+const APP_VERSION_NUM = 168;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3976,7 +3992,7 @@ function courseShowMap() {
   showTab('list');
   _setBsState('peek');
   toast('코스 ' + _courseSel.length + '곳 표시 중');
-  setTimeout(() => {
+  setTimeout(async () => {
     try {
       const positions = [];
       const colors = ['#FF6B6B','#5B7DB8','#2D8659','#9B59B6','#E67E22','#1ABC9C','#E74C3C','#3498DB'];
@@ -3998,30 +4014,50 @@ function courseShowMap() {
         _courseMarkers.push(marker);
       });
       // 구간별 폴리라인 + 화살표 + 시간 + 경로버튼
+      // 도로 경로(NCP Directions 5) 우선, 실패 시 직선 fallback
       if (positions.length >= 2) {
-        for (let i = 0; i < positions.length - 1; i++) {
-          const from = positions[i], to = positions[i+1];
-          const color = colors[i % colors.length];
-          const lineBg = new naver.maps.Polyline({ map: map, path: [from, to], strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: 0.9 });
-          _courseLines.push(lineBg);
-          const line = new naver.maps.Polyline({ map: map, path: [from, to], strokeWeight: 5, strokeColor: color, strokeOpacity: 1 });
-          _courseLines.push(line);
+        let totalDistM = 0, totalDurMs = 0, anyDriving = false;
+        // 모든 구간 병렬 호출 (5개 구간 = 1초 내)
+        const segments = await Promise.all(positions.slice(0, -1).map((from, i) => {
+          const to = positions[i+1];
           const fLat = typeof from.lat === 'function' ? from.lat() : from.y;
           const fLng = typeof from.lng === 'function' ? from.lng() : from.x;
           const tLat = typeof to.lat === 'function' ? to.lat() : to.y;
           const tLng = typeof to.lng === 'function' ? to.lng() : to.x;
-          const midLat = (fLat + tLat) / 2;
-          const midLng = (fLng + tLng) / 2;
+          return fetchDriveRoute(fLat, fLng, tLat, tLng).then(r => ({from, to, fLat, fLng, tLat, tLng, drive: r, i}));
+        }));
+        for (const seg of segments) {
+          const {from, to, fLat, fLng, tLat, tLng, drive, i} = seg;
+          const color = colors[i % colors.length];
+          // path: 도로 경로 우선, 없으면 직선
+          let path = [from, to];
+          let distM = null, durMs = null;
+          if (drive && drive.path && drive.path.length >= 2) {
+            path = drive.path.map(p => new naver.maps.LatLng(p[1], p[0]));
+            distM = drive.distance_m;
+            durMs = drive.duration_ms;
+            anyDriving = true;
+            totalDistM += distM;
+            totalDurMs += durMs;
+          }
+          const lineBg = new naver.maps.Polyline({ map: map, path, strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: 0.9 });
+          _courseLines.push(lineBg);
+          const line = new naver.maps.Polyline({ map: map, path, strokeWeight: 5, strokeColor: color, strokeOpacity: 1 });
+          _courseLines.push(line);
+          // 라벨 위치: path 중간점 (도로면 실제 도로 중간), 화살표 angle: 직선 기준
+          const midPath = path[Math.floor(path.length / 2)];
+          const midLat = typeof midPath.lat === 'function' ? midPath.lat() : midPath.y;
+          const midLng = typeof midPath.lng === 'function' ? midPath.lng() : midPath.x;
           const angle = Math.atan2(tLng - fLng, tLat - fLat) * 180 / Math.PI;
-          const km = getDistanceKm(_courseSel[i].lat, _courseSel[i].lng, _courseSel[i+1].lat, _courseSel[i+1].lng);
-          const walkMin = Math.round(km / 4 * 60);
+          const km = distM !== null ? distM / 1000 : getDistanceKm(_courseSel[i].lat, _courseSel[i].lng, _courseSel[i+1].lat, _courseSel[i+1].lng);
           const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
+          const timeTxt = durMs !== null ? `🚗${Math.round(durMs/60000)}분` : `🚶${Math.round(km/4*60)}분`;
           const segIdx = i;
           const infoEl = document.createElement('div');
           infoEl.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;gap:2px">
             <div style="transform:rotate(${angle-90}deg);color:${color};font-size:22px;text-shadow:0 0 4px white,0 0 4px white;line-height:1">➤</div>
             <div style="display:flex;align-items:center;gap:4px;background:white;border:1.5px solid ${color};border-radius:12px;padding:2px 8px;font-size:10px;color:#333;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.15);font-weight:600;cursor:pointer" id="navInfo${i}">
-              ${distTxt} · 🚶${walkMin}분
+              ${distTxt} · ${timeTxt}
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
             </div>
           </div>`;
@@ -4032,6 +4068,12 @@ function courseShowMap() {
           });
           info.setMap(map);
           _courseMarkers.push(info);
+        }
+        // 코스 요약 — 화면 상단 토스트 (전체 도로 거리 + 차량 시간)
+        if (anyDriving) {
+          const totalKm = (totalDistM / 1000).toFixed(1);
+          const totalMin = Math.round(totalDurMs / 60000);
+          toast(`총 ${totalKm}km · 차량 ${totalMin}분 · ${positions.length}곳`);
         }
       }
       if (positions.length > 0) {
