@@ -3187,8 +3187,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.6.9';
-const APP_VERSION_NUM = 169;
+const APP_VERSION = '1.6.10';
+const APP_VERSION_NUM = 1610;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -3965,9 +3965,17 @@ function _initCourseDrag() {
   }
 }
 function openKakaoRoute(fromIdx, toIdx) {
-  const sp = _courseSel[fromIdx], ep = _courseSel[toIdx];
-  if (!sp || !ep) return;
-  location.href = `nmap://route/public-transit?slat=${sp.lat}&slng=${sp.lng}&sname=${encodeURIComponent(sp.name)}&dlat=${ep.lat}&dlng=${ep.lng}&dname=${encodeURIComponent(ep.name)}&appname=com.datemap`;
+  // 출발지 = 현재 위치 (구간 fromIdx 무시), 목적지 = 구간 도착점
+  // 데이트 진행 중 "지금 내 위치 → 다음 장소" 가 자연스러움
+  const ep = _courseSel[toIdx];
+  if (!ep) return;
+  if (typeof myLat === 'number' && typeof myLng === 'number') {
+    location.href = `nmap://route/public-transit?slat=${myLat}&slng=${myLng}&sname=${encodeURIComponent('내 위치')}&dlat=${ep.lat}&dlng=${ep.lng}&dname=${encodeURIComponent(ep.name)}&appname=com.datemap`;
+  } else {
+    // 위치 권한 없으면 목적지만 (네이버지도가 출발지 직접 묻기)
+    toast('위치 권한이 없어 목적지만 전달');
+    location.href = `nmap://route/public-transit?dlat=${ep.lat}&dlng=${ep.lng}&dname=${encodeURIComponent(ep.name)}&appname=com.datemap`;
+  }
 }
 function courseMove(i, dir) {
   const j = i + dir;
