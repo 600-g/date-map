@@ -696,79 +696,134 @@ const NAVER_CLIENT_ID = 'lxiz2j5ujj';
 const NAVER_PROXY = 'https://date-map.enoq001.workers.dev';
 const DOOGEUN_API = 'https://api.600g.net';
 
-/** 길찾기 상세 시트 — 앱 내에서 단계별 안내 (외부 앱 안 열고) */
+/** 길찾기 상세 시트 — 앱 내 [🚗 자동차] / [🚇 대중교통] 탭으로 비교 */
 function closeRouteDetail() {
   document.getElementById('routeDetailModal').classList.remove('open');
 }
+
+function _renderDriveTab(d) {
+  const km = (d.distance_m / 1000).toFixed(1);
+  const min = Math.round(d.duration_ms / 60000);
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+    <div style="padding:14px;background:#f5f0e8;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">거리</div><div style="font-size:20px;font-weight:700;color:#333">${km}km</div></div>
+    <div style="padding:14px;background:#f5f0e8;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">시간</div><div style="font-size:20px;font-weight:700;color:#333">${min}분</div></div>
+    ${d.toll_fare ? `<div style="padding:14px;background:#fff3cd;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">통행료</div><div style="font-size:15px;font-weight:700">₩${d.toll_fare.toLocaleString()}</div></div>` : ''}
+    ${d.taxi_fare ? `<div style="padding:14px;background:#fff8dc;border:2px solid #f4a52e;border-radius:8px;text-align:center"><div style="font-size:11px;color:#7a5a00">🚕 택시 예상</div><div style="font-size:18px;font-weight:800;color:#7a5a00">₩${d.taxi_fare.toLocaleString()}</div></div>` : ''}
+  </div>`;
+}
+
+function _renderTransitTab(t) {
+  if (!t) {
+    return `<div style="text-align:center;padding:30px 0;color:#888;font-size:13px">대중교통 경로를 찾을 수 없어요<br><span style="font-size:11px;color:#aaa">(거리가 너무 가깝거나 노선이 없는 지역)</span></div>`;
+  }
+  let html = `<div style="padding:8px 12px;background:#e8f4fd;border-radius:8px;margin-bottom:10px;font-size:12px;color:#1a5490">총 ${t.total_time_min}분 · 환승 ${t.transfer_count}회 · 요금 <strong>₩${t.fare.toLocaleString()}</strong></div>`;
+  html += '<div style="display:flex;flex-direction:column;gap:8px">';
+  for (let j = 0; j < t.subpath.length; j++) {
+    const sp = t.subpath[j];
+    if (sp.type === 'WALK') {
+      const isTransfer = j > 0 && j < t.subpath.length - 1;
+      if (isTransfer) {
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff3cd;border-radius:8px;border:1px dashed #d4a017">
+          <span style="font-size:18px;flex-shrink:0">🔁</span>
+          <div><div style="font-weight:600;color:#7a5a00">환승 ${sp.section_time_min}분</div>
+          ${sp.distance_m ? `<div style="font-size:11px;color:#888">${sp.distance_m}m 이동</div>` : ''}</div></div>`;
+      } else {
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:#f5f0e8;border-radius:8px">
+          <span style="font-size:20px;flex-shrink:0">🚶</span>
+          <div><div style="font-weight:600">도보 ${sp.section_time_min}분</div>
+          <div style="font-size:11px;color:#888">${sp.distance_m}m</div></div></div>`;
+      }
+    } else if (sp.type === 'SUBWAY') {
+      const c = subwayColor(sp.subway_code);
+      const stationsList = sp.stations && sp.stations.length > 2
+        ? `<div style="font-size:10px;color:#888;margin-top:4px;line-height:1.4">${sp.stations.join(' · ')}</div>` : '';
+      html += `<div style="padding:10px;background:${c}15;border-left:4px solid ${c};border-radius:6px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">🚇 ${sp.lane}</span>
+          <span style="font-weight:700;color:#333">${sp.section_time_min}분</span>
+        </div>
+        <div style="font-size:12px;color:#555;margin-top:4px"><strong>${sp.start_station}</strong> → <strong>${sp.end_station}</strong></div>
+        ${stationsList}</div>`;
+    } else if (sp.type === 'BUS') {
+      const c = busColor(sp.bus_type);
+      const stopsList = sp.stops && sp.stops.length > 2
+        ? `<div style="font-size:10px;color:#888;margin-top:4px;line-height:1.4">${sp.stops.join(' · ')}</div>` : '';
+      html += `<div style="padding:10px;background:${c}15;border-left:4px solid ${c};border-radius:6px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">🚌 ${sp.bus_no}</span>
+          <span style="font-weight:700;color:#333">${sp.section_time_min}분</span>
+        </div>
+        <div style="font-size:12px;color:#555;margin-top:4px"><strong>${sp.start_stop}</strong> → <strong>${sp.end_stop}</strong></div>
+        ${stopsList}</div>`;
+    }
+  }
+  html += '</div>';
+  return html;
+}
+
+// 모달 안에서 탭 전환 — drive/transit 캐싱된 데이터 사용
+let _routeTabState = { drive: null, transit: null };
+function _switchRouteTab(tab) {
+  const bodyEl = document.getElementById('routeDetailBody');
+  const titleEl = document.getElementById('routeDetailTitle');
+  document.querySelectorAll('.route-tab-btn').forEach(b => {
+    const active = b.dataset.tab === tab;
+    b.style.background = active ? 'var(--brown)' : 'white';
+    b.style.color = active ? 'white' : 'var(--brown)';
+  });
+  if (tab === 'drive') {
+    const d = _routeTabState.drive;
+    const min = Math.round(d.duration_ms / 60000);
+    titleEl.innerHTML = `🚗 자동차 · ${min}분`;
+    bodyEl.innerHTML = _renderDriveTab(d);
+  } else {
+    const t = _routeTabState.transit;
+    titleEl.innerHTML = t ? `🚇 대중교통 · ${t.total_time_min}분` : `🚇 대중교통`;
+    bodyEl.innerHTML = _renderTransitTab(t);
+  }
+}
+
 function showRouteDetail(opts) {
+  // opts: {fromName, toName, toLat, toLng, drive, transit?, initialTab?}
   const titleEl = document.getElementById('routeDetailTitle');
   const metaEl = document.getElementById('routeDetailMeta');
   const bodyEl = document.getElementById('routeDetailBody');
   const footEl = document.getElementById('routeDetailFooter');
-  if (opts.mode === 'transit') {
-    const t = opts.data;
-    titleEl.innerHTML = `🚇 대중교통 · ${t.total_time_min}분`;
-    metaEl.innerHTML = `<strong>${opts.fromName}</strong> → <strong>${opts.toName}</strong> · 환승 ${t.transfer_count}회 · 요금 ₩${t.fare.toLocaleString()}`;
-    let html = '<div style="display:flex;flex-direction:column;gap:8px">';
-    for (let j = 0; j < t.subpath.length; j++) {
-      const sp = t.subpath[j];
-      if (sp.type === 'WALK') {
-        // 환승 도보 판별: 양 옆이 모두 BUS/SUBWAY 면 환승. 첫/마지막은 일반 도보
-        const isFirst = j === 0;
-        const isLast = j === t.subpath.length - 1;
-        const isTransfer = !isFirst && !isLast;
-        if (isTransfer) {
-          html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff3cd;border-radius:8px;border:1px dashed #d4a017">
-            <span style="font-size:18px;flex-shrink:0">🔁</span>
-            <div><div style="font-weight:600;color:#7a5a00">환승 ${sp.section_time_min}분</div>
-            ${sp.distance_m ? `<div style="font-size:11px;color:#888">${sp.distance_m}m 이동</div>` : ''}</div></div>`;
-        } else {
-          html += `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:#f5f0e8;border-radius:8px">
-            <span style="font-size:20px;flex-shrink:0">🚶</span>
-            <div><div style="font-weight:600">도보 ${sp.section_time_min}분</div>
-            <div style="font-size:11px;color:#888">${sp.distance_m}m</div></div></div>`;
-        }
-      } else if (sp.type === 'SUBWAY') {
-        const c = subwayColor(sp.subway_code);
-        const stationsList = sp.stations && sp.stations.length > 2
-          ? `<div style="font-size:10px;color:#888;margin-top:4px;line-height:1.4">${sp.stations.join(' · ')}</div>` : '';
-        html += `<div style="padding:10px;background:${c}15;border-left:4px solid ${c};border-radius:6px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">🚇 ${sp.lane}</span>
-            <span style="font-weight:700;color:#333">${sp.section_time_min}분</span>
-          </div>
-          <div style="font-size:12px;color:#555;margin-top:4px"><strong>${sp.start_station}</strong> → <strong>${sp.end_station}</strong></div>
-          ${stationsList}</div>`;
-      } else if (sp.type === 'BUS') {
-        const c = busColor(sp.bus_type);
-        const stopsList = sp.stops && sp.stops.length > 2
-          ? `<div style="font-size:10px;color:#888;margin-top:4px;line-height:1.4">${sp.stops.join(' · ')}</div>` : '';
-        html += `<div style="padding:10px;background:${c}15;border-left:4px solid ${c};border-radius:6px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">🚌 ${sp.bus_no}</span>
-            <span style="font-weight:700;color:#333">${sp.section_time_min}분</span>
-          </div>
-          <div style="font-size:12px;color:#555;margin-top:4px"><strong>${sp.start_stop}</strong> → <strong>${sp.end_stop}</strong></div>
-          ${stopsList}</div>`;
-      }
-    }
-    html += '</div>';
-    bodyEl.innerHTML = html;
-  } else {
-    // drive
-    const d = opts.data;
-    const km = (d.distance_m / 1000).toFixed(1);
-    const min = Math.round(d.duration_ms / 60000);
-    titleEl.innerHTML = `🚗 자동차 · ${min}분`;
-    metaEl.innerHTML = `<strong>${opts.fromName}</strong> → <strong>${opts.toName}</strong>`;
-    bodyEl.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div style="padding:14px;background:#f5f0e8;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">거리</div><div style="font-size:20px;font-weight:700;color:#333">${km}km</div></div>
-      <div style="padding:14px;background:#f5f0e8;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">시간</div><div style="font-size:20px;font-weight:700;color:#333">${min}분</div></div>
-      ${d.toll_fare ? `<div style="padding:14px;background:#fff3cd;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">통행료</div><div style="font-size:15px;font-weight:700">₩${d.toll_fare.toLocaleString()}</div></div>` : ''}
-      ${d.taxi_fare ? `<div style="padding:14px;background:#fff3cd;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">택시 예상</div><div style="font-size:15px;font-weight:700">₩${d.taxi_fare.toLocaleString()}</div></div>` : ''}
+  _routeTabState.drive = opts.drive;
+  _routeTabState.transit = opts.transit;
+
+  // 비교 카드 (요약) — 한 눈에 보기
+  const driveMin = opts.drive ? Math.round(opts.drive.duration_ms / 60000) : '?';
+  const taxiFare = opts.drive ? opts.drive.taxi_fare : 0;
+  const transitMin = opts.transit ? opts.transit.total_time_min : null;
+  const transitFare = opts.transit ? opts.transit.fare : null;
+
+  metaEl.innerHTML = `<div style="font-size:13px;margin-bottom:8px"><strong>${opts.fromName}</strong> → <strong>${opts.toName}</strong></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+      <div style="padding:8px 4px;background:#f5f0e8;border-radius:6px;text-align:center">
+        <div style="font-size:9px;color:#888">🚗 자동차</div>
+        <div style="font-size:14px;font-weight:700;color:#333">${driveMin}분</div>
+      </div>
+      <div style="padding:8px 4px;background:#fff8dc;border:1px solid #f4a52e;border-radius:6px;text-align:center">
+        <div style="font-size:9px;color:#7a5a00">🚕 택시</div>
+        <div style="font-size:13px;font-weight:700;color:#7a5a00">${taxiFare ? '₩' + (taxiFare/1000).toFixed(1) + 'k' : '?'}</div>
+      </div>
+      <div style="padding:8px 4px;background:#e8f4fd;border-radius:6px;text-align:center">
+        <div style="font-size:9px;color:#1a5490">🚇 대중교통</div>
+        <div style="font-size:14px;font-weight:700;color:#1a5490">${transitMin ? transitMin+'분' : '?'}</div>
+        ${transitFare ? `<div style="font-size:9px;color:#888">₩${transitFare.toLocaleString()}</div>` : ''}
+      </div>
+    </div>
+    <!-- 탭 -->
+    <div style="display:flex;gap:6px">
+      <button class="route-tab-btn" data-tab="drive" onclick="_switchRouteTab('drive')" style="flex:1;padding:6px;font-size:12px;border:2px solid var(--brown);background:white;color:var(--brown);border-radius:6px;cursor:pointer;font-weight:600">🚗 자동차</button>
+      <button class="route-tab-btn" data-tab="transit" onclick="_switchRouteTab('transit')" style="flex:1;padding:6px;font-size:12px;border:2px solid var(--brown);background:white;color:var(--brown);border-radius:6px;cursor:pointer;font-weight:600">🚇 대중교통</button>
     </div>`;
-  }
-  // 앱 내 처리 — 외부 앱 호출 X. 닫기 버튼만.
+
+  // 초기 탭 — 코스 모드 따름. 대중교통이 없으면 자동차 fallback
+  const initial = (opts.initialTab === 'transit' && opts.transit) ? 'transit' : 'drive';
+  _switchRouteTab(initial);
+
   footEl.innerHTML = `<button class="btn btn-dark" style="flex:1;font-size:12px" onclick="closeRouteDetail()">확인</button>`;
   document.getElementById('routeDetailModal').classList.add('open');
 }
@@ -3347,8 +3402,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.7.5';
-const APP_VERSION_NUM = 175;
+const APP_VERSION = '1.7.6';
+const APP_VERSION_NUM = 176;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4189,52 +4244,44 @@ async function fetchTransitRoute(fromLat, fromLng, toLat, toLng) {
   }
 }
 
-/** 코스 거리 행 클릭 시 — 현재 모드(자동차/대중교통)에 따라 fetch + 상세 시트 */
+/** 코스 거리 행 클릭 시 — 자동차+대중교통 둘 다 fetch (병렬), 모달에 비교 카드 */
 async function openCourseRouteDetail(fromIdx, toIdx) {
   const sp = _courseSel[fromIdx], ep = _courseSel[toIdx];
   if (!sp || !ep) return;
   toast('경로 조회 중...');
-  if (_courseRouteMode === 'transit') {
-    const transit = await fetchTransitRoute(sp.lat, sp.lng, ep.lat, ep.lng);
-    if (!transit) { toast('대중교통 경로 못 찾음'); return; }
-    showRouteDetail({
-      mode: 'transit', fromName: sp.name, toName: ep.name,
-      toLat: ep.lat, toLng: ep.lng, data: transit,
-    });
-  } else {
-    const drive = await fetchDriveRoute(sp.lat, sp.lng, ep.lat, ep.lng);
-    const km = getDistanceKm(sp.lat, sp.lng, ep.lat, ep.lng);
-    showRouteDetail({
-      mode: 'drive', fromName: sp.name, toName: ep.name,
-      toLat: ep.lat, toLng: ep.lng,
-      data: drive || {distance_m: km*1000, duration_ms: Math.round(km/4*60)*60000, toll_fare: 0, taxi_fare: 0},
-    });
-  }
+  const [drive, transit] = await Promise.all([
+    fetchDriveRoute(sp.lat, sp.lng, ep.lat, ep.lng),
+    fetchTransitRoute(sp.lat, sp.lng, ep.lat, ep.lng),
+  ]);
+  const km = getDistanceKm(sp.lat, sp.lng, ep.lat, ep.lng);
+  showRouteDetail({
+    fromName: sp.name, toName: ep.name,
+    toLat: ep.lat, toLng: ep.lng,
+    drive: drive || {distance_m: km*1000, duration_ms: Math.max(1, Math.round(km/30*60))*60000, toll_fare: 0, taxi_fare: 0},
+    transit: transit,
+    initialTab: _courseRouteMode,
+  });
 }
 
-/** 단일 마커 [길찾기] — 현재 위치 → 그 장소, 현재 모드(자동차/대중교통) */
+/** 단일 마커 [길찾기] — 현재 위치 → 그 장소, 자동차+대중교통 둘 다 비교 */
 async function openMarkerRoute(p) {
   if (typeof myLat !== 'number' || typeof myLng !== 'number') {
     toast('내 위치 권한이 필요해요');
     return;
   }
   toast('경로 조회 중...');
-  if (_courseRouteMode === 'transit') {
-    const transit = await fetchTransitRoute(myLat, myLng, p.lat, p.lng);
-    if (!transit) { toast('대중교통 경로 못 찾음'); return; }
-    showRouteDetail({
-      mode: 'transit', fromName: '내 위치', toName: p.name,
-      toLat: p.lat, toLng: p.lng, data: transit,
-    });
-  } else {
-    const drive = await fetchDriveRoute(myLat, myLng, p.lat, p.lng);
-    const km = getDistanceKm(myLat, myLng, p.lat, p.lng);
-    showRouteDetail({
-      mode: 'drive', fromName: '내 위치', toName: p.name,
-      toLat: p.lat, toLng: p.lng,
-      data: drive || {distance_m: km*1000, duration_ms: Math.round(km/4*60)*60000, toll_fare: 0, taxi_fare: 0},
-    });
-  }
+  const [drive, transit] = await Promise.all([
+    fetchDriveRoute(myLat, myLng, p.lat, p.lng),
+    fetchTransitRoute(myLat, myLng, p.lat, p.lng),
+  ]);
+  const km = getDistanceKm(myLat, myLng, p.lat, p.lng);
+  showRouteDetail({
+    fromName: '내 위치', toName: p.name,
+    toLat: p.lat, toLng: p.lng,
+    drive: drive || {distance_m: km*1000, duration_ms: Math.max(1, Math.round(km/30*60))*60000, toll_fare: 0, taxi_fare: 0},
+    transit: transit,
+    initialTab: _courseRouteMode,
+  });
 }
 
 /** 호환 래퍼 — 기존 openKakaoRoute 호출자(거리 행 등) 일괄 redirect */
@@ -4365,14 +4412,19 @@ function courseShowMap() {
             const sumEl = document.createElement('div');
             sumEl.innerHTML = `<div style="background:white;border:1.5px solid #333;border-radius:14px;padding:3px 9px;font-size:11px;font-weight:700;color:#333;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer" id="transInfo${i}">🚇 ${transit.total_time_min}분 · 환승${transit.transfer_count} · ₩${transit.fare.toLocaleString()}</div>`;
             const transitCaptured = transit;
-            sumEl.querySelector(`#transInfo${i}`).onclick = () => showRouteDetail({
-              mode: 'transit',
-              fromName: _courseSel[segIdx].name,
-              toName: _courseSel[segIdx+1].name,
-              toLat: _courseSel[segIdx+1].lat,
-              toLng: _courseSel[segIdx+1].lng,
-              data: transitCaptured,
-            });
+            const sCap = _courseSel[segIdx], eCap = _courseSel[segIdx+1];
+            sumEl.querySelector(`#transInfo${i}`).onclick = async () => {
+              // 대중교통은 이미 있음. 자동차도 함께 fetch (병렬)
+              const drive = await fetchDriveRoute(sCap.lat, sCap.lng, eCap.lat, eCap.lng);
+              const km = getDistanceKm(sCap.lat, sCap.lng, eCap.lat, eCap.lng);
+              showRouteDetail({
+                fromName: sCap.name, toName: eCap.name,
+                toLat: eCap.lat, toLng: eCap.lng,
+                drive: drive || {distance_m: km*1000, duration_ms: Math.max(1, Math.round(km/30*60))*60000, toll_fare: 0, taxi_fare: 0},
+                transit: transitCaptured,
+                initialTab: 'transit',
+              });
+            };
             const sumOv = new NaverCustomOverlay({ position: new naver.maps.LatLng(midLat, midLng), content: sumEl, yAnchor: 0.5, xAnchor: 0.5, zIndex: 8 });
             sumOv.setMap(map);
             _courseMarkers.push(sumOv);
@@ -4429,15 +4481,19 @@ function courseShowMap() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
               </div>
             </div>`;
-            const driveCaptured = drive || {distance_m: km*1000, duration_ms: Math.round(km/4*60)*60000};
-            infoEl.querySelector(`#navInfo${i}`).onclick = () => showRouteDetail({
-              mode: 'drive',
-              fromName: _courseSel[segIdx].name,
-              toName: _courseSel[segIdx+1].name,
-              toLat: _courseSel[segIdx+1].lat,
-              toLng: _courseSel[segIdx+1].lng,
-              data: driveCaptured,
-            });
+            const driveCaptured = drive || {distance_m: km*1000, duration_ms: Math.max(1, Math.round(km/30*60))*60000, toll_fare: 0, taxi_fare: 0};
+            const sCap2 = _courseSel[segIdx], eCap2 = _courseSel[segIdx+1];
+            infoEl.querySelector(`#navInfo${i}`).onclick = async () => {
+              // 자동차는 이미 있음. 대중교통도 함께 fetch (병렬)
+              const transit = await fetchTransitRoute(sCap2.lat, sCap2.lng, eCap2.lat, eCap2.lng);
+              showRouteDetail({
+                fromName: sCap2.name, toName: eCap2.name,
+                toLat: eCap2.lat, toLng: eCap2.lng,
+                drive: driveCaptured,
+                transit: transit,
+                initialTab: 'drive',
+              });
+            };
             const info = new NaverCustomOverlay({
               position: new naver.maps.LatLng(midLat, midLng),
               content: infoEl, yAnchor: 0.5, xAnchor: 0.5, zIndex: 6
