@@ -526,6 +526,19 @@ header .lc svg{width:18px;height:18px}
   </div>
 </div>
 
+<!-- 길찾기 상세 시트 (앱 내) -->
+<div class="modal-overlay" id="routeDetailModal" onclick="if(event.target===this)closeRouteDetail()">
+  <div class="modal" style="width:340px;max-width:90vw;max-height:85vh;padding:16px;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-shrink:0">
+      <h3 id="routeDetailTitle" style="margin:0;font-size:15px"></h3>
+      <span style="cursor:pointer;font-size:20px;color:#aaa;line-height:1;padding:0 4px" onclick="closeRouteDetail()">&times;</span>
+    </div>
+    <div id="routeDetailMeta" style="font-size:12px;color:#666;margin-bottom:10px;flex-shrink:0"></div>
+    <div id="routeDetailBody" style="flex:1;overflow-y:auto;font-size:13px;line-height:1.5"></div>
+    <div id="routeDetailFooter" style="display:flex;gap:6px;margin-top:10px;flex-shrink:0"></div>
+  </div>
+</div>
+
 <!-- 저장된 코스 모달 -->
 <div class="modal-overlay" id="savedCoursesModal" onclick="if(event.target===this)closeSavedCoursesModal()">
   <div class="modal" style="width:320px;max-height:85vh;padding:20px;display:flex;flex-direction:column">
@@ -682,6 +695,107 @@ const NAVER_CLIENT_ID = 'lxiz2j5ujj';
 // NAVER_CLIENT_SECRET 은 클라에 노출하지 않음 — 두근컴퍼니 백엔드 프록시(api.600g.net) 가 보유
 const NAVER_PROXY = 'https://date-map.enoq001.workers.dev';
 const DOOGEUN_API = 'https://api.600g.net';
+
+/** 길찾기 상세 시트 — 앱 내에서 단계별 안내 (외부 앱 안 열고) */
+function closeRouteDetail() {
+  document.getElementById('routeDetailModal').classList.remove('open');
+}
+function showRouteDetail(opts) {
+  const titleEl = document.getElementById('routeDetailTitle');
+  const metaEl = document.getElementById('routeDetailMeta');
+  const bodyEl = document.getElementById('routeDetailBody');
+  const footEl = document.getElementById('routeDetailFooter');
+  if (opts.mode === 'transit') {
+    const t = opts.data;
+    titleEl.innerHTML = `🚇 대중교통 · ${t.total_time_min}분`;
+    metaEl.innerHTML = `<strong>${opts.fromName}</strong> → <strong>${opts.toName}</strong> · 환승 ${t.transfer_count}회 · 요금 ₩${t.fare.toLocaleString()}`;
+    let html = '<div style="display:flex;flex-direction:column;gap:8px">';
+    for (const sp of t.subpath) {
+      if (sp.type === 'WALK') {
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:#f5f0e8;border-radius:8px">
+          <span style="font-size:20px;flex-shrink:0">🚶</span>
+          <div><div style="font-weight:600">도보 ${sp.section_time_min}분</div>
+          <div style="font-size:11px;color:#888">${sp.distance_m}m</div></div></div>`;
+      } else if (sp.type === 'SUBWAY') {
+        const c = subwayColor(sp.subway_code);
+        const stationsList = sp.stations && sp.stations.length > 2
+          ? `<div style="font-size:10px;color:#888;margin-top:4px;line-height:1.4">${sp.stations.join(' · ')}</div>` : '';
+        html += `<div style="padding:10px;background:${c}15;border-left:4px solid ${c};border-radius:6px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">🚇 ${sp.lane}</span>
+            <span style="font-weight:700;color:#333">${sp.section_time_min}분</span>
+          </div>
+          <div style="font-size:12px;color:#555;margin-top:4px"><strong>${sp.start_station}</strong> → <strong>${sp.end_station}</strong></div>
+          ${stationsList}</div>`;
+      } else if (sp.type === 'BUS') {
+        const c = busColor(sp.bus_type);
+        const stopsList = sp.stops && sp.stops.length > 2
+          ? `<div style="font-size:10px;color:#888;margin-top:4px;line-height:1.4">${sp.stops.join(' · ')}</div>` : '';
+        html += `<div style="padding:10px;background:${c}15;border-left:4px solid ${c};border-radius:6px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">🚌 ${sp.bus_no}</span>
+            <span style="font-weight:700;color:#333">${sp.section_time_min}분</span>
+          </div>
+          <div style="font-size:12px;color:#555;margin-top:4px"><strong>${sp.start_stop}</strong> → <strong>${sp.end_stop}</strong></div>
+          ${stopsList}</div>`;
+      }
+    }
+    html += '</div>';
+    bodyEl.innerHTML = html;
+  } else {
+    // drive
+    const d = opts.data;
+    const km = (d.distance_m / 1000).toFixed(1);
+    const min = Math.round(d.duration_ms / 60000);
+    titleEl.innerHTML = `🚗 자동차 · ${min}분`;
+    metaEl.innerHTML = `<strong>${opts.fromName}</strong> → <strong>${opts.toName}</strong>`;
+    bodyEl.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div style="padding:14px;background:#f5f0e8;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">거리</div><div style="font-size:20px;font-weight:700;color:#333">${km}km</div></div>
+      <div style="padding:14px;background:#f5f0e8;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">시간</div><div style="font-size:20px;font-weight:700;color:#333">${min}분</div></div>
+      ${d.toll_fare ? `<div style="padding:14px;background:#fff3cd;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">통행료</div><div style="font-size:15px;font-weight:700">₩${d.toll_fare.toLocaleString()}</div></div>` : ''}
+      ${d.taxi_fare ? `<div style="padding:14px;background:#fff3cd;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">택시 예상</div><div style="font-size:15px;font-weight:700">₩${d.taxi_fare.toLocaleString()}</div></div>` : ''}
+    </div>`;
+  }
+  // 외부 앱 버튼 — 옵션 (사용자가 더 자세히 보고 싶을 때)
+  const slat = (typeof myLat === 'number') ? myLat : null;
+  const slng = (typeof myLng === 'number') ? myLng : null;
+  footEl.innerHTML = `<button class="btn btn-outline" style="flex:1;font-size:11px" onclick="openExternalRoute(${slat},${slng},'내 위치',${opts.toLat},${opts.toLng},'${opts.toName.replace(/'/g, '')}');closeRouteDetail()">📱 ${IS_MOBILE_DEVICE ? '네이버지도 앱' : '카카오맵 웹'}으로 보기</button>
+    <button class="btn btn-dark" style="flex:1;font-size:11px" onclick="closeRouteDetail()">확인</button>`;
+  document.getElementById('routeDetailModal').classList.add('open');
+}
+
+/** 외부 지도 앱 호출 — 모바일은 네이버지도 앱(nmap://), 데스크탑/웹은 카카오맵 웹(파란화면 방지) */
+const IS_MOBILE_DEVICE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+function openExternalRoute(slat, slng, sname, dlat, dlng, dname) {
+  if (IS_MOBILE_DEVICE) {
+    const sp = (slat != null && slng != null)
+      ? `slat=${slat}&slng=${slng}&sname=${encodeURIComponent(sname || '내 위치')}&`
+      : '';
+    location.href = `nmap://route/public-transit?${sp}dlat=${dlat}&dlng=${dlng}&dname=${encodeURIComponent(dname)}&appname=com.datemap`;
+  } else {
+    // 카카오맵 웹 길찾기 (안정적, 새 탭으로 열림)
+    const dest = `${encodeURIComponent(dname)},${dlat},${dlng}`;
+    const url = (slat != null && slng != null)
+      ? `https://map.kakao.com/link/from/${encodeURIComponent(sname || '내 위치')},${slat},${slng}/to/${dest}`
+      : `https://map.kakao.com/link/to/${dest}`;
+    window.open(url, '_blank', 'noopener');
+  }
+}
+function openExternalSearch(query, lat, lng) {
+  if (IS_MOBILE_DEVICE) {
+    const ll = (lat != null && lng != null) ? `&lat=${lat}&lng=${lng}` : '';
+    location.href = `nmap://search?query=${encodeURIComponent(query)}${ll}&appname=com.datemap`;
+  } else {
+    window.open(`https://map.kakao.com/link/search/${encodeURIComponent(query)}`, '_blank', 'noopener');
+  }
+}
+function openExternalKakao(name, lat, lng) {
+  if (IS_MOBILE_DEVICE) {
+    location.href = `kakaomap://search?q=${encodeURIComponent(name)}&p=${lat},${lng}`;
+  } else {
+    window.open(`https://map.kakao.com/link/map/${encodeURIComponent(name)},${lat},${lng}`, '_blank', 'noopener');
+  }
+}
 
 /** NCP Directions 5 — 두 지점 사이 실제 도로 경로 fetch.
  *  반환: {distance_m, duration_ms, path:[[lng,lat]...]} | null (실패 시) */
@@ -2465,22 +2579,19 @@ function toggleV(id) {
 let _reopenAfterRender = null;
 function openKakaoMap(id) {
   const p = places.find(x=>x.id===id); if(!p) return;
-  location.href = `kakaomap://search?q=${encodeURIComponent(p.name)}&p=${p.lat},${p.lng}`;
+  openExternalKakao(p.name, p.lat, p.lng);
 }
 
 function openNaverMap(id) {
   const p = places.find(x=>x.id===id); if(!p) return;
   const q = p.addr ? `${p.name} ${p.addr}` : p.name;
-  location.href = `nmap://search?query=${encodeURIComponent(q)}&lat=${p.lat}&lng=${p.lng}&appname=com.datemap`;
+  openExternalSearch(q, p.lat, p.lng);
 }
 
+/** [길찾기] 버튼 — 앱 내 상세 시트 (외부 앱 X). 모드는 코스 토글에 따름. */
 function openNavi(id) {
   const p = places.find(x=>x.id===id); if(!p) return;
-  if (myLat !== null && myLng !== null) {
-    location.href = `nmap://route/public-transit?slat=${myLat}&slng=${myLng}&sname=${encodeURIComponent('내 위치')}&dlat=${p.lat}&dlng=${p.lng}&dname=${encodeURIComponent(p.name)}&appname=com.datemap`;
-  } else {
-    location.href = `nmap://route/public-transit?dlat=${p.lat}&dlng=${p.lng}&dname=${encodeURIComponent(p.name)}&appname=com.datemap`;
-  }
+  openMarkerRoute(p);
 }
 
 // ── 주변 카테고리 검색 (중복 토글) ──
@@ -2739,14 +2850,14 @@ function renderNearbyResults(docs, iconKey, groupKey) {
     });
     iwEl.querySelector('[data-action="close"]').onclick = () => iw.setMap(null);
     iwEl.querySelector('[data-action="nb-kakao"]').onclick = () => {
-      location.href = `kakaomap://search?q=${encodeURIComponent(d.place_name)}&p=${d.y},${d.x}`;
+      openExternalKakao(d.place_name, d.y, d.x);
     };
     iwEl.querySelector('[data-action="nb-naver"]').onclick = () => {
-      location.href = `nmap://search?query=${encodeURIComponent(d.place_name)}&appname=com.datemap`;
+      openExternalSearch(d.place_name);
     };
     iwEl.querySelector('[data-action="kakao-nav"]').onclick = () => {
-      if (myLat !== null) location.href = `nmap://route/public-transit?slat=${myLat}&slng=${myLng}&sname=${encodeURIComponent('내 위치')}&dlat=${d.y}&dlng=${d.x}&dname=${encodeURIComponent(d.place_name)}&appname=com.datemap`;
-      else location.href = `nmap://route/public-transit?dlat=${d.y}&dlng=${d.x}&dname=${encodeURIComponent(d.place_name)}&appname=com.datemap`;
+      // 앱 내 상세 시트 (모드는 코스 토글에 따름)
+      openMarkerRoute({lat: d.y, lng: d.x, name: d.place_name});
     };
     const iw = new NaverCustomOverlay({ position:pos, content:iwEl, yAnchor:1.15, zIndex:11 });
     const entry = { key: groupKey, marker, iw, open:false };
@@ -3192,8 +3303,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.7.0';
-const APP_VERSION_NUM = 170;
+const APP_VERSION = '1.7.1';
+const APP_VERSION_NUM = 171;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4034,19 +4145,56 @@ async function fetchTransitRoute(fromLat, fromLng, toLat, toLng) {
   }
 }
 
-function openKakaoRoute(fromIdx, toIdx) {
-  // 출발지 = 현재 위치 (구간 fromIdx 무시), 목적지 = 구간 도착점
-  // 데이트 진행 중 "지금 내 위치 → 다음 장소" 가 자연스러움
-  const ep = _courseSel[toIdx];
-  if (!ep) return;
-  if (typeof myLat === 'number' && typeof myLng === 'number') {
-    location.href = `nmap://route/public-transit?slat=${myLat}&slng=${myLng}&sname=${encodeURIComponent('내 위치')}&dlat=${ep.lat}&dlng=${ep.lng}&dname=${encodeURIComponent(ep.name)}&appname=com.datemap`;
+/** 코스 거리 행 클릭 시 — 현재 모드(자동차/대중교통)에 따라 fetch + 상세 시트 */
+async function openCourseRouteDetail(fromIdx, toIdx) {
+  const sp = _courseSel[fromIdx], ep = _courseSel[toIdx];
+  if (!sp || !ep) return;
+  toast('경로 조회 중...');
+  if (_courseRouteMode === 'transit') {
+    const transit = await fetchTransitRoute(sp.lat, sp.lng, ep.lat, ep.lng);
+    if (!transit) { toast('대중교통 경로 못 찾음'); return; }
+    showRouteDetail({
+      mode: 'transit', fromName: sp.name, toName: ep.name,
+      toLat: ep.lat, toLng: ep.lng, data: transit,
+    });
   } else {
-    // 위치 권한 없으면 목적지만 (네이버지도가 출발지 직접 묻기)
-    toast('위치 권한이 없어 목적지만 전달');
-    location.href = `nmap://route/public-transit?dlat=${ep.lat}&dlng=${ep.lng}&dname=${encodeURIComponent(ep.name)}&appname=com.datemap`;
+    const drive = await fetchDriveRoute(sp.lat, sp.lng, ep.lat, ep.lng);
+    const km = getDistanceKm(sp.lat, sp.lng, ep.lat, ep.lng);
+    showRouteDetail({
+      mode: 'drive', fromName: sp.name, toName: ep.name,
+      toLat: ep.lat, toLng: ep.lng,
+      data: drive || {distance_m: km*1000, duration_ms: Math.round(km/4*60)*60000, toll_fare: 0, taxi_fare: 0},
+    });
   }
 }
+
+/** 단일 마커 [길찾기] — 현재 위치 → 그 장소, 현재 모드(자동차/대중교통) */
+async function openMarkerRoute(p) {
+  if (typeof myLat !== 'number' || typeof myLng !== 'number') {
+    toast('내 위치 권한이 필요해요');
+    return;
+  }
+  toast('경로 조회 중...');
+  if (_courseRouteMode === 'transit') {
+    const transit = await fetchTransitRoute(myLat, myLng, p.lat, p.lng);
+    if (!transit) { toast('대중교통 경로 못 찾음'); return; }
+    showRouteDetail({
+      mode: 'transit', fromName: '내 위치', toName: p.name,
+      toLat: p.lat, toLng: p.lng, data: transit,
+    });
+  } else {
+    const drive = await fetchDriveRoute(myLat, myLng, p.lat, p.lng);
+    const km = getDistanceKm(myLat, myLng, p.lat, p.lng);
+    showRouteDetail({
+      mode: 'drive', fromName: '내 위치', toName: p.name,
+      toLat: p.lat, toLng: p.lng,
+      data: drive || {distance_m: km*1000, duration_ms: Math.round(km/4*60)*60000, toll_fare: 0, taxi_fare: 0},
+    });
+  }
+}
+
+/** 호환 래퍼 — 기존 openKakaoRoute 호출자(거리 행 등) 일괄 redirect */
+function openKakaoRoute(fromIdx, toIdx) { return openCourseRouteDetail(fromIdx, toIdx); }
 function courseMove(i, dir) {
   const j = i + dir;
   if (j < 0 || j >= _courseSel.length) return;
@@ -4162,7 +4310,15 @@ function courseShowMap() {
             const segIdx = i;
             const sumEl = document.createElement('div');
             sumEl.innerHTML = `<div style="background:white;border:1.5px solid #333;border-radius:14px;padding:3px 9px;font-size:11px;font-weight:700;color:#333;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.2);cursor:pointer" id="transInfo${i}">🚇 ${transit.total_time_min}분 · 환승${transit.transfer_count} · ₩${transit.fare.toLocaleString()}</div>`;
-            sumEl.querySelector(`#transInfo${i}`).onclick = () => openKakaoRoute(segIdx, segIdx+1);
+            const transitCaptured = transit;
+            sumEl.querySelector(`#transInfo${i}`).onclick = () => showRouteDetail({
+              mode: 'transit',
+              fromName: _courseSel[segIdx].name,
+              toName: _courseSel[segIdx+1].name,
+              toLat: _courseSel[segIdx+1].lat,
+              toLng: _courseSel[segIdx+1].lng,
+              data: transitCaptured,
+            });
             const sumOv = new NaverCustomOverlay({ position: new naver.maps.LatLng(midLat, midLng), content: sumEl, yAnchor: 0.5, xAnchor: 0.5, zIndex: 8 });
             sumOv.setMap(map);
             _courseMarkers.push(sumOv);
@@ -4216,7 +4372,15 @@ function courseShowMap() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
               </div>
             </div>`;
-            infoEl.querySelector(`#navInfo${i}`).onclick = () => openKakaoRoute(segIdx, segIdx+1);
+            const driveCaptured = drive || {distance_m: km*1000, duration_ms: Math.round(km/4*60)*60000};
+            infoEl.querySelector(`#navInfo${i}`).onclick = () => showRouteDetail({
+              mode: 'drive',
+              fromName: _courseSel[segIdx].name,
+              toName: _courseSel[segIdx+1].name,
+              toLat: _courseSel[segIdx+1].lat,
+              toLng: _courseSel[segIdx+1].lng,
+              data: driveCaptured,
+            });
             const info = new NaverCustomOverlay({
               position: new naver.maps.LatLng(midLat, midLng),
               content: infoEl, yAnchor: 0.5, xAnchor: 0.5, zIndex: 6
