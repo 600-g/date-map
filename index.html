@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>김춘식 데이트 맵</title>
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json?v=175">
 <meta name="theme-color" content="#3B4C6B">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -3347,8 +3347,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.7.4';
-const APP_VERSION_NUM = 174;
+const APP_VERSION = '1.7.5';
+const APP_VERSION_NUM = 175;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -5299,7 +5299,7 @@ window.addEventListener('load', () => {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!refreshing) { refreshing = true; window.location.reload(); }
     });
-    navigator.serviceWorker.register('sw.js').then(reg => {
+    navigator.serviceWorker.register('sw.js?v=' + APP_VERSION_NUM).then(reg => {
       reg.update();
       reg.onupdatefound = () => {
         const sw = reg.installing;
