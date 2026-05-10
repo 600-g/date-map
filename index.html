@@ -914,7 +914,38 @@ function drawDriveOnMap(d) {
   path.forEach(p => bounds.extend(p));
   map.fitBounds(bounds, {top:80, right:40, bottom:140, left:40});
 }
-function drawTransitOnMap(t, fLat, fLng, tLat, tLng) {
+async function drawTransitOnMap(t, fLat, fLng, tLat, tLng) {
+  // 1. ODSAY loadLane 시도 — 정확한 노선 polyline (도로 곡선)
+  const lanePaths = t.map_obj ? await fetchTransitLane(t.map_obj) : null;
+  if (lanePaths && lanePaths.length) {
+    // 모든 lane section 합쳐서 단일 polyline (도로 따라 곡선)
+    const allPts = lanePaths.flatMap(p => p.points);
+    const path = allPts.map(p => new naver.maps.LatLng(p[1], p[0]));
+    const lineBg = new naver.maps.Polyline({ map, path, strokeWeight: 9, strokeColor: '#ffffff', strokeOpacity: 0.85 });
+    const line = new naver.maps.Polyline({ map, path, strokeWeight: 5, strokeColor: '#1a5490', strokeOpacity: 1 });
+    _routePolylines.push(lineBg, line);
+    // 시작역/정류장 마커는 직선 모드와 동일하게 추가
+    for (const sp of t.subpath) {
+      if (sp.type === 'SUBWAY' && sp.start_x != null) {
+        const c = subwayColor(sp.subway_code);
+        const el = document.createElement('div');
+        el.innerHTML = `<div style="background:${c};color:white;border:2.5px solid white;border-radius:10px;padding:3px 7px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35);text-align:center;line-height:1.2">🚇 ${sp.lane}<br><span style="font-size:9px;font-weight:500">${sp.start_station}</span></div>`;
+        const m = new NaverCustomOverlay({ position: new naver.maps.LatLng(sp.start_y, sp.start_x), content: el, yAnchor: 1.1, xAnchor: 0.5, zIndex: 7 });
+        m.setMap(map); _routePolylines.push(m);
+      } else if (sp.type === 'BUS' && sp.start_x != null) {
+        const c = busColor(sp.bus_type);
+        const el = document.createElement('div');
+        el.innerHTML = `<div style="background:${c};color:white;border:2.5px solid white;border-radius:10px;padding:3px 7px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35);text-align:center;line-height:1.2">🚌 ${sp.bus_no}<br><span style="font-size:9px;font-weight:500">${sp.start_stop}</span></div>`;
+        const m = new NaverCustomOverlay({ position: new naver.maps.LatLng(sp.start_y, sp.start_x), content: el, yAnchor: 1.1, xAnchor: 0.5, zIndex: 7 });
+        m.setMap(map); _routePolylines.push(m);
+      }
+    }
+    const bounds = new naver.maps.LatLngBounds();
+    path.forEach(p => bounds.extend(p));
+    map.fitBounds(bounds, {top:80, right:40, bottom:140, left:40});
+    return;
+  }
+  // 2. fallback: 기존 직선 polyline (역↔역)
   let prevLat = fLat, prevLng = fLng;
   for (let j = 0; j < t.subpath.length; j++) {
     const sp = t.subpath[j];
@@ -958,24 +989,23 @@ function drawTransitOnMap(t, fLat, fLng, tLat, tLng) {
 }
 
 /** [안내 시작] — 모달 닫고 지도에 경로만 깔끔하게 표시 (UI 숨김) */
-function startNavigation() {
+async function startNavigation() {
   const tab = document.querySelector('.route-tab-btn[style*="brown);background:var"]')?.dataset?.tab
     || (_routeTabState.transit ? 'transit' : 'drive');
   clearRoutePolylines();
+  closeRouteDetail();
   let drew = false;
   if (tab === 'transit' && _routeTabState.transit) {
-    drawTransitOnMap(_routeTabState.transit, _routeTabState.fromLat, _routeTabState.fromLng, _routeTabState.toLat, _routeTabState.toLng);
+    _enterNavigationMode();
+    toast('🚇 경로 조회 중...');
+    await drawTransitOnMap(_routeTabState.transit, _routeTabState.fromLat, _routeTabState.fromLng, _routeTabState.toLat, _routeTabState.toLng);
     drew = true;
   } else if (tab === 'drive' && _routeTabState.drive && _routeTabState.drive.path) {
     drawDriveOnMap(_routeTabState.drive);
+    _enterNavigationMode();
     drew = true;
   }
-  closeRouteDetail();
-  if (drew) {
-    _enterNavigationMode();
-  } else {
-    toast('경로 데이터 없음');
-  }
+  if (!drew) toast('경로 데이터 없음');
 }
 
 /** 안내 모드 진입 — 모든 부수 UI 숨김 + 하단 [안내 종료] 버튼 */
@@ -3755,8 +3785,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.8.3';
-const APP_VERSION_NUM = 183;
+const APP_VERSION = '1.8.4';
+const APP_VERSION_NUM = 184;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4600,6 +4630,17 @@ async function fetchSubwayArrival(stationName) {
     if (!r.ok) return null;
     const d = await r.json();
     return d.ok ? d.arrivals : null;
+  } catch (e) { return null; }
+}
+
+/** ODSAY loadLane — 정확한 노선 polyline (도로 따라 곡선) */
+async function fetchTransitLane(mapObj) {
+  if (!mapObj) return null;
+  try {
+    const r = await fetch(`${DOOGEUN_API}/api/odsay/lane?mapObj=${encodeURIComponent(mapObj)}`);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.ok ? d.paths : null;
   } catch (e) { return null; }
 }
 

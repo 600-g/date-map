@@ -1,4 +1,4 @@
-const CACHE_NAME = 'datemap-v1.8.3';
+const CACHE_NAME = 'datemap-v1.8.4';
 // 자체 도메인(datemap.600g.net) root 기준. GH Pages 도 CNAME 등록되어 동일.
 const ASSETS = [
   '/',
