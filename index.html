@@ -768,24 +768,17 @@ function _renderTransitTab(t) {
   return html;
 }
 
-/** 도착정보 → ETA 텍스트 + 색상 */
+/** 도착정보 → 텍스트 + 색상.
+ *  "운행중"은 한국어 자연어 메시지 (예: "[5]번째 전역 (서초)") 그대로 사용 */
 function _formatArrivalETA(a) {
-  if (a.arrival_status === '도착' || a.arrival_status === '진입중') return { txt: '곧 도착', color: '#27ae60' };
-  if (a.barvl_min === 0 && a.barvl_sec) return { txt: `${a.barvl_sec}초`, color: '#e67e22' };
-  if (a.barvl_min) return { txt: `${a.barvl_min}분`, color: '#1a5490' };
-  return { txt: '운행중', color: '#888' };
+  if (a.arrival_status === '도착' || a.arrival_status === '진입중') return { txt: '곧 도착', color: '#27ae60', isTime: true };
+  if (a.barvl_min === 0 && a.barvl_sec) return { txt: `${a.barvl_sec}초 후`, color: '#e67e22', isTime: true };
+  if (a.barvl_min) return { txt: `${a.barvl_min}분 후`, color: '#1a5490', isTime: true };
+  // 운행중 — 자연어 메시지 ("[5]번째 전역" 등) 사용
+  return { txt: a.msg || '운행중', color: '#666', isTime: false };
 }
 
-/** 펼침 토글 — 지하철 앱처럼 다음 열차 N대 미리보기 */
-window._toggleEtaExpand = function(id, btn) {
-  const exp = document.getElementById(id);
-  if (!exp) return;
-  const open = exp.style.display !== 'none';
-  exp.style.display = open ? 'none' : 'block';
-  btn.textContent = open ? '▼' : '▲';
-};
-
-/** 모든 #eta-sw-* 자리에 실시간 도착정보 (다음 열차 N대 펼침 토글) */
+/** 모든 #eta-sw-* 자리에 실시간 도착정보 — 다음 열차 N대 인라인 (토글 X) */
 async function _fillTransitETAs() {
   const els = document.querySelectorAll('[id^="eta-sw-"]');
   for (const el of els) {
@@ -793,31 +786,16 @@ async function _fillTransitETAs() {
     if (!station || !line) continue;
     const arrivals = await fetchSubwayArrival(station);
     if (!arrivals || !arrivals.length) { el.textContent = ''; continue; }
-    // 같은 노선 다음 열차 최대 3대
-    const matching = arrivals.filter(a => a.line === line).slice(0, 3);
+    const matching = arrivals.filter(a => a.line === line).slice(0, 2);  // 첫 2대
     if (!matching.length) { el.textContent = ''; continue; }
-    const first = matching[0];
-    const e = _formatArrivalETA(first);
-    const expandId = `${el.id}-exp`;
-    // 인라인: 첫 열차 + 토글 ▼ (다음 열차 있으면)
-    el.innerHTML = ` · <span style="color:${e.color};font-weight:700;font-size:10px">${e.txt} 후</span>${first.is_express ? '<span style="background:#e74c3c;color:white;padding:0 4px;border-radius:3px;font-size:9px;margin-left:3px">급행</span>' : ''}${matching.length > 1 ? `<button onclick="_toggleEtaExpand('${expandId}', this)" style="background:none;border:none;color:#888;cursor:pointer;font-size:11px;padding:0 4px;vertical-align:middle">▼</button>` : ''}`;
-    // 펼침: 다음 열차들 미리보기 (지하철 앱처럼)
-    if (matching.length > 1) {
-      let expEl = document.getElementById(expandId);
-      if (!expEl) {
-        expEl = document.createElement('div');
-        expEl.id = expandId;
-        expEl.style.cssText = 'display:none;margin-top:4px;padding:6px 8px;background:white;border:1px solid #e0e0e0;border-radius:4px;font-size:10px';
-        el.parentNode.insertBefore(expEl, el.nextSibling);
-      }
-      expEl.innerHTML = matching.map((a, i) => {
-        const ae = _formatArrivalETA(a);
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;${i > 0 ? 'border-top:1px solid #f0f0f0' : ''}">
-          <span style="color:#666"><strong style="color:#333">${i+1}번째</strong> ${a.destination ? `→ ${a.destination}` : ''}${a.is_express ? '<span style="background:#e74c3c;color:white;padding:0 3px;border-radius:2px;font-size:8px;margin-left:3px">급행</span>' : ''}</span>
-          <span style="color:${ae.color};font-weight:700">${ae.txt} 후</span>
-        </div>${a.msg ? `<div style="color:#aaa;font-size:9px;padding-bottom:2px">${a.msg}</div>` : ''}`;
-      }).join('');
+    const e0 = _formatArrivalETA(matching[0]);
+    const e1 = matching[1] ? _formatArrivalETA(matching[1]) : null;
+    let html = ` · <span style="color:${e0.color};font-weight:700;font-size:10px">${e0.txt}</span>`;
+    if (matching[0].is_express) html += '<span style="background:#e74c3c;color:white;padding:0 4px;border-radius:3px;font-size:9px;margin-left:3px;font-weight:700">급행</span>';
+    if (e1) {
+      html += `<span style="color:#aaa;font-size:9px;margin-left:6px">다음 ${e1.txt}${matching[1].is_express ? ' 급행' : ''}</span>`;
     }
+    el.innerHTML = html;
   }
 }
 
@@ -981,22 +959,22 @@ function startNavigation() {
   }
 }
 
-/** 안내 모드 진입 — 자주쓰는 UI 숨김 + 우상단 [안내 종료] 버튼 */
+/** 안내 모드 진입 — 모든 부수 UI 숨김 + 하단 [안내 종료] 버튼 */
 function _enterNavigationMode() {
-  // 1. 카테고리 버튼 (스벅·편의점·영화관·약국 등) 숨김
-  const nearbyBar = document.getElementById('nearbyBar');
-  if (nearbyBar) nearbyBar.style.display = 'none';
-  // 2. 바텀시트 peek 상태로 (지도 잘 보이게)
+  // 안내 중에 보일 필요 없는 UI 일괄 숨김
+  ['nearbyBar', 'filterBar', 'catSummary', 'searchBar', 'catWrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.dataset.navHidden = el.style.display || '', el.style.display = 'none';
+  });
   if (typeof _setBsState === 'function') _setBsState('peek');
-  // 3. body에 안내 모드 표시 (CSS 추가 적용 가능)
   document.body.classList.add('nav-active');
-  // 4. [안내 종료] 버튼 (우상단 fixed)
+  // 하단 가운데 [안내 종료] 버튼 — 누르기 쉬운 위치
   let btn = document.getElementById('navExitBtn');
   if (!btn) {
     btn = document.createElement('button');
     btn.id = 'navExitBtn';
     btn.innerHTML = '<span style="font-size:14px">✕</span> 안내 종료';
-    btn.style.cssText = 'position:fixed;top:14px;right:14px;z-index:9999;background:#2C1810;color:white;border:none;border-radius:24px;padding:9px 16px;font-size:13px;font-weight:700;box-shadow:0 4px 14px rgba(0,0,0,.35);cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-family:Pretendard Variable,Pretendard,sans-serif';
+    btn.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;background:#2C1810;color:white;border:none;border-radius:28px;padding:12px 28px;font-size:14px;font-weight:700;box-shadow:0 6px 20px rgba(0,0,0,.45);cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-family:Pretendard Variable,Pretendard,sans-serif';
     btn.onclick = _exitNavigationMode;
     document.body.appendChild(btn);
   } else {
@@ -1007,8 +985,13 @@ function _enterNavigationMode() {
 /** 안내 종료 — UI 복원 + polyline 정리 */
 function _exitNavigationMode() {
   clearRoutePolylines();
-  const nearbyBar = document.getElementById('nearbyBar');
-  if (nearbyBar) nearbyBar.style.display = '';
+  ['nearbyBar', 'filterBar', 'catSummary', 'searchBar', 'catWrap'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.dataset.navHidden !== undefined) {
+      el.style.display = el.dataset.navHidden;
+      delete el.dataset.navHidden;
+    }
+  });
   document.body.classList.remove('nav-active');
   const btn = document.getElementById('navExitBtn');
   if (btn) btn.style.display = 'none';
@@ -3753,8 +3736,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.8.1';
-const APP_VERSION_NUM = 181;
+const APP_VERSION = '1.8.2';
+const APP_VERSION_NUM = 182;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
