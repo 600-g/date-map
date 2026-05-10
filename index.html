@@ -737,12 +737,17 @@ function _renderTransitTab(t) {
       const c = subwayColor(sp.subway_code);
       const stationsList = sp.stations && sp.stations.length > 2
         ? `<div style="font-size:10px;color:#888;margin-top:4px;line-height:1.4">${sp.stations.join(' · ')}</div>` : '';
+      const etaId = `eta-sw-${j}`;
       html += `<div style="padding:10px;background:${c}15;border-left:4px solid ${c};border-radius:6px">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="display:inline-flex;align-items:center;gap:4px;background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">${ROUTE_ICONS.train}<span>${sp.lane}</span></span>
           <span style="font-weight:700;color:#333">${sp.section_time_min}분</span>
         </div>
-        <div style="font-size:12px;color:#555;margin-top:4px"><strong>${sp.start_station}</strong> → <strong>${sp.end_station}</strong></div>
+        <div style="font-size:12px;color:#555;margin-top:4px">
+          <strong>${sp.start_station}</strong>
+          <span id="${etaId}" data-station="${sp.start_station}" data-line="${sp.lane}" style="font-size:10px;color:#888"> · 조회 중</span>
+          → <strong>${sp.end_station}</strong>
+        </div>
         ${stationsList}</div>`;
     } else if (sp.type === 'BUS') {
       const c = busColor(sp.bus_type);
@@ -758,11 +763,33 @@ function _renderTransitTab(t) {
     }
   }
   html += '</div>';
+  // 모달 그려진 후 비동기 ETA 채움
+  setTimeout(() => _fillTransitETAs(), 50);
   return html;
 }
 
-// 모달 안에서 탭 전환 — drive/transit 캐싱된 데이터 사용
-let _routeTabState = { drive: null, transit: null };
+/** 모든 #eta-sw-* 자리에 실시간 도착 시간 인라인 표시 */
+async function _fillTransitETAs() {
+  const els = document.querySelectorAll('[id^="eta-sw-"]');
+  for (const el of els) {
+    const station = el.dataset.station, line = el.dataset.line;
+    if (!station || !line) continue;
+    const arrivals = await fetchSubwayArrival(station);
+    if (!arrivals || !arrivals.length) { el.textContent = ''; continue; }
+    const m = arrivals.find(a => a.line === line);
+    if (!m) { el.textContent = ''; continue; }
+    let txt, color;
+    if (m.arrival_status === '도착' || m.arrival_status === '진입중') { txt = '곧 도착'; color = '#27ae60'; }
+    else if (m.barvl_min === 0 && m.barvl_sec) { txt = `${m.barvl_sec}초 후`; color = '#e67e22'; }
+    else if (m.barvl_min) { txt = `${m.barvl_min}분 후`; color = '#1a5490'; }
+    else { txt = ''; color = '#888'; }
+    if (!txt) { el.textContent = ''; continue; }
+    el.innerHTML = ` · <span style="color:${color};font-weight:700;font-size:10px">${txt}</span>${m.is_express ? '<span style="background:#e74c3c;color:white;padding:0 4px;border-radius:3px;font-size:9px;margin-left:3px">급행</span>' : ''}`;
+  }
+}
+
+// 모달 안에서 탭 전환 — drive/transit 캐싱된 데이터 + 출발/도착 좌표
+let _routeTabState = { drive: null, transit: null, fromLat: null, fromLng: null, toLat: null, toLng: null };
 function _switchRouteTab(tab) {
   const bodyEl = document.getElementById('routeDetailBody');
   const titleEl = document.getElementById('routeDetailTitle');
@@ -792,6 +819,10 @@ function showRouteDetail(opts) {
   const footEl = document.getElementById('routeDetailFooter');
   _routeTabState.drive = opts.drive;
   _routeTabState.transit = opts.transit;
+  _routeTabState.fromLat = opts.fromLat;
+  _routeTabState.fromLng = opts.fromLng;
+  _routeTabState.toLat = opts.toLat;
+  _routeTabState.toLng = opts.toLng;
 
   // 비교 카드 (요약) — 한 눈에 보기
   const driveMin = opts.drive ? Math.round(opts.drive.duration_ms / 60000) : '?';
@@ -837,16 +868,80 @@ function showRouteDetail(opts) {
   document.getElementById('routeDetailModal').classList.add('open');
 }
 
-/** 안내 모드 진입 — 단계별 카드 강조 + 실시간 정보 (지하철 도착 등) */
+// ── 길찾기 polyline (모달 [안내 시작] 시 지도에 경로 그림) ──
+let _routePolylines = [];
+function clearRoutePolylines() {
+  _routePolylines.forEach(p => { try { p.setMap(null); } catch (e) {} });
+  _routePolylines = [];
+}
+function drawDriveOnMap(d) {
+  if (!d.path || d.path.length < 2) return;
+  const path = d.path.map(p => new naver.maps.LatLng(p[1], p[0]));
+  const lineBg = new naver.maps.Polyline({ map, path, strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: 0.9 });
+  const line = new naver.maps.Polyline({ map, path, strokeWeight: 5, strokeColor: '#5B7DB8', strokeOpacity: 1 });
+  _routePolylines.push(lineBg, line);
+  const bounds = new naver.maps.LatLngBounds();
+  path.forEach(p => bounds.extend(p));
+  map.fitBounds(bounds, {top:80, right:40, bottom:140, left:40});
+}
+function drawTransitOnMap(t, fLat, fLng, tLat, tLng) {
+  let prevLat = fLat, prevLng = fLng;
+  for (let j = 0; j < t.subpath.length; j++) {
+    const sp = t.subpath[j];
+    let segStart, segEnd, color, isDashed = false;
+    if (sp.type === 'WALK') {
+      segStart = new naver.maps.LatLng(prevLat, prevLng);
+      const next = t.subpath[j+1];
+      if (next && next.start_x != null) segEnd = new naver.maps.LatLng(next.start_y, next.start_x);
+      else segEnd = new naver.maps.LatLng(tLat, tLng);
+      color = '#888'; isDashed = true;
+    } else if (sp.type === 'SUBWAY') {
+      segStart = new naver.maps.LatLng(sp.start_y, sp.start_x);
+      segEnd = new naver.maps.LatLng(sp.end_y, sp.end_x);
+      color = subwayColor(sp.subway_code);
+      // 시작역 마커
+      const el = document.createElement('div');
+      el.innerHTML = `<div style="background:${color};color:white;border:2.5px solid white;border-radius:10px;padding:3px 7px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35);text-align:center;line-height:1.2">🚇 ${sp.lane}<br><span style="font-size:9px;font-weight:500">${sp.start_station}</span></div>`;
+      const m = new NaverCustomOverlay({ position: segStart, content: el, yAnchor: 1.1, xAnchor: 0.5, zIndex: 7 });
+      m.setMap(map); _routePolylines.push(m);
+      prevLat = sp.end_y; prevLng = sp.end_x;
+    } else if (sp.type === 'BUS') {
+      segStart = new naver.maps.LatLng(sp.start_y, sp.start_x);
+      segEnd = new naver.maps.LatLng(sp.end_y, sp.end_x);
+      color = busColor(sp.bus_type);
+      const el = document.createElement('div');
+      el.innerHTML = `<div style="background:${color};color:white;border:2.5px solid white;border-radius:10px;padding:3px 7px;font-size:10px;font-weight:700;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.35);text-align:center;line-height:1.2">🚌 ${sp.bus_no}<br><span style="font-size:9px;font-weight:500">${sp.start_stop}</span></div>`;
+      const m = new NaverCustomOverlay({ position: segStart, content: el, yAnchor: 1.1, xAnchor: 0.5, zIndex: 7 });
+      m.setMap(map); _routePolylines.push(m);
+      prevLat = sp.end_y; prevLng = sp.end_x;
+    }
+    if (segStart && segEnd) {
+      const lineBg = new naver.maps.Polyline({ map, path: [segStart, segEnd], strokeWeight: 8, strokeColor: '#ffffff', strokeOpacity: 0.85 });
+      const line = new naver.maps.Polyline({ map, path: [segStart, segEnd], strokeWeight: 5, strokeColor: color, strokeOpacity: 1, strokeStyle: isDashed ? 'shortdash' : 'solid' });
+      _routePolylines.push(lineBg, line);
+    }
+  }
+  const bounds = new naver.maps.LatLngBounds();
+  bounds.extend(new naver.maps.LatLng(fLat, fLng));
+  bounds.extend(new naver.maps.LatLng(tLat, tLng));
+  map.fitBounds(bounds, {top:80, right:40, bottom:140, left:40});
+}
+
+/** [안내 시작] — 모달 닫고 지도에 경로 polyline 표시 */
 function startNavigation() {
   const tab = document.querySelector('.route-tab-btn[style*="brown);background:var"]')?.dataset?.tab
     || (_routeTabState.transit ? 'transit' : 'drive');
-  closeRouteDetail();
+  clearRoutePolylines();
   if (tab === 'transit' && _routeTabState.transit) {
-    _showNavigationSheet('transit', _routeTabState.transit);
-  } else if (tab === 'drive' && _routeTabState.drive) {
-    _showNavigationSheet('drive', _routeTabState.drive);
+    drawTransitOnMap(_routeTabState.transit, _routeTabState.fromLat, _routeTabState.fromLng, _routeTabState.toLat, _routeTabState.toLng);
+    toast('🚇 대중교통 경로를 지도에 표시');
+  } else if (tab === 'drive' && _routeTabState.drive && _routeTabState.drive.path) {
+    drawDriveOnMap(_routeTabState.drive);
+    toast('🚗 자동차 경로를 지도에 표시');
+  } else {
+    toast('경로 데이터 없음');
   }
+  closeRouteDetail();
 }
 
 let _navStepIdx = 0;
@@ -3587,8 +3682,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.7.9';
-const APP_VERSION_NUM = 179;
+const APP_VERSION = '1.8.0';
+const APP_VERSION_NUM = 180;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4461,6 +4556,7 @@ async function openCourseRouteDetail(fromIdx, toIdx) {
   const km = getDistanceKm(sp.lat, sp.lng, ep.lat, ep.lng);
   showRouteDetail({
     fromName: sp.name, toName: ep.name,
+    fromLat: sp.lat, fromLng: sp.lng,
     toLat: ep.lat, toLng: ep.lng,
     drive: drive || {distance_m: km*1000, duration_ms: Math.max(1, Math.round(km/30*60))*60000, toll_fare: 0, taxi_fare: 0},
     transit: transit,
@@ -4482,6 +4578,7 @@ async function openMarkerRoute(p) {
   const km = getDistanceKm(myLat, myLng, p.lat, p.lng);
   showRouteDetail({
     fromName: '내 위치', toName: p.name,
+    fromLat: myLat, fromLng: myLng,
     toLat: p.lat, toLng: p.lng,
     drive: drive || {distance_m: km*1000, duration_ms: Math.max(1, Math.round(km/30*60))*60000, toll_fare: 0, taxi_fare: 0},
     transit: transit,
@@ -4624,6 +4721,7 @@ function courseShowMap() {
               const km = getDistanceKm(sCap.lat, sCap.lng, eCap.lat, eCap.lng);
               showRouteDetail({
                 fromName: sCap.name, toName: eCap.name,
+                fromLat: sCap.lat, fromLng: sCap.lng,
                 toLat: eCap.lat, toLng: eCap.lng,
                 drive: drive || {distance_m: km*1000, duration_ms: Math.max(1, Math.round(km/30*60))*60000, toll_fare: 0, taxi_fare: 0},
                 transit: transitCaptured,
@@ -4693,6 +4791,7 @@ function courseShowMap() {
               const transit = await fetchTransitRoute(sCap2.lat, sCap2.lng, eCap2.lat, eCap2.lng);
               showRouteDetail({
                 fromName: sCap2.name, toName: eCap2.name,
+                fromLat: sCap2.lat, fromLng: sCap2.lng,
                 toLat: eCap2.lat, toLng: eCap2.lng,
                 drive: driveCaptured,
                 transit: transit,
@@ -4814,6 +4913,8 @@ function clearCourseOverlays() {
   _courseLines.forEach(l => { try{l.setMap(null);}catch(e){} });
   _courseLines = [];
   if (_coursePolyline) { try{_coursePolyline.setMap(null);}catch(e){} _coursePolyline = null; }
+  // [안내 시작]으로 그린 단일 길찾기 polyline 도 같이 정리
+  if (typeof clearRoutePolylines === 'function') clearRoutePolylines();
   const ctrl = document.getElementById('courseCtrl');
   if (ctrl) ctrl.remove();
   const clp = document.getElementById('courseListPanel');
