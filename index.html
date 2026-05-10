@@ -934,7 +934,7 @@ function _renderNavStep() {
         <span style="font-weight:700;color:#333">${cur.section_time_min}분</span>
       </div>
       <div style="font-size:14px;font-weight:600;color:#333">${cur.start_station} → ${cur.end_station}</div>
-      <div id="navRealtime" style="margin-top:10px;padding:8px;background:white;border-radius:6px;font-size:12px;color:#999">⏳ 실시간 도착정보 (서울시 API 키 등록 후 활성화)</div>
+      <div id="navRealtime" style="margin-top:10px;padding:10px;background:white;border-radius:6px;font-size:12px;color:#999;border:1px solid #e0e0e0">⏳ 실시간 도착정보 조회 중...</div>
       ${cur.stations && cur.stations.length > 1 ? `<div style="margin-top:8px;font-size:10px;color:#888;line-height:1.6">정거장: ${cur.stations.join(' · ')}</div>` : ''}
     </div>`;
   } else if (cur.type === 'BUS') {
@@ -951,7 +951,59 @@ function _renderNavStep() {
   bodyEl.innerHTML = body;
   footEl.innerHTML = `${_navStepIdx > 0 ? `<button class="btn btn-outline" style="flex:1" onclick="_navStep(-1)">← 이전</button>` : ''}
     <button class="btn btn-dark" style="flex:2" onclick="_navStep(1)">${stepNum < stepTotal ? '다음 →' : '도착!'}</button>`;
+  // 지하철 단계면 실시간 도착정보 비동기 로드 + 30초마다 갱신
+  if (cur.type === 'SUBWAY') {
+    _loadSubwayRealtime(cur);
+    _startNavAutoRefresh();
+  }
 }
+/** 서울 지하철 실시간 도착정보 → navRealtime div 채움 */
+async function _loadSubwayRealtime(sp) {
+  const arrivals = await fetchSubwayArrival(sp.start_station);
+  const el = document.getElementById('navRealtime');
+  if (!el) return;
+  if (!arrivals || arrivals.length === 0) {
+    el.innerHTML = '<span style="color:#999;font-size:11px">실시간 정보 없음 (역명 매칭 안 됨)</span>';
+    return;
+  }
+  // 노선 + 방향 매칭 (최대 3개)
+  const matching = arrivals.filter(a => a.line === sp.lane).slice(0, 3);
+  const list = matching.length > 0 ? matching : arrivals.slice(0, 3);
+  const c = subwayColor(sp.subway_code);
+  let html = `<div style="font-size:11px;color:#666;margin-bottom:6px;display:flex;align-items:center;gap:4px">${ROUTE_ICONS.train}<span style="font-weight:700">실시간 도착</span></div>`;
+  list.forEach((a, idx) => {
+    const min = a.barvl_min;
+    const sec = a.barvl_sec;
+    let status, statusColor;
+    if (a.arrival_status === '도착' || a.arrival_status === '진입중') { status = '곧 도착'; statusColor = '#27ae60'; }
+    else if (min === 0 && sec > 0) { status = `${sec}초 후`; statusColor = '#e67e22'; }
+    else if (min) { status = `${min}분 후`; statusColor = '#333'; }
+    else { status = a.arrival_status || '-'; statusColor = '#888'; }
+    html += `<div style="padding:6px 0;${idx > 0 ? 'border-top:1px solid #f0f0f0;' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px">
+        <span style="display:inline-flex;align-items:center;gap:4px"><strong style="color:${c}">${a.line}</strong>${a.destination ? `<span style="color:#666">→ ${a.destination}</span>` : ''}${a.is_express ? '<span style="background:#e74c3c;color:white;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700">급행</span>' : ''}</span>
+        <span style="color:${statusColor};font-weight:700">${status}</span>
+      </div>
+      ${a.msg ? `<div style="font-size:10px;color:#888;margin-top:2px">${a.msg}</div>` : ''}
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+// 안내 시트 자동 갱신 (30초)
+let _navRefreshTimer = null;
+function _startNavAutoRefresh() {
+  if (_navRefreshTimer) clearInterval(_navRefreshTimer);
+  _navRefreshTimer = setInterval(() => {
+    const sheet = document.getElementById('navSheet');
+    if (!sheet || !sheet.classList.contains('open')) {
+      clearInterval(_navRefreshTimer); _navRefreshTimer = null; return;
+    }
+    const cur = _navData && _navData.subpath && _navData.subpath[_navStepIdx];
+    if (cur && cur.type === 'SUBWAY') _loadSubwayRealtime(cur);
+  }, 30000);
+}
+
 function _navStep(delta) {
   _navStepIdx = Math.max(0, Math.min(_navData.subpath.length, _navStepIdx + delta));
   _renderNavStep();
@@ -3535,8 +3587,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.7.8';
-const APP_VERSION_NUM = 178;
+const APP_VERSION = '1.7.9';
+const APP_VERSION_NUM = 179;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4371,6 +4423,17 @@ const BUS_TYPE_COLORS = {
   16: '#888',                                     // 농어촌
 };
 const busColor = (busType) => BUS_TYPE_COLORS[busType] || '#0068b7';
+
+/** 서울 지하철 실시간 도착정보 (역명 기준) */
+async function fetchSubwayArrival(stationName) {
+  try {
+    const url = `${DOOGEUN_API}/api/seoul/subway/arrival?station=${encodeURIComponent(stationName.replace('역',''))}`;
+    const r = await fetch(url);
+    if (!r.ok) return null;
+    const d = await r.json();
+    return d.ok ? d.arrivals : null;
+  } catch (e) { return null; }
+}
 
 /** ODSAY 대중교통 경로 fetch — 직선 polyline + 환승역 마커. */
 async function fetchTransitRoute(fromLat, fromLng, toLat, toLng) {
