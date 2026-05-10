@@ -514,8 +514,8 @@ header .lc svg{width:18px;height:18px}
       <div id="courseSummary" style="font-size:12px;color:var(--dark);padding:10px;background:#f5f0e8;border-radius:8px;margin-bottom:12px;text-align:center;font-weight:500;flex-shrink:0"></div>
       <!-- 길찾기 모드 토글 -->
       <div style="display:flex;gap:6px;margin-bottom:10px;flex-shrink:0">
-        <button class="route-mode-btn active" data-mode="drive" onclick="setRouteMode('drive')" style="flex:1;padding:8px;font-size:12px;border:2px solid var(--brown);background:var(--brown);color:white;border-radius:8px;cursor:pointer;font-weight:600">🚗 자동차</button>
-        <button class="route-mode-btn" data-mode="transit" onclick="setRouteMode('transit')" style="flex:1;padding:8px;font-size:12px;border:2px solid var(--brown);background:white;color:var(--brown);border-radius:8px;cursor:pointer;font-weight:600">🚇 대중교통</button>
+        <button class="route-mode-btn" data-mode="drive" onclick="setRouteMode('drive')" style="flex:1;padding:8px;font-size:12px;border:2px solid var(--brown);background:white;color:var(--brown);border-radius:8px;cursor:pointer;font-weight:600">🚗 자동차</button>
+        <button class="route-mode-btn active" data-mode="transit" onclick="setRouteMode('transit')" style="flex:1;padding:8px;font-size:12px;border:2px solid var(--brown);background:var(--brown);color:white;border-radius:8px;cursor:pointer;font-weight:600">🚇 대중교통</button>
       </div>
       <div style="display:flex;gap:8px;flex-shrink:0">
         <button class="btn btn-outline" style="flex:1" onclick="courseBack()">다시 선택</button>
@@ -706,9 +706,9 @@ function _renderDriveTab(d) {
   const min = Math.round(d.duration_ms / 60000);
   return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
     <div style="padding:14px;background:#f5f0e8;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">거리</div><div style="font-size:20px;font-weight:700;color:#333">${km}km</div></div>
-    <div style="padding:14px;background:#f5f0e8;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">시간</div><div style="font-size:20px;font-weight:700;color:#333">${min}분</div></div>
+    <div style="padding:14px;background:#f5f0e8;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">소요 시간</div><div style="font-size:20px;font-weight:700;color:#333">${min}분</div></div>
     ${d.toll_fare ? `<div style="padding:14px;background:#fff3cd;border-radius:8px;text-align:center"><div style="font-size:11px;color:#888">통행료</div><div style="font-size:15px;font-weight:700">₩${d.toll_fare.toLocaleString()}</div></div>` : ''}
-    ${d.taxi_fare ? `<div style="padding:14px;background:#fff8dc;border:2px solid #f4a52e;border-radius:8px;text-align:center"><div style="font-size:11px;color:#7a5a00">🚕 택시 예상</div><div style="font-size:18px;font-weight:800;color:#7a5a00">₩${d.taxi_fare.toLocaleString()}</div></div>` : ''}
+    ${d.taxi_fare ? `<div style="padding:14px;background:#fff8dc;border:2px solid #f4a52e;border-radius:8px;text-align:center;color:#7a5a00"><div style="display:flex;align-items:center;justify-content:center;gap:4px;font-size:11px">${ROUTE_ICONS.taxi}<span>택시 예상</span></div><div style="font-size:18px;font-weight:800;margin-top:2px">₩${d.taxi_fare.toLocaleString()}</div></div>` : ''}
   </div>`;
 }
 
@@ -716,20 +716,20 @@ function _renderTransitTab(t) {
   if (!t) {
     return `<div style="text-align:center;padding:30px 0;color:#888;font-size:13px">대중교통 경로를 찾을 수 없어요<br><span style="font-size:11px;color:#aaa">(거리가 너무 가깝거나 노선이 없는 지역)</span></div>`;
   }
-  let html = `<div style="padding:8px 12px;background:#e8f4fd;border-radius:8px;margin-bottom:10px;font-size:12px;color:#1a5490">총 ${t.total_time_min}분 · 환승 ${t.transfer_count}회 · 요금 <strong>₩${t.fare.toLocaleString()}</strong></div>`;
+  let html = `<div style="padding:10px 12px;background:#e8f4fd;border-radius:8px;margin-bottom:10px;font-size:12px;color:#1a5490;display:flex;justify-content:space-between;align-items:center"><span>총 <strong>${t.total_time_min}분</strong> · 환승 ${t.transfer_count}회</span><span style="font-weight:700">₩${t.fare.toLocaleString()}</span></div>`;
   html += '<div style="display:flex;flex-direction:column;gap:8px">';
   for (let j = 0; j < t.subpath.length; j++) {
     const sp = t.subpath[j];
     if (sp.type === 'WALK') {
       const isTransfer = j > 0 && j < t.subpath.length - 1;
       if (isTransfer) {
-        html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff3cd;border-radius:8px;border:1px dashed #d4a017">
-          <span style="font-size:18px;flex-shrink:0">🔁</span>
-          <div><div style="font-weight:600;color:#7a5a00">환승 ${sp.section_time_min}분</div>
-          ${sp.distance_m ? `<div style="font-size:11px;color:#888">${sp.distance_m}m 이동</div>` : ''}</div></div>`;
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff3cd;border-radius:8px;border:1px dashed #d4a017;color:#7a5a00">
+          <span style="flex-shrink:0">${ROUTE_ICONS.transfer}</span>
+          <div><div style="font-weight:600">환승 ${sp.section_time_min}분</div>
+          ${sp.distance_m ? `<div style="font-size:11px;color:#a08555">${sp.distance_m}m 이동</div>` : ''}</div></div>`;
       } else {
-        html += `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:#f5f0e8;border-radius:8px">
-          <span style="font-size:20px;flex-shrink:0">🚶</span>
+        html += `<div style="display:flex;align-items:center;gap:10px;padding:10px;background:#f5f0e8;border-radius:8px;color:#5a5048">
+          <span style="flex-shrink:0">${ROUTE_ICONS.walk}</span>
           <div><div style="font-weight:600">도보 ${sp.section_time_min}분</div>
           <div style="font-size:11px;color:#888">${sp.distance_m}m</div></div></div>`;
       }
@@ -738,8 +738,8 @@ function _renderTransitTab(t) {
       const stationsList = sp.stations && sp.stations.length > 2
         ? `<div style="font-size:10px;color:#888;margin-top:4px;line-height:1.4">${sp.stations.join(' · ')}</div>` : '';
       html += `<div style="padding:10px;background:${c}15;border-left:4px solid ${c};border-radius:6px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">🚇 ${sp.lane}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="display:inline-flex;align-items:center;gap:4px;background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">${ROUTE_ICONS.train}<span>${sp.lane}</span></span>
           <span style="font-weight:700;color:#333">${sp.section_time_min}분</span>
         </div>
         <div style="font-size:12px;color:#555;margin-top:4px"><strong>${sp.start_station}</strong> → <strong>${sp.end_station}</strong></div>
@@ -749,8 +749,8 @@ function _renderTransitTab(t) {
       const stopsList = sp.stops && sp.stops.length > 2
         ? `<div style="font-size:10px;color:#888;margin-top:4px;line-height:1.4">${sp.stops.join(' · ')}</div>` : '';
       html += `<div style="padding:10px;background:${c}15;border-left:4px solid ${c};border-radius:6px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <span style="background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">🚌 ${sp.bus_no}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="display:inline-flex;align-items:center;gap:4px;background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">${ROUTE_ICONS.bus}<span>${sp.bus_no}</span></span>
           <span style="font-weight:700;color:#333">${sp.section_time_min}분</span>
         </div>
         <div style="font-size:12px;color:#555;margin-top:4px"><strong>${sp.start_stop}</strong> → <strong>${sp.end_stop}</strong></div>
@@ -774,11 +774,12 @@ function _switchRouteTab(tab) {
   if (tab === 'drive') {
     const d = _routeTabState.drive;
     const min = Math.round(d.duration_ms / 60000);
-    titleEl.innerHTML = `🚗 자동차 · ${min}분`;
+    titleEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${ROUTE_ICONS.car} 자동차 · ${min}분</span>`;
     bodyEl.innerHTML = _renderDriveTab(d);
   } else {
     const t = _routeTabState.transit;
-    titleEl.innerHTML = t ? `🚇 대중교통 · ${t.total_time_min}분` : `🚇 대중교통`;
+    const txt = t ? `대중교통 · ${t.total_time_min}분` : `대중교통`;
+    titleEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px">${ROUTE_ICONS.train} ${txt}</span>`;
     bodyEl.innerHTML = _renderTransitTab(t);
   }
 }
@@ -800,28 +801,30 @@ function showRouteDetail(opts) {
 
   metaEl.innerHTML = `<div style="font-size:13px;margin-bottom:8px"><strong>${opts.fromName}</strong> → <strong>${opts.toName}</strong></div>
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
-      <div style="padding:8px 4px;background:#f5f0e8;border-radius:6px;text-align:center">
-        <div style="font-size:9px;color:#888">🚗 자동차</div>
-        <div style="font-size:14px;font-weight:700;color:#333">${driveMin}분</div>
+      <div style="padding:10px 4px;background:#f5f0e8;border-radius:8px;text-align:center;color:#5a5048">
+        <div style="display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px;color:#888">${ROUTE_ICONS.car}<span>자동차</span></div>
+        <div style="font-size:15px;font-weight:700;color:#333;margin-top:2px">${driveMin}분</div>
       </div>
-      <div style="padding:8px 4px;background:#fff8dc;border:1px solid #f4a52e;border-radius:6px;text-align:center">
-        <div style="font-size:9px;color:#7a5a00">🚕 택시</div>
-        <div style="font-size:13px;font-weight:700;color:#7a5a00">${taxiFare ? '₩' + (taxiFare/1000).toFixed(1) + 'k' : '?'}</div>
+      <div style="padding:10px 4px;background:#fff8dc;border:1px solid #f4a52e;border-radius:8px;text-align:center;color:#7a5a00">
+        <div style="display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px">${ROUTE_ICONS.taxi}<span>택시</span></div>
+        <div style="font-size:13px;font-weight:800;margin-top:2px">${taxiFare ? '₩' + taxiFare.toLocaleString() : '?'}</div>
       </div>
-      <div style="padding:8px 4px;background:#e8f4fd;border-radius:6px;text-align:center">
-        <div style="font-size:9px;color:#1a5490">🚇 대중교통</div>
-        <div style="font-size:14px;font-weight:700;color:#1a5490">${transitMin ? transitMin+'분' : '?'}</div>
-        ${transitFare ? `<div style="font-size:9px;color:#888">₩${transitFare.toLocaleString()}</div>` : ''}
+      <div style="padding:10px 4px;background:#e8f4fd;border-radius:8px;text-align:center;color:#1a5490">
+        <div style="display:flex;align-items:center;justify-content:center;gap:3px;font-size:10px">${ROUTE_ICONS.train}<span>대중교통</span></div>
+        <div style="font-size:15px;font-weight:700;margin-top:2px">${transitMin ? transitMin+'분' : '?'}</div>
+        ${transitFare ? `<div style="font-size:10px;color:#666;margin-top:1px">₩${transitFare.toLocaleString()}</div>` : ''}
       </div>
     </div>
     <!-- 탭 -->
     <div style="display:flex;gap:6px">
-      <button class="route-tab-btn" data-tab="drive" onclick="_switchRouteTab('drive')" style="flex:1;padding:6px;font-size:12px;border:2px solid var(--brown);background:white;color:var(--brown);border-radius:6px;cursor:pointer;font-weight:600">🚗 자동차</button>
-      <button class="route-tab-btn" data-tab="transit" onclick="_switchRouteTab('transit')" style="flex:1;padding:6px;font-size:12px;border:2px solid var(--brown);background:white;color:var(--brown);border-radius:6px;cursor:pointer;font-weight:600">🚇 대중교통</button>
+      <button class="route-tab-btn" data-tab="drive" onclick="_switchRouteTab('drive')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:7px;font-size:12px;border:2px solid var(--brown);background:white;color:var(--brown);border-radius:6px;cursor:pointer;font-weight:600">${ROUTE_ICONS.car}<span>자동차</span></button>
+      <button class="route-tab-btn" data-tab="transit" onclick="_switchRouteTab('transit')" style="flex:1;display:flex;align-items:center;justify-content:center;gap:4px;padding:7px;font-size:12px;border:2px solid var(--brown);background:white;color:var(--brown);border-radius:6px;cursor:pointer;font-weight:600">${ROUTE_ICONS.train}<span>대중교통</span></button>
     </div>`;
 
-  // 초기 탭 — 코스 모드 따름. 대중교통이 없으면 자동차 fallback
-  const initial = (opts.initialTab === 'transit' && opts.transit) ? 'transit' : 'drive';
+  // 초기 탭 — 기본 대중교통 (있으면), 없으면 자동차
+  const initial = opts.initialTab && (opts.initialTab !== 'transit' || opts.transit)
+    ? opts.initialTab
+    : (opts.transit ? 'transit' : 'drive');
   _switchRouteTab(initial);
 
   footEl.innerHTML = `<button class="btn btn-dark" style="flex:1;font-size:12px" onclick="closeRouteDetail()">확인</button>`;
@@ -3402,8 +3405,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.7.6';
-const APP_VERSION_NUM = 176;
+const APP_VERSION = '1.7.7';
+const APP_VERSION_NUM = 177;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4086,9 +4089,8 @@ function renderCourseRoute() {
       const km = getDistanceKm(prev.lat, prev.lng, p.lat, p.lng);
       totalKm += km;
       const distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
-      const walkMin = Math.round(km / 4 * 60);
       distHtml = `<div class="cr-dist" onclick="openKakaoRoute(${i-1},${i})">
-        <span style="font-size:11px;color:var(--accent)">↓ ${distTxt} · 🚶${walkMin}분</span>
+        <span style="font-size:11px;color:var(--accent)">↓ ${distTxt} · 상세보기</span>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="flex-shrink:0"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>
       </div>`;
     }
@@ -4099,8 +4101,8 @@ function renderCourseRoute() {
       <span class="cr-handle">☰</span>
     </div>`;
   }).join('');
-  const mins = Math.round(totalKm / 4 * 60);
-  document.getElementById('courseSummary').innerHTML = `총 거리 <b>${totalKm >= 1 ? totalKm.toFixed(1)+'km' : Math.round(totalKm*1000)+'m'}</b> · 도보 약 <b>${mins}분</b>`;
+  const totalDistTxt = totalKm >= 1 ? totalKm.toFixed(1)+'km' : Math.round(totalKm*1000)+'m';
+  document.getElementById('courseSummary').innerHTML = `총 거리 <b>${totalDistTxt}</b> · 구간 <b>${_courseSel.length-1}개</b> <span style="color:#999;font-size:11px">(시간/비용은 [지도에서 보기])</span>`;
   _initCourseDrag();
 }
 // 코스 드래그 정렬 (카테고리와 동일한 연속 DOM 스왑 방식)
@@ -4179,8 +4181,18 @@ function _initCourseDrag() {
     });
   }
 }
-// ── 길찾기 모드 (drive | transit) ──
-let _courseRouteMode = 'drive';
+// ── 길찾기 모드 (transit | drive) — 기본 대중교통 ──
+let _courseRouteMode = 'transit';
+
+// 길찾기 SVG 아이콘 (이모지 대신 일관된 디자인)
+const ROUTE_ICONS = {
+  car:      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 16H9m10 0h3v-3.15a1 1 0 00-.84-.99L16 11l-2.7-3.6a1 1 0 00-.8-.4H5.24a2 2 0 00-1.8 1.1l-.8 1.63A6 6 0 002 12.42V16h2"/><circle cx="6.5" cy="16.5" r="2.5"/><circle cx="16.5" cy="16.5" r="2.5"/></svg>',
+  taxi:     '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2h4M5 7l1.5-3h11L19 7"/><path d="M2 12h2v4h16v-4h2v-1l-2-3H4l-2 3v1z"/><circle cx="7" cy="16" r="2"/><circle cx="17" cy="16" r="2"/></svg>',
+  train:    '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="16" rx="2"/><path d="M4 11h16M8 19l-2 3M16 19l2 3"/><circle cx="9" cy="15" r="0.5"/><circle cx="15" cy="15" r="0.5"/></svg>',
+  bus:      '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6v6M15 6v6M2 12h19.6M18 18h2v-7l-2-5H6L4 11v7h2"/><path d="M6 18v2M18 18v2"/><circle cx="7" cy="18" r="1.5"/><circle cx="17" cy="18" r="1.5"/></svg>',
+  walk:     '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13" cy="4" r="2"/><path d="M15 22l-3-7-2-2-3 5"/><path d="M11 13l-2-3 2-3 4 1 2 3"/></svg>',
+  transfer: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4M3 11V9a4 4 0 014-4h14M7 23l-4-4 4-4M21 13v2a4 4 0 01-4 4H3"/></svg>',
+};
 function setRouteMode(mode) {
   if (mode !== 'drive' && mode !== 'transit') return;
   _courseRouteMode = mode;
@@ -4571,9 +4583,8 @@ function _showCourseInSheet() {
       var km = getDistanceKm(prev.lat, prev.lng, p.lat, p.lng);
       totalKm += km;
       var distTxt = km >= 1 ? km.toFixed(1)+'km' : Math.round(km*1000)+'m';
-      var walkMin = Math.round(km / 4 * 60);
       html += '<div style="display:flex;align-items:center;justify-content:center;gap:4px;padding:3px 0;cursor:pointer" onclick="openKakaoRoute(' + (i-1) + ',' + i + ')">' +
-        '<span style="font-size:10px;color:var(--accent)">↓ ' + distTxt + ' · 🚶' + walkMin + '분</span>' +
+        '<span style="font-size:10px;color:var(--accent)">↓ ' + distTxt + ' · 상세보기</span>' +
         '<svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M3 11l19-9-9 19-2-8-8-2z" fill="#5B7DB8"/></svg>' +
       '</div>';
     }
