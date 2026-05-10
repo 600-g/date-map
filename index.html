@@ -47,6 +47,8 @@ header{display:none}
 .dot{width:6px;height:6px;background:#7FD49A;border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @keyframes locPulse{0%{transform:scale(1);opacity:.5}100%{transform:scale(2.2);opacity:0}}
+@keyframes rt-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.6;transform:scale(.85)}}
+body.nav-active #bottomSheet,body.nav-active .nearby-bar,body.nav-active .filter-bar{display:none!important}
 .main{display:flex;flex:1;overflow:hidden}
 .panel{width:320px;background:var(--cream);border-right:1px solid var(--warm);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0;transition:background .3s,color .3s}
 #map{flex:1;background:#e8e0d8;overflow:hidden}
@@ -736,17 +738,18 @@ function _renderTransitTab(t) {
     } else if (sp.type === 'SUBWAY') {
       const c = subwayColor(sp.subway_code);
       const stationsList = sp.stations && sp.stations.length > 2
-        ? `<div style="font-size:10px;color:#888;margin-top:4px;line-height:1.4">${sp.stations.join(' · ')}</div>` : '';
+        ? `<div style="font-size:10px;color:#888;margin-top:6px;line-height:1.4">${sp.stations.join(' · ')}</div>` : '';
       const etaId = `eta-sw-${j}`;
       html += `<div style="padding:10px;background:${c}15;border-left:4px solid ${c};border-radius:6px">
         <div style="display:flex;align-items:center;gap:8px">
           <span style="display:inline-flex;align-items:center;gap:4px;background:${c};color:white;padding:3px 10px;border-radius:14px;font-size:12px;font-weight:700;flex-shrink:0">${ROUTE_ICONS.train}<span>${sp.lane}</span></span>
           <span style="font-weight:700;color:#333">${sp.section_time_min}분</span>
         </div>
-        <div style="font-size:12px;color:#555;margin-top:4px">
-          <strong>${sp.start_station}</strong>
-          <span id="${etaId}" data-station="${sp.start_station}" data-line="${sp.lane}" style="font-size:10px;color:#888"> · 조회 중</span>
-          → <strong>${sp.end_station}</strong>
+        <div style="font-size:13px;color:#333;margin-top:6px;font-weight:600">
+          <strong>${sp.start_station}</strong> → <strong>${sp.end_station}</strong>
+        </div>
+        <div id="${etaId}" data-station="${sp.start_station}" data-line="${sp.lane}" style="margin-top:6px;padding:6px 10px;background:#f0f0f0;border-radius:5px;font-size:11px;color:#888;display:flex;align-items:center;gap:6px">
+          <span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#888"></span>실시간 조회 중...
         </div>
         ${stationsList}</div>`;
     } else if (sp.type === 'BUS') {
@@ -768,34 +771,50 @@ function _renderTransitTab(t) {
   return html;
 }
 
-/** 도착정보 → 텍스트 + 색상.
- *  "운행중"은 한국어 자연어 메시지 (예: "[5]번째 전역 (서초)") 그대로 사용 */
+/** 도착정보 → 짧은 텍스트 + 색상 (직관성 강조)
+ *  "[5]번째 전역 (서초)" → "5번째 전" 으로 단축 */
 function _formatArrivalETA(a) {
-  if (a.arrival_status === '도착' || a.arrival_status === '진입중') return { txt: '곧 도착', color: '#27ae60', isTime: true };
-  if (a.barvl_min === 0 && a.barvl_sec) return { txt: `${a.barvl_sec}초 후`, color: '#e67e22', isTime: true };
-  if (a.barvl_min) return { txt: `${a.barvl_min}분 후`, color: '#1a5490', isTime: true };
-  // 운행중 — 자연어 메시지 ("[5]번째 전역" 등) 사용
-  return { txt: a.msg || '운행중', color: '#666', isTime: false };
+  if (a.arrival_status === '도착' || a.arrival_status === '진입중') {
+    return { txt: '곧 도착', bg: '#d4edda', fg: '#155724', strong: true };
+  }
+  if (a.barvl_min === 0 && a.barvl_sec) {
+    return { txt: `${a.barvl_sec}초 후`, bg: '#fff3cd', fg: '#856404', strong: true };
+  }
+  if (a.barvl_min === 1) return { txt: '1분 후', bg: '#fff3cd', fg: '#856404', strong: true };
+  if (a.barvl_min === 2) return { txt: '2분 후', bg: '#cce5ff', fg: '#004085', strong: false };
+  if (a.barvl_min) return { txt: `${a.barvl_min}분 후`, bg: '#cce5ff', fg: '#004085', strong: false };
+  // 운행중 — msg에서 "[N]번째 전" 만 추출 (역명 / 한자 제거)
+  if (a.msg) {
+    const m = a.msg.match(/\[(\d+)\]/);
+    if (m) return { txt: `${m[1]}번째 전`, bg: '#e9ecef', fg: '#495057', strong: false };
+  }
+  return { txt: '운행중', bg: '#e9ecef', fg: '#6c757d', strong: false };
 }
 
-/** 모든 #eta-sw-* 자리에 실시간 도착정보 — 다음 열차 N대 인라인 (토글 X) */
+/** 모든 #eta-sw-* 자리에 실시간 도착정보 — 박스 색 강조 + 짧은 표시 */
 async function _fillTransitETAs() {
   const els = document.querySelectorAll('[id^="eta-sw-"]');
   for (const el of els) {
     const station = el.dataset.station, line = el.dataset.line;
     if (!station || !line) continue;
     const arrivals = await fetchSubwayArrival(station);
-    if (!arrivals || !arrivals.length) { el.textContent = ''; continue; }
-    const matching = arrivals.filter(a => a.line === line).slice(0, 2);  // 첫 2대
-    if (!matching.length) { el.textContent = ''; continue; }
+    if (!arrivals || !arrivals.length) {
+      el.style.display = 'none'; continue;
+    }
+    const matching = arrivals.filter(a => a.line === line).slice(0, 2);
+    if (!matching.length) { el.style.display = 'none'; continue; }
     const e0 = _formatArrivalETA(matching[0]);
     const e1 = matching[1] ? _formatArrivalETA(matching[1]) : null;
-    let html = ` · <span style="color:${e0.color};font-weight:700;font-size:10px">${e0.txt}</span>`;
-    if (matching[0].is_express) html += '<span style="background:#e74c3c;color:white;padding:0 4px;border-radius:3px;font-size:9px;margin-left:3px;font-weight:700">급행</span>';
-    if (e1) {
-      html += `<span style="color:#aaa;font-size:9px;margin-left:6px">다음 ${e1.txt}${matching[1].is_express ? ' 급행' : ''}</span>`;
-    }
-    el.innerHTML = html;
+    // 첫 열차 박스 강조 + 다음 열차 작게
+    el.style.background = e0.bg;
+    el.style.color = e0.fg;
+    el.innerHTML = `
+      <span style="display:inline-flex;align-items:center;gap:5px;font-weight:700">
+        <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${e0.fg}${e0.strong ? ';box-shadow:0 0 0 3px '+e0.bg+';animation:rt-pulse 1.5s infinite' : ''}"></span>
+        ${e0.txt}${matching[0].is_express ? '<span style="background:#dc3545;color:white;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:700">급행</span>' : ''}
+      </span>
+      ${e1 ? `<span style="font-size:10px;color:${e0.fg};opacity:0.7;margin-left:auto">다음 ${e1.txt}${matching[1].is_express ? ' 급행' : ''}</span>` : ''}
+    `;
   }
 }
 
@@ -3736,8 +3755,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.8.2';
-const APP_VERSION_NUM = 182;
+const APP_VERSION = '1.8.3';
+const APP_VERSION_NUM = 183;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
