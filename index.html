@@ -3785,8 +3785,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.8.4';
-const APP_VERSION_NUM = 184;
+const APP_VERSION = '1.8.5';
+const APP_VERSION_NUM = 185;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -5788,5 +5788,7 @@ window.addEventListener('load', () => {
   }
 });
 </script>
+<!-- 두근컴퍼니 임베드 위젯 — 우하단 ⚙️ → 개발자모드 비번 → 채팅·패치노트 -->
+<script src="https://600g.net/embed/widget.js" data-team-id="date-map" defer></script>
 </body>
 </html>
