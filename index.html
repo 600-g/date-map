@@ -415,9 +415,9 @@ header .lc svg{width:18px;height:18px}
         <button class="btn btn-outline" id="updateBtn" style="width:100%;margin-bottom:12px;opacity:.5" onclick="forceUpdate()" disabled> 최신 버전입니다</button>
 
         <hr class="div">
-        <div class="s-title"><i data-lucide="settings-2" class="lc lc-sm"></i> 두근컴퍼니</div>
-        <div class="s-desc">개발자가 채팅·패치노트로 관리해요</div>
-        <button class="btn btn-outline" style="width:100%" onclick="window.doogeunEmbed?.open()">⚙️ 두근컴퍼니 열기</button>
+        <div class="s-title"><i data-lucide="wrench" class="lc lc-sm"></i> 개발자 모드</div>
+        <div class="s-desc">채팅·터미널·패치 히스토리로 데이트맵을 직접 관리</div>
+        <button class="btn btn-outline" style="width:100%" onclick="window.doogeunEmbed?.open()">🔧 개발자 모드 열기</button>
 
         <hr class="div">
         <div class="s-title"><i data-lucide="trash-2" class="lc lc-sm"></i> 초기화</div>
@@ -3790,8 +3790,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.8.6';
-const APP_VERSION_NUM = 186;
+const APP_VERSION = '1.8.7';
+const APP_VERSION_NUM = 187;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
