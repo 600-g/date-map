@@ -3792,8 +3792,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.8.7';
-const APP_VERSION_NUM = 187;
+const APP_VERSION = '1.8.8';
+const APP_VERSION_NUM = 188;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -5796,6 +5796,6 @@ window.addEventListener('load', () => {
 });
 </script>
 <!-- 두근컴퍼니 임베드 위젯 — 설정 탭 > 두근컴퍼니 열기 버튼이 트리거 (data-no-fab) -->
-<script src="https://600g.net/embed/widget.js" data-team-id="date-map" data-no-fab defer></script>
+<script src="https://600g.net/embed/widget.js?v=2" data-team-id="date-map" data-no-fab defer></script>
 </body>
 </html>
