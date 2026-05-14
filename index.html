@@ -415,6 +415,11 @@ header .lc svg{width:18px;height:18px}
         <button class="btn btn-outline" id="updateBtn" style="width:100%;margin-bottom:12px;opacity:.5" onclick="forceUpdate()" disabled> 최신 버전입니다</button>
 
         <hr class="div">
+        <div class="s-title"><i data-lucide="settings-2" class="lc lc-sm"></i> 두근컴퍼니</div>
+        <div class="s-desc">개발자가 채팅·패치노트로 관리해요</div>
+        <button class="btn btn-outline" style="width:100%" onclick="window.doogeunEmbed?.open()">⚙️ 두근컴퍼니 열기</button>
+
+        <hr class="div">
         <div class="s-title"><i data-lucide="trash-2" class="lc lc-sm"></i> 초기화</div>
         <div class="s-desc">모든 장소를 삭제합니다</div>
         <button class="btn btn-outline" style="width:100%" onclick="clearAll()">전체 초기화</button>
@@ -3785,8 +3790,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.8.5';
-const APP_VERSION_NUM = 185;
+const APP_VERSION = '1.8.6';
+const APP_VERSION_NUM = 186;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -5788,7 +5793,7 @@ window.addEventListener('load', () => {
   }
 });
 </script>
-<!-- 두근컴퍼니 임베드 위젯 — 우하단 ⚙️ → 개발자모드 비번 → 채팅·패치노트 -->
-<script src="https://600g.net/embed/widget.js" data-team-id="date-map" defer></script>
+<!-- 두근컴퍼니 임베드 위젯 — 설정 탭 > 두근컴퍼니 열기 버튼이 트리거 (data-no-fab) -->
+<script src="https://600g.net/embed/widget.js" data-team-id="date-map" data-no-fab defer></script>
 </body>
 </html>
