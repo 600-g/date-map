@@ -4,10 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>김춘식 데이트 맵</title>
-<link rel="manifest" href="manifest.json?v=175">
+<link rel="manifest" href="manifest.json?v=176">
 <meta name="theme-color" content="#3B4C6B">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="데이트 맵">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="icon-192.png?v=3">
@@ -3792,8 +3792,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.8.9';
-const APP_VERSION_NUM = 189;
+const APP_VERSION = '1.9.0';
+const APP_VERSION_NUM = 190;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
@@ -4188,23 +4188,21 @@ function _applyDarkMode(on){
   document.documentElement.setAttribute('data-dark', on?'true':'false');
   const tog=document.getElementById('darkToggle');
   if(tog) tog.checked=on;
-  // 다크모드일 때 meta theme-color도 변경
+  _syncThemeColor();
+}
+// 상태바 색(meta theme-color) = 화면 맨 위 실제 배경색(body 의 --dark). 다르면 홈 화면 앱 위쪽에 띠가 생긴다
+function _syncThemeColor(){
   const mc=document.querySelector('meta[name="theme-color"]');
-  if(mc){
-    if(on) mc.content='#0a0a0a';
-    else{
-      const t=JSON.parse(localStorage.getItem('datemap-theme')||'{}');
-      const th=THEMES[t.color||'default'];
-      if(th) mc.content=th.dark;
-    }
-  }
+  if(!mc) return;
+  const c=getComputedStyle(document.documentElement).getPropertyValue('--dark').trim();
+  if(c) mc.content=c;
 }
 function _applyColorTheme(id){
   const t=THEMES[id];if(!t)return;
   const r=document.documentElement.style;
   r.setProperty('--accent',t.accent);r.setProperty('--dark',t.dark);r.setProperty('--dark-light',t.darkLight);
   r.setProperty('--brown',t.brown);r.setProperty('--warm',t.warm);r.setProperty('--cream',t.cream);
-  const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.content=t.dark;
+  _syncThemeColor();
 }
 function _applyFont(id){
   const f=FONTS[id];if(!f)return;
