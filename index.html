@@ -43,6 +43,8 @@ input,textarea,select,.pi-memo,.pi-addr,.code-box{-webkit-user-select:text;user-
 body{font-family:'Pretendard Variable',Pretendard,-apple-system,sans-serif;font-weight:450;background:var(--dark);color:var(--text-main);height:100dvh;height:100vh;display:flex;flex-direction:column;overflow:hidden;padding-top:env(safe-area-inset-top, 0px);padding-left:env(safe-area-inset-left, 0px);padding-right:env(safe-area-inset-right, 0px)}
 @supports(height:100dvh){body{height:100dvh}}
 header{display:none}
+.status-cover{display:none}
+@media (display-mode: standalone), (display-mode: fullscreen){.status-cover{display:block;position:fixed;top:0;left:0;right:0;width:100%;height:max(6px, env(safe-area-inset-top));background:var(--dark);z-index:2147483000;pointer-events:none}}
 .badge{font-size:12px;background:rgba(255,255,255,.15);backdrop-filter:blur(4px);color:white;padding:4px 12px;border-radius:20px;display:flex;align-items:center;gap:5px}
 .dot{width:6px;height:6px;background:#7FD49A;border-radius:50%;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
@@ -308,6 +310,9 @@ header .lc svg{width:18px;height:18px}
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 </head>
 <body>
+<!-- iOS 26~27 홈 화면 앱은 상태바 아래에 시스템 블러를 그린다(theme-color·status-bar-style 로는 못 막음).
+     맨 위에 화면 폭 전체·불투명·6px 이상인 고정 띠가 있으면 iOS 가 그 색으로 상태바를 칠하고 블러를 그리지 않는다 -->
+<div class="status-cover" aria-hidden="true"></div>
 <header>
   <h1 style="-webkit-user-select:none;user-select:none"><img src="icon-192.png?v=3" width="22" height="22" style="vertical-align:middle;margin-right:4px;border-radius:4px;cursor:pointer;touch-action:manipulation;-webkit-user-drag:none;user-drag:none;-webkit-user-select:none;pointer-events:auto" id="appIcon" draggable="false"> 김춘식 데이트 맵</h1>
   <div class="badge" onclick="openPlaceListModal()" style="cursor:pointer"><div class="dot"></div><span>0</span>개 장소</div>
@@ -3792,8 +3797,8 @@ function toast(msg) {
 }
 
 // ── 버전 체크 ──
-const APP_VERSION = '1.9.0';
-const APP_VERSION_NUM = 190;
+const APP_VERSION = '1.9.1';
+const APP_VERSION_NUM = 191;
 function checkVersion() {
   fetch('version.json?t=' + Date.now()).then(r => r.json()).then(d => {
     if (d.v && d.v !== APP_VERSION_NUM) {
